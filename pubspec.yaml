@@ -1,0 +1,55 @@
+name: nocturne
+description: A YouTube music streaming app inspired by Apple Music.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Audio playback
+  just_audio: ^0.9.36
+  audio_service: ^0.18.12
+
+  # YouTube source
+  youtube_explode_dart: ^2.0.0
+
+  # UI helpers
+  palette_generator: ^0.3.3
+  cached_network_image: ^3.3.0
+  google_fonts: ^6.1.0
+  lottie: ^2.7.0
+  animations: ^2.0.8
+
+  # State management
+  flutter_riverpod: ^2.4.9
+
+  # Networking
+  dio: ^5.4.0
+
+  # Firebase
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.14.0
+  google_sign_in: ^6.1.6
+
+  # Local storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

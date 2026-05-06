@@ -1,0 +1,40 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Native
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/App.framework/
+ios/Flutter/Flutter.framework/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Generated config (developer-specific)
+lib/firebase_options.dart
+
+# Backend
+backend/node_modules/
+backend/downloads/
