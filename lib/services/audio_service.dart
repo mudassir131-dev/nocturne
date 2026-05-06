@@ -2,10 +2,9 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import '../models/song.dart';
-import '../utils/config.dart';
+import 'stream_resolver.dart';
 
 /// Provider for the platform AudioHandler. Overridden in `main.dart`
 /// after `AudioService.init(...)` returns.
@@ -20,7 +19,7 @@ final audioHandlerProvider = Provider<NocturneAudioHandler>(
 /// from the lock screen / notification shade.
 class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayer _player = AudioPlayer();
-  final YoutubeExplode _yt = YoutubeExplode();
+  final StreamResolver _resolver = StreamResolver();
   final List<Song> _queue = [];
   int _currentIndex = -1;
 
@@ -79,37 +78,10 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
-  /// Resolves a playable audio URL for [videoId], trying on-device extraction
-  /// first (residential IP, no bot-check) and falling back to the backend
-  /// `/stream/:videoId` endpoint when the on-device extractor can't reach
-  /// YouTube (e.g. some carriers, region restrictions).
-  Future<String?> _resolveStreamUrl(String videoId) async {
-    try {
-      final manifest = await _yt.videos.streamsClient
-          .getManifest(videoId)
-          .timeout(const Duration(seconds: 12));
-      // Audio-only first, ordered by bitrate. Falls back to muxed if
-      // YouTube doesn't expose adaptive streams for this video.
-      final audioOnly = manifest.audioOnly.toList();
-      if (audioOnly.isNotEmpty) {
-        audioOnly.sort((a, b) => b.bitrate.bitsPerSecond
-            .compareTo(a.bitrate.bitsPerSecond));
-        return audioOnly.first.url.toString();
-      }
-      final muxed = manifest.muxed.toList();
-      if (muxed.isNotEmpty) {
-        muxed.sort((a, b) => b.bitrate.bitsPerSecond
-            .compareTo(a.bitrate.bitsPerSecond));
-        return muxed.first.url.toString();
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[audio] youtube_explode failed for $videoId: $e');
-      }
-    }
-    // Backend fallback. Works only when YTDLP_COOKIES_BASE64 is set on the
-    // server (otherwise YouTube returns the bot-check empty body).
-    return '${AppConfig.backendBaseUrl}/stream/$videoId';
+  /// Delegates to [StreamResolver] which tries Piped → Invidious → on-device
+  /// extraction → backend in order.
+  Future<String?> _resolveStreamUrl(String videoId) {
+    return _resolver.resolve(videoId);
   }
 
   MediaItem _toMediaItem(Song song) => MediaItem(
