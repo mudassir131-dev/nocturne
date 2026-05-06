@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../utils/theme.dart';
 
 /// 140x140 horizontal-scroll card used on the home screen and elsewhere.
+/// Theme-aware text colours.
 class AlbumCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -22,6 +23,10 @@ class AlbumCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
+    final placeholder = theme.cardColor;
+    final placeholderIcon = fg.withOpacity(0.45);
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -36,10 +41,10 @@ class AlbumCard extends StatelessWidget {
                 height: size,
                 child: imageUrl.isEmpty
                     ? Container(
-                        color: AppColors.card,
-                        child: const Icon(
+                        color: placeholder,
+                        child: Icon(
                           Icons.album,
-                          color: Colors.white54,
+                          color: placeholderIcon,
                           size: 48,
                         ),
                       )
@@ -47,13 +52,13 @@ class AlbumCard extends StatelessWidget {
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         placeholder: (_, __) => Container(
-                          color: AppColors.card,
+                          color: placeholder,
                         ),
                         errorWidget: (_, __, ___) => Container(
-                          color: AppColors.card,
-                          child: const Icon(
+                          color: placeholder,
+                          child: Icon(
                             Icons.broken_image,
-                            color: Colors.white54,
+                            color: placeholderIcon,
                           ),
                         ),
                       ),
@@ -64,8 +69,8 @@ class AlbumCard extends StatelessWidget {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: fg,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -75,8 +80,8 @@ class AlbumCard extends StatelessWidget {
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: theme.hintColor,
                   fontSize: 12,
                 ),
               ),

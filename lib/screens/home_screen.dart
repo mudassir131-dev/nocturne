@@ -8,6 +8,7 @@ import '../state/player_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/album_card.dart';
 import '../widgets/song_tile.dart';
+import 'album_screen.dart';
 
 /// Recommended-songs feed sourced from a default search query so the home
 /// screen always has something to show, even before the user has any
@@ -51,16 +52,16 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       Text(
                         _greeting(),
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
+                        style: TextStyle(
+                          color: Theme.of(context).hintColor,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Nocturne',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w800,
                           fontSize: 28,
                         ),
@@ -88,7 +89,7 @@ class HomeScreen extends ConsumerWidget {
                     subtitle: s.artist,
                     imageUrl: s.thumbnail,
                     onTap: () =>
-                        ref.read(playerControllerProvider).playSong(s),
+                        openArtistAlbum(context, seed: s),
                   );
                 },
               ),
@@ -102,11 +103,11 @@ class HomeScreen extends ConsumerWidget {
             ),
             data: (songs) {
               if (songs.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(20),
+                return Padding(
+                  padding: const EdgeInsets.all(20),
                   child: Text(
                     'Connect your backend to see recommendations.',
-                    style: TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                 );
               }
@@ -141,8 +142,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
       child: Text(
         title,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),
@@ -156,15 +157,17 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.card,
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        color: theme.cardColor,
+        border: Border.all(color: fg.withOpacity(0.18)),
       ),
-      child: const Icon(Icons.person, color: Colors.white70),
+      child: Icon(Icons.person, color: fg.withOpacity(0.7)),
     );
   }
 }

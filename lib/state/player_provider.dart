@@ -5,12 +5,15 @@ import '../models/song.dart';
 import '../services/audio_service.dart';
 import '../services/database_service.dart';
 
-/// Currently-playing song. Null when nothing is loaded.
+/// Currently-playing song. Listens to the handler's own index stream
+/// (NOT just_audio's currentIndexStream) because we use a manual queue;
+/// just_audio's index never changes since each track is loaded as a
+/// fresh single source.
 final currentSongProvider = StreamProvider<Song?>((ref) {
   final handler = ref.watch(audioHandlerProvider);
-  return handler.player.currentIndexStream.map(
-    (_) => handler.currentSong,
-  );
+  return handler.currentIndexStream
+      .map((_) => handler.currentSong)
+      .distinct((a, b) => a?.videoId == b?.videoId);
 });
 
 /// Whether the player is actively playing.

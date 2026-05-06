@@ -11,10 +11,8 @@ class DockItem {
   const DockItem({required this.icon, required this.label});
 }
 
-/// Floating, glassmorphic bottom navigation dock.
-///
-/// Uses [BackdropFilter] for the liquid-glass blur and a translucent
-/// white container with a subtle border to lift it off pure black.
+/// Floating, glassmorphic bottom navigation dock. Theme-aware so it
+/// reads correctly on both light and dark backgrounds.
 class LiquidGlassDock extends StatelessWidget {
   final List<DockItem> items;
   final int currentIndex;
@@ -29,21 +27,26 @@ class LiquidGlassDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final glassFill = isDark
+        ? Colors.white.withOpacity(0.13)
+        : Colors.black.withOpacity(0.04);
+    final glassBorder = isDark
+        ? Colors.white.withOpacity(0.28)
+        : Colors.black.withOpacity(0.10);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.dock),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
             height: 68,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
+              color: glassFill,
               borderRadius: BorderRadius.circular(AppRadius.dock),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.25),
-                width: 1.5,
-              ),
+              border: Border.all(color: glassBorder, width: 1.5),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -76,13 +79,14 @@ class _DockButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
+    final accent = theme.colorScheme.primary;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color: selected
-            ? Colors.white.withOpacity(0.18)
-            : Colors.transparent,
+        color: selected ? accent.withOpacity(0.18) : Colors.transparent,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Material(
@@ -92,12 +96,15 @@ class _DockButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            child: Icon(
-              item.icon,
-              size: 26,
-              color: selected
-                  ? Colors.white
-                  : Colors.white.withOpacity(0.6),
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 220),
+              scale: selected ? 1.08 : 1.0,
+              curve: Curves.easeOutCubic,
+              child: Icon(
+                item.icon,
+                size: 26,
+                color: selected ? accent : fg.withOpacity(0.6),
+              ),
             ),
           ),
         ),

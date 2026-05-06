@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../models/song.dart';
-import '../utils/theme.dart';
 
 /// Standard list-row representation of a song.
 class SongTile extends StatelessWidget {
@@ -23,6 +22,9 @@ class SongTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
+    final secondary = theme.hintColor;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -46,8 +48,8 @@ class SongTile extends StatelessWidget {
                   children: [
                     Text(
                       song.title,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: fg,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -57,8 +59,8 @@ class SongTile extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       song.artist,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: secondary,
                         fontSize: 13,
                       ),
                       maxLines: 1,
@@ -72,21 +74,20 @@ class SongTile extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: Text(
                     song.durationLabel,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: secondary,
                       fontSize: 12,
                     ),
                   ),
                 ),
               if (onAdd != null)
                 IconButton(
-                  icon: const Icon(Icons.add, color: Colors.white70, size: 22),
+                  icon: Icon(Icons.add, color: fg.withOpacity(0.7), size: 22),
                   onPressed: onAdd,
                   tooltip: 'Add to playlist',
                 ),
               IconButton(
-                icon:
-                    const Icon(Icons.more_vert, color: Colors.white70, size: 22),
+                icon: Icon(Icons.more_vert, color: fg.withOpacity(0.7), size: 22),
                 onPressed: onMenu,
               ),
             ],
@@ -103,12 +104,15 @@ class _Thumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final placeholderColor = theme.cardColor;
+    final iconColor = theme.colorScheme.onSurface.withOpacity(0.45);
     if (url.isEmpty) {
       return Container(
         width: 50,
         height: 50,
-        color: AppColors.card,
-        child: const Icon(Icons.music_note, color: Colors.white54),
+        color: placeholderColor,
+        child: Icon(Icons.music_note, color: iconColor),
       );
     }
     return CachedNetworkImage(
@@ -119,13 +123,13 @@ class _Thumb extends StatelessWidget {
       placeholder: (_, __) => Container(
         width: 50,
         height: 50,
-        color: AppColors.card,
+        color: placeholderColor,
       ),
       errorWidget: (_, __, ___) => Container(
         width: 50,
         height: 50,
-        color: AppColors.card,
-        child: const Icon(Icons.broken_image, color: Colors.white54),
+        color: placeholderColor,
+        child: Icon(Icons.broken_image, color: iconColor),
       ),
     );
   }
