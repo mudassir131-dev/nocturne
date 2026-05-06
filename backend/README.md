@@ -47,11 +47,21 @@ flutter run --dart-define=NOCTURNE_BACKEND_URL=http://10.0.2.2:3000
 
 ## Environment variables
 
-| Name        | Default      | Description                                    |
-| ----------- | ------------ | ---------------------------------------------- |
-| `PORT`      | `3000`       | HTTP port to listen on.                        |
-| `YTDLP_BIN` | `yt-dlp`     | Path to the `yt-dlp` binary.                   |
-| `SELF_URL`  | _(unset)_    | Public URL for the self-ping keep-alive.       |
+| Name                     | Default      | Description                                                                    |
+| ------------------------ | ------------ | ------------------------------------------------------------------------------ |
+| `PORT`                   | `3000`       | HTTP port to listen on.                                                        |
+| `YTDLP_BIN`              | `yt-dlp`     | Path to the `yt-dlp` binary.                                                   |
+| `SELF_URL`               | _(unset)_    | Public URL for the self-ping keep-alive.                                       |
+| `YTDLP_COOKIES_BASE64`   | _(unset)_    | Base64 of a `cookies.txt` from a logged-in YouTube session. **Required** for `/stream` + `/download` to work from cloud IPs (Railway etc.) — see `docs/YT_COOKIES_SETUP.md`. |
+| `YTDLP_COOKIES_FILE`     | _(unset)_    | Absolute path to a `cookies.txt` (alternative to base64).                      |
+
+## YouTube bot-check workaround
+
+YouTube blocks per-video extraction from data-center IPs with a
+"Sign in to confirm you're not a bot" error. Search keeps working
+(`--flat-playlist` skips the check) but `/stream` and `/download` need
+cookies from a logged-in YouTube session. Setup guide:
+[`docs/YT_COOKIES_SETUP.md`](../docs/YT_COOKIES_SETUP.md).
 
 ## Notes
 
