@@ -12,15 +12,17 @@ class LibraryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(databaseServiceProvider);
     final likedCount = db.likedSongsLocal().length;
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
 
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 180),
         children: [
-          const Text(
+          Text(
             'Your Library',
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: fg,
               fontWeight: FontWeight.w800,
               fontSize: 28,
             ),
@@ -69,21 +71,23 @@ class LibraryScreen extends ConsumerWidget {
 
   void _showCreateDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: const Text(
+        backgroundColor: theme.cardColor,
+        title: Text(
           'New playlist',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: fg),
         ),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
+          style: TextStyle(color: fg),
+          decoration: InputDecoration(
             hintText: 'Playlist name',
-            hintStyle: TextStyle(color: Colors.white54),
+            hintStyle: TextStyle(color: theme.hintColor),
           ),
         ),
         actions: [
@@ -134,8 +138,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),
@@ -202,24 +206,26 @@ class _CreatePlaylistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.card),
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: Colors.white.withOpacity(0.10)),
+          border: Border.all(color: fg.withOpacity(0.10)),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add, color: AppColors.accent, size: 36),
-              SizedBox(height: 8),
+              const Icon(Icons.add, color: AppColors.accent, size: 36),
+              const SizedBox(height: 8),
               Text(
                 'New Playlist',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: fg),
               ),
             ],
           ),
@@ -235,9 +241,11 @@ class _PlaylistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       padding: const EdgeInsets.all(12),
@@ -248,11 +256,11 @@ class _PlaylistCard extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                color: Colors.black26,
-                child: const Center(
+                color: fg.withOpacity(0.08),
+                child: Center(
                   child: Icon(
                     Icons.queue_music,
-                    color: Colors.white54,
+                    color: fg.withOpacity(0.5),
                     size: 56,
                   ),
                 ),
@@ -264,14 +272,14 @@ class _PlaylistCard extends StatelessWidget {
             playlist.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: fg,
               fontWeight: FontWeight.w600,
             ),
           ),
           Text(
             '${playlist.songCount} songs',
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: theme.hintColor),
           ),
         ],
       ),
@@ -289,7 +297,7 @@ class _EmptyHint extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.textSecondary),
+        style: TextStyle(color: Theme.of(context).hintColor),
       ),
     );
   }

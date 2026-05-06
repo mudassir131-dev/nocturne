@@ -9,6 +9,7 @@ import '../services/audio_service.dart';
 import '../services/database_service.dart';
 import '../state/player_provider.dart';
 import '../utils/theme.dart';
+import 'equalizer_screen.dart';
 
 /// Full-screen "now playing" view. Extracts the dominant colour of the
 /// current album art via palette_generator and uses it as a soft gradient
@@ -127,8 +128,13 @@ class _TopBar extends StatelessWidget {
         ),
         const Spacer(),
         IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-          onPressed: () {},
+          tooltip: 'Equalizer',
+          icon: const Icon(Icons.graphic_eq, color: Colors.white),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const EqualizerScreen(),
+            ),
+          ),
         ),
       ],
     );

@@ -115,10 +115,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Search',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
                 fontSize: 28,
               ),
@@ -228,15 +228,15 @@ class _Results extends ConsumerWidget {
         padding: const EdgeInsets.all(20),
         child: Text(
           'Search failed.\n${state.error}',
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: Theme.of(context).hintColor),
         ),
       );
     }
     if (state.results.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No results',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: Theme.of(context).hintColor),
         ),
       );
     }

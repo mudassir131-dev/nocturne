@@ -56,12 +56,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ));
+      // Defer status / nav bar styling to the system; the chrome will be
+      // recoloured per-page based on the active brightness once
+      // MaterialApp is mounted.
     }, timeoutSeconds: 3);
 
     await _runStep('Hive', () async {
@@ -84,6 +81,8 @@ class _BootstrapAppState extends State<_BootstrapApp> {
           androidNotificationChannelName: 'Nocturne Playback',
           androidNotificationOngoing: true,
           androidStopForegroundOnPause: true,
+          androidShowNotificationBadge: true,
+          androidNotificationIcon: 'drawable/ic_stat_nocturne',
         ),
       );
     }, timeoutSeconds: 10);
@@ -112,92 +111,123 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_ready) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark(),
-        home: const _SplashScreen(),
-      );
-    }
-
-    // Even if AudioService.init failed, a plain NocturneAudioHandler still
-    // plays audio — it just won't be wired to lock-screen / notification
-    // controls. That's a much better fallback than a black screen.
     final handler = _audioHandler ?? nocturne_audio.NocturneAudioHandler();
     return ProviderScope(
       overrides: [
         nocturne_audio.audioHandlerProvider.overrideWithValue(handler),
       ],
-      child: NocturneApp(warnings: _warnings),
-    );
-  }
-}
-
-class NocturneApp extends StatelessWidget {
-  const NocturneApp({super.key, this.warnings = const []});
-
-  final List<String> warnings;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Nocturne',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
-      home: const RootScreen(),
-      builder: (context, child) {
-        if (warnings.isEmpty || !kDebugMode) return child!;
-        return Stack(children: [
-          child!,
-          Positioned(
-            left: 8,
-            right: 8,
-            bottom: 8,
-            child: Material(
-              color: Colors.red.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  'Init warnings:\n${warnings.join('\n')}',
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
+      child: MaterialApp(
+        title: 'Nocturne',
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.system,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 360),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _ready
+              ? const RootScreen(key: ValueKey('root'))
+              : const _SplashScreen(key: ValueKey('splash')),
+        ),
+        builder: (context, child) {
+          // Recolour status / nav bars based on the resolved brightness so
+          // they remain readable under both light and dark themes.
+          final brightness = Theme.of(context).brightness;
+          final iconBrightness =
+              brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: iconBrightness,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: iconBrightness,
+          ));
+          if (_warnings.isEmpty || !kDebugMode) return child!;
+          return Stack(children: [
+            child!,
+            Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: Material(
+                color: Colors.red.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    'Init warnings:\n${_warnings.join('\n')}',
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                  ),
                 ),
               ),
             ),
-          ),
-        ]);
-      },
+          ]);
+        },
+      ),
     );
   }
 }
 
 class _SplashScreen extends StatelessWidget {
-  const _SplashScreen();
+  const _SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.background,
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Nocturne',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
+            ShaderMask(
+              shaderCallback: (rect) => const LinearGradient(
+                colors: [AppColors.accent, Color(0xFFFF7043)],
+              ).createShader(rect),
+              child: Text(
+                'Nocturne',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.5,
+                  shadows: [
+                    Shadow(
+                      color: AppColors.accent.withOpacity(0.4),
+                      blurRadius: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 24),
-            SizedBox(
+            const SizedBox(height: 12),
+            Text(
+              AppBranding.tagline,
+              style: TextStyle(
+                color: fg.withOpacity(0.65),
+                fontSize: 13,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+            const SizedBox(
               width: 28,
               height: 28,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.accent),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              AppBranding.developer,
+              style: TextStyle(
+                color: fg.withOpacity(0.55),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
               ),
             ),
           ],
