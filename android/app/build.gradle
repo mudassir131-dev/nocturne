@@ -41,12 +41,15 @@ android {
             // publishing to the Play Store.
             signingConfig = signingConfigs.debug
 
-            // Trim resources + obfuscate code to keep the release APK
-            // small. Flutter ships a default `proguard-rules.pro` so we
-            // just point at it.
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // R8 minify is disabled for now: aggressive shrinking strips
+            // ExoPlayer / just_audio reflection-only classes, which causes
+            // first-play crashes (subsequent .play() succeeds because the
+            // already-loaded source bypasses the missing classes). The
+            // proguard-rules.pro file is still here for when we re-enable
+            // minify with a verified keep ruleset.
+            minifyEnabled = false
+            shrinkResources = false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
