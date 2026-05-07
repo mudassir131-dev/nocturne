@@ -226,6 +226,8 @@ class _Artwork extends StatelessWidget {
                   : CachedNetworkImage(
                       imageUrl: song.thumbnail,
                       fit: BoxFit.cover,
+                      memCacheWidth: 720,
+                      memCacheHeight: 720,
                       placeholder: (_, __) =>
                           Container(color: Colors.black26),
                       errorWidget: (_, __, ___) => Container(
@@ -447,6 +449,7 @@ class _PlayPauseState extends ConsumerState<_PlayPause> {
 
   @override
   Widget build(BuildContext context) {
+    final buffering = ref.watch(isBufferingProvider).value ?? false;
     return GestureDetector(
       onTapDown: (_) => setState(() => _scale = 0.88),
       onTapCancel: () => setState(() => _scale = 1),
@@ -459,19 +462,28 @@ class _PlayPauseState extends ConsumerState<_PlayPause> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOut,
         scale: _scale,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          transitionBuilder: (child, anim) =>
-              ScaleTransition(scale: anim, child: child),
-          child: Icon(
-            widget.playing
-                ? Icons.pause_rounded
-                : Icons.play_arrow_rounded,
-            key: ValueKey(widget.playing),
-            color: Colors.white,
-            size: 76,
-          ),
-        ),
+        child: buffering
+            ? const SizedBox(
+                width: 76,
+                height: 76,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              )
+            : AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                transitionBuilder: (child, anim) =>
+                    ScaleTransition(scale: anim, child: child),
+                child: Icon(
+                  widget.playing
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  key: ValueKey(widget.playing),
+                  color: Colors.white,
+                  size: 76,
+                ),
+              ),
       ),
     );
   }

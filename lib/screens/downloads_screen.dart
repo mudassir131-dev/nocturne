@@ -144,6 +144,8 @@ class _DownloadTile extends StatelessWidget {
               : CachedNetworkImage(
                   imageUrl: s.thumbnail,
                   fit: BoxFit.cover,
+                  memCacheWidth: 200,
+                  memCacheHeight: 200,
                 ),
         ),
       ),

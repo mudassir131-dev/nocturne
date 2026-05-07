@@ -62,6 +62,8 @@ class _LyricsScreenState extends ConsumerState<LyricsScreen> {
             CachedNetworkImage(
               imageUrl: song.thumbnail,
               fit: BoxFit.cover,
+              memCacheWidth: 720,
+              memCacheHeight: 720,
             ),
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),

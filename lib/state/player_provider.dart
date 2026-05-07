@@ -24,6 +24,15 @@ final isPlayingProvider = StreamProvider<bool>((ref) {
   return handler.player.playingStream;
 });
 
+/// Whether the player is currently buffering (network fetch / decoding).
+final isBufferingProvider = StreamProvider<bool>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.player.processingStateStream.map(
+    (s) =>
+        s == ProcessingState.loading || s == ProcessingState.buffering,
+  );
+});
+
 /// Current playback position.
 final positionProvider = StreamProvider<Duration>((ref) {
   final handler = ref.watch(audioHandlerProvider);

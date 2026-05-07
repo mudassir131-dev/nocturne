@@ -167,6 +167,8 @@ class _Art extends StatelessWidget {
       width: 40,
       height: 40,
       fit: BoxFit.cover,
+      memCacheWidth: 160,
+      memCacheHeight: 160,
     );
   }
 }
@@ -178,18 +180,28 @@ class _PlayPauseButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playing = ref.watch(isPlayingProvider).value ?? false;
+    final buffering = ref.watch(isBufferingProvider).value ?? false;
     return IconButton(
-      icon: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        transitionBuilder: (child, anim) =>
-            ScaleTransition(scale: anim, child: child),
-        child: Icon(
-          playing ? Icons.pause : Icons.play_arrow,
-          key: ValueKey(playing),
-          color: color,
-          size: 28,
-        ),
-      ),
+      icon: buffering
+          ? SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(color),
+              ),
+            )
+          : AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                playing ? Icons.pause : Icons.play_arrow,
+                key: ValueKey(playing),
+                color: color,
+                size: 28,
+              ),
+            ),
       onPressed: () => ref.read(playerControllerProvider).togglePlay(),
     );
   }

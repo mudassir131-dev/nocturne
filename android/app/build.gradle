@@ -26,7 +26,7 @@ android {
         applicationId = "app.nocturne.nocturne"
         // 21 is required by firebase_auth + just_audio + audio_service.
         minSdk = 21
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
@@ -40,6 +40,28 @@ android {
             // out of the box. Replace with your own signing config before
             // publishing to the Play Store.
             signingConfig = signingConfigs.debug
+
+            // Trim resources + obfuscate code to keep the release APK
+            // small. Flutter ships a default `proguard-rules.pro` so we
+            // just point at it.
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        resources {
+            excludes += [
+                'META-INF/*.kotlin_module',
+                'META-INF/AL2.0',
+                'META-INF/LGPL2.1',
+                'META-INF/DEPENDENCIES',
+                'META-INF/LICENSE',
+                'META-INF/LICENSE.txt',
+                'META-INF/NOTICE',
+                'META-INF/NOTICE.txt',
+            ]
         }
     }
 }

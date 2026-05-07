@@ -51,6 +51,8 @@ class AlbumCard extends StatelessWidget {
                     : CachedNetworkImage(
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
+                        memCacheWidth: 480,
+                        memCacheHeight: 480,
                         placeholder: (_, __) => Container(
                           color: placeholder,
                         ),
