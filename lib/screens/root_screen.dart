@@ -69,9 +69,13 @@ class _RootScreenState extends ConsumerState<RootScreen> {
   void _openSearch() {
     Navigator.of(context).push(
       PageRouteBuilder<void>(
-        opaque: false,
-        barrierColor: Colors.black54,
+        // Opaque so the underlying home page + dock + mini-player don't
+        // bleed through behind the search screen (was previously
+        // `opaque: false` which caused the screen-overlap reported by
+        // the user).
+        opaque: true,
         transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
         pageBuilder: (_, __, ___) => const SearchScreen(),
         transitionsBuilder: (_, animation, __, child) {
           final curved = CurvedAnimation(

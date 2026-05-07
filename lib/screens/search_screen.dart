@@ -149,53 +149,76 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final state = ref.watch(_searchProvider);
     final notifier = ref.read(_searchProvider.notifier);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Search',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
-              ),
-            ),
-            const SizedBox(height: 16),
-            LiquidGlassSearchBar(
-              controller: _controller,
-              onChanged: notifier.onChanged,
-              trailing: Icon(
-                CupertinoIcons.mic_fill,
-                color: Theme.of(context).hintColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: state.query.isEmpty
-                  ? _Browse(
-                      categories: _categories,
-                      onPick: (label) {
-                        _controller.text = label;
-                        notifier.onChanged(label);
-                      },
-                    )
-                  : Column(
-                      children: [
-                        _FilterTabs(
-                          filter: _filter,
-                          onChanged: (f) => setState(() => _filter = f),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: _Results(state: state, filter: _filter),
-                        ),
-                      ],
+    return Scaffold(
+      // Solid background so the search route doesn't bleed through into
+      // the underlying home page + dock + mini-player.
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Search',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 28,
+                      ),
                     ),
-            ),
-          ],
+                  ),
+                  // Close button so the user can dismiss search back to
+                  // the previous tab (the dock + mini-player are hidden
+                  // while search is open since the route is opaque).
+                  IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: Icon(
+                      CupertinoIcons.xmark,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    splashRadius: 20,
+                    tooltip: 'Close',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LiquidGlassSearchBar(
+                controller: _controller,
+                onChanged: notifier.onChanged,
+                trailing: Icon(
+                  CupertinoIcons.mic_fill,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: state.query.isEmpty
+                    ? _Browse(
+                        categories: _categories,
+                        onPick: (label) {
+                          _controller.text = label;
+                          notifier.onChanged(label);
+                        },
+                      )
+                    : Column(
+                        children: [
+                          _FilterTabs(
+                            filter: _filter,
+                            onChanged: (f) => setState(() => _filter = f),
+                          ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: _Results(state: state, filter: _filter),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
