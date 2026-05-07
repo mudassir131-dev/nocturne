@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/song.dart';
+import '../utils/config.dart';
 import 'stream_resolver.dart';
 
 /// Provider for the platform AudioHandler. Overridden in `main.dart`
@@ -229,7 +230,16 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
     }
 
     try {
-      await _player.setUrl(url);
+      // Use setAudioSource so we can attach an Authorization header when
+      // the backend sits behind a basic-auth tunnel.
+      final headers = AppConfig.streamHeaders;
+      if (headers.isEmpty) {
+        await _player.setUrl(url);
+      } else {
+        await _player.setAudioSource(
+          AudioSource.uri(Uri.parse(url), headers: headers),
+        );
+      }
       await _player.play();
       _scheduleCrossfade();
       _prefetchNext();

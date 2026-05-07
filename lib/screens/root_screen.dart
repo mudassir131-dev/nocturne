@@ -10,16 +10,16 @@ import 'new_screen.dart';
 import 'radio_screen.dart';
 import 'search_screen.dart';
 
-/// Top-level scaffold with the liquid-glass bottom dock and the mini
-/// player floating above it.
+/// Top-level scaffold with the iOS-26-style floating dock + mini player.
 ///
-/// Tabs: Home / New / Radio / Library / Search.
+/// Layout matches the Apple Music dock:
 ///
-/// The body is a [PageView] (springy iOS-feeling physics) so users can
-/// swipe horizontally between tabs anywhere on screen. The dock itself
-/// is also pannable: dragging across the dock moves the screen + the
-/// red indicator with the finger in real time, then snaps to the
-/// nearest tab on release.
+///   [ Home  New  Radio  Library ]   ( 🔍 )
+///
+/// The pill is a horizontal PageView (Home / New / Radio / Library); the
+/// circle on the right opens [SearchScreen] as a fullscreen route push so
+/// the dock and main pages stay in their pill while search has its own
+/// hero-friendly stack.
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
 
@@ -33,10 +33,9 @@ class _RootScreenState extends ConsumerState<RootScreen> {
 
   static const List<DockItem> _items = [
     DockItem(icon: CupertinoIcons.house_fill, label: 'Home'),
-    DockItem(icon: CupertinoIcons.sparkles, label: 'New'),
+    DockItem(icon: CupertinoIcons.square_grid_2x2_fill, label: 'New'),
     DockItem(icon: CupertinoIcons.dot_radiowaves_left_right, label: 'Radio'),
-    DockItem(icon: CupertinoIcons.square_stack_3d_up, label: 'Library'),
-    DockItem(icon: CupertinoIcons.search, label: 'Search'),
+    DockItem(icon: CupertinoIcons.music_albums_fill, label: 'Library'),
   ];
 
   static const List<Widget> _pages = [
@@ -44,7 +43,6 @@ class _RootScreenState extends ConsumerState<RootScreen> {
     NewScreen(),
     RadioScreen(),
     LibraryScreen(),
-    SearchScreen(),
   ];
 
   @override
@@ -65,6 +63,30 @@ class _RootScreenState extends ConsumerState<RootScreen> {
       i,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _openSearch() {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(milliseconds: 280),
+        pageBuilder: (_, __, ___) => const SearchScreen(),
+        transitionsBuilder: (_, animation, __, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.06),
+              end: Offset.zero,
+            ).animate(curved),
+            child: FadeTransition(opacity: curved, child: child),
+          );
+        },
+      ),
     );
   }
 
@@ -94,6 +116,7 @@ class _RootScreenState extends ConsumerState<RootScreen> {
               controller: _controller,
               currentIndex: _index,
               onTap: _selectTab,
+              onSearchTap: _openSearch,
             ),
           ],
         ),

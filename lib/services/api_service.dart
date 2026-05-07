@@ -21,6 +21,10 @@ class ApiService {
               connectTimeout: const Duration(seconds: 15),
               receiveTimeout: const Duration(seconds: 30),
               sendTimeout: const Duration(seconds: 15),
+              headers: {
+                if (AppConfig.backendAuthHeader != null)
+                  'Authorization': AppConfig.backendAuthHeader!,
+              },
             ));
 
   final Dio _dio;

@@ -11,22 +11,27 @@ class DockItem {
   const DockItem({required this.icon, required this.label});
 }
 
-/// Floating glass dock with a "liquid" red indicator that slides smoothly
-/// to the selected tab. The indicator rides above the icons (frosted-glass
-/// pill) and is what gives the bar its iOS 26 feel.
+/// iOS-26-style floating dock:
 ///
-/// The dock is **driven by the host's [PageController]**: as the user
-/// swipes between tabs (either via this dock or via the body's own
-/// PageView) the controller's `page` value drives the indicator's
-/// position in real time. The dock additionally exposes its own
-/// horizontal-pan handler so users can drag a finger across the dock
-/// and see the screen + indicator track the finger 1:1, then snap to
-/// the nearest tab on release with spring physics (~300ms).
+///   [ Home  New  Radio  Library ]   ( 🔍 )
+///   ───────── pill ─────────────    circle
+///
+/// The pill is a frosted-glass capsule with N tabs and a red liquid pill
+/// indicator that slides between them. The trailing circle is a separate
+/// glass button that opens the search screen (handled by the host).
+///
+/// Pill behaviour:
+/// - Tapping a tab animates the body's [PageController] to that page.
+/// - Dragging horizontally on the pill drags the screen + indicator with
+///   the finger 1:1, then snaps to the nearest tab on release with spring
+///   physics (~300 ms). The indicator also tracks the active page when
+///   the user swipes the body PageView.
 class LiquidGlassDock extends StatefulWidget {
   final List<DockItem> items;
   final PageController controller;
   final ValueChanged<int> onTap;
   final int currentIndex;
+  final VoidCallback? onSearchTap;
 
   const LiquidGlassDock({
     super.key,
@@ -34,6 +39,7 @@ class LiquidGlassDock extends StatefulWidget {
     required this.controller,
     required this.onTap,
     required this.currentIndex,
+    this.onSearchTap,
   });
 
   static const double _height = 64;
@@ -53,26 +59,26 @@ class _LiquidGlassDockState extends State<LiquidGlassDock> {
     final glassFill = isDark
         ? Colors.white.withOpacity(0.10)
         : Colors.black.withOpacity(0.04);
-    final topBorder = (isDark ? Colors.white : Colors.black).withOpacity(0.15);
+    final glassBorder = (isDark ? Colors.white : Colors.black).withOpacity(0.18);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: topBorder, width: 0.5)),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        4,
+        16,
+        MediaQuery.of(context).padding.bottom > 0 ? 4 : 12,
       ),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-          child: Container(
-            color: glassFill,
-            padding: EdgeInsets.only(
-              top: 6,
-              bottom: MediaQuery.of(context).padding.bottom > 0 ? 0 : 6,
-            ),
-            child: SizedBox(
+      child: Row(
+        children: [
+          Expanded(
+            child: _GlassPill(
               height: LiquidGlassDock._height,
+              fill: glassFill,
+              border: glassBorder,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final cellWidth = constraints.maxWidth / widget.items.length;
+                  final cellWidth =
+                      constraints.maxWidth / widget.items.length;
                   return GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onHorizontalDragStart: (_) => _onDragStart(),
@@ -87,10 +93,10 @@ class _LiquidGlassDockState extends State<LiquidGlassDock> {
                           builder: (context, _) {
                             final page = _resolvedPage();
                             return Positioned(
-                              left: cellWidth * page + cellWidth * 0.18,
+                              left: cellWidth * page + cellWidth * 0.10,
                               top: 6,
                               bottom: 6,
-                              width: cellWidth * 0.64,
+                              width: cellWidth * 0.80,
                               child: const _LiquidIndicator(),
                             );
                           },
@@ -121,7 +127,17 @@ class _LiquidGlassDockState extends State<LiquidGlassDock> {
               ),
             ),
           ),
-        ),
+          if (widget.onSearchTap != null) ...[
+            const SizedBox(width: 10),
+            _GlassCircleButton(
+              size: LiquidGlassDock._height,
+              fill: glassFill,
+              border: glassBorder,
+              icon: Icons.search,
+              onTap: widget.onSearchTap!,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -152,7 +168,6 @@ class _LiquidGlassDockState extends State<LiquidGlassDock> {
       (widget.items.length - 1).toDouble(),
     );
     setState(() => _dragPage = fingerPage);
-    // Drive the body PageView so the screen tracks the finger.
     widget.controller.jumpTo(fingerPage * viewportWidth);
   }
 
@@ -171,6 +186,95 @@ class _LiquidGlassDockState extends State<LiquidGlassDock> {
         .whenComplete(() {
       if (mounted) setState(() => _dragging = false);
     });
+  }
+}
+
+/// Frosted glass capsule used for both the tab pill and the circle button.
+class _GlassPill extends StatelessWidget {
+  final double height;
+  final Color fill;
+  final Color border;
+  final Widget child;
+
+  const _GlassPill({
+    required this.height,
+    required this.fill,
+    required this.border,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = height / 2;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: border, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassCircleButton extends StatelessWidget {
+  final double size;
+  final Color fill;
+  final Color border;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GlassCircleButton({
+    required this.size,
+    required this.fill,
+    required this.border,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          child: Material(
+            color: fill,
+            shape: CircleBorder(
+              side: BorderSide(color: border, width: 1),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: Center(
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
