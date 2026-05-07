@@ -107,7 +107,7 @@ class _BootstrapAppState extends State<_BootstrapApp>
       // Throws (or no-ops) when Firebase isn't configured yet — that's fine,
       // we keep going and Firebase-dependent features stay disabled.
       await Firebase.initializeApp();
-    }, timeoutSeconds: 5);
+    }, timeoutSeconds: 5, silentOnFail: true);
 
     await _runStep('AudioService', () async {
       _audioHandler = await AudioService.init(
@@ -132,12 +132,15 @@ class _BootstrapAppState extends State<_BootstrapApp>
     String name,
     Future<void> Function() body, {
     required int timeoutSeconds,
+    bool silentOnFail = false,
   }) async {
     try {
       await body().timeout(Duration(seconds: timeoutSeconds));
       if (kDebugMode) debugPrint('[bootstrap] $name OK');
     } catch (e, st) {
-      _warnings.add('$name: $e');
+      if (!silentOnFail) {
+        _warnings.add('$name: $e');
+      }
       if (kDebugMode) {
         debugPrint('[bootstrap] $name FAILED: $e');
         debugPrintStack(stackTrace: st, label: 'bootstrap/$name');
