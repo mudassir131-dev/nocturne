@@ -29,15 +29,15 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
 
   static const Map<String, List<double>> _presets = {
     'Flat': [0, 0, 0, 0, 0],
-    'Bass Boost': [6, 4, 0, 0, 0],
-    'Treble Boost': [0, 0, 0, 4, 6],
-    'Vocal': [-2, 0, 4, 4, 0],
-    'Rock': [4, 2, -2, 2, 4],
+    'Bass Booster': [6, 4, 0, 0, 0],
     'Pop': [-1, 2, 4, 2, -1],
+    'Rock': [4, 2, -2, 2, 4],
+    'Hip Hop': [6, 3, -1, 1, 3],
     'Jazz': [3, 2, 0, 2, 3],
     'Classical': [4, 3, -2, 3, 4],
+    'Vocal Booster': [-2, 0, 4, 4, 0],
+    'Dance': [5, 4, -1, 3, 5],
     'Cinema': [5, 2, 0, 2, 4], // Dolby Atmos / surround feel
-    'Hip Hop': [6, 3, -1, 1, 3],
   };
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -76,6 +77,14 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      // Enable unbounded offline cache so liked-songs / playlists /
+      // recently-played remain available without a connection.
+      try {
+        FirebaseFirestore.instance.settings = const Settings(
+          persistenceEnabled: true,
+          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        );
+      } catch (_) {/* settings may already be locked in hot reload */}
     }, timeoutSeconds: 5);
 
     await _runStep('AudioService', () async {
