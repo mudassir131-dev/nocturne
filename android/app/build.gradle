@@ -23,7 +23,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.nocturne.nocturne"
+        // Must match the package name registered in
+        // android/app/google-services.json so Firebase finds this app.
+        applicationId = "com.nocturne.app"
         // 21 is required by firebase_auth + just_audio + audio_service.
         minSdk = 21
         targetSdk = 34
