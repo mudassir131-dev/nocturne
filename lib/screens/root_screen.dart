@@ -88,10 +88,7 @@ class _RootScreenState extends ConsumerState<RootScreen> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 6),
-            child: MiniPlayer(),
-          ),
+          const MiniPlayer(),
           AppleNavBar(
             items: _items,
             currentIndex: _index,

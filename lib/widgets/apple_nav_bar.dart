@@ -17,13 +17,17 @@ class AppleNavItem {
   });
 }
 
-/// Apple-Music-style full-width liquid-glass nav bar:
-/// - Real `BackdropFilter.blur(20, 20)`
-/// - Sits below an optional mini-player band
-/// - Renders a sliding active indicator (300 ms spring) under the active tab
-/// - Active tab tints in red, inactive tabs in `onSurface * 0.6`
-/// - Thin separator on top to delineate the glass surface
-/// - Swipe / drag horizontally to switch tabs (via `onDrag`)
+/// Apple-Music-iOS-26-style floating dock:
+///
+///   [  Home  New  Radio  Library  ]   [ search ]
+///
+/// - Left: rounded "capsule" pill with the first N-1 tabs. The active tab
+///   is highlighted by a sliding red filled pill that smoothly animates
+///   between tabs.
+/// - Right: a separate rounded circle for the last tab (search).
+/// - Both surfaces use a real `BackdropFilter.blur(20, 20)` with a thin
+///   translucent fill to look like liquid glass.
+/// - Horizontal drag on the dock pages the underlying PageView.
 class AppleNavBar extends StatelessWidget {
   final List<AppleNavItem> items;
   final int currentIndex;
@@ -40,74 +44,119 @@ class AppleNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final glassFill = isDark
-        ? Colors.white.withOpacity(0.06)
-        : Colors.white.withOpacity(0.55);
-    final separator = isDark
-        ? Colors.white.withOpacity(0.12)
-        : Colors.black.withOpacity(0.08);
+    assert(items.length >= 2);
+    final mainItems = items.take(items.length - 1).toList();
+    final lastItem = items.last;
+    final lastIndex = items.length - 1;
+    final isLastActive = currentIndex == lastIndex;
 
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: glassFill,
-          border: Border(
-            top: BorderSide(color: separator, width: 0.5),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.only(bottom: 6),
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onHorizontalDragUpdate: (d) {
-              if (onDrag != null) onDrag!(d.primaryDelta ?? 0);
-            },
-            child: SizedBox(
-              height: 64,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final tabWidth = constraints.maxWidth / items.length;
-                  return Stack(
-                    children: [
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOutCubic,
-                        left: tabWidth * currentIndex + tabWidth * 0.5 - 18,
-                        top: 6,
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      Row(
-                        children: List.generate(items.length, (i) {
-                          final item = items[i];
-                          final active = i == currentIndex;
-                          return Expanded(
-                            child: _NavTab(
-                              item: item,
-                              active: active,
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                onTap(i);
-                              },
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
-                  );
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragUpdate: (d) {
+          if (onDrag != null) onDrag!(d.primaryDelta ?? 0);
+        },
+        child: Row(
+          children: [
+            Expanded(
+              child: _CapsulePill(
+                items: mainItems,
+                activeIndex:
+                    currentIndex < mainItems.length ? currentIndex : -1,
+                onTap: (i) {
+                  HapticFeedback.selectionClick();
+                  onTap(i);
                 },
               ),
             ),
+            const SizedBox(width: 10),
+            _CircleButton(
+              item: lastItem,
+              active: isLastActive,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onTap(lastIndex);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CapsulePill extends StatelessWidget {
+  final List<AppleNavItem> items;
+  final int activeIndex;
+  final ValueChanged<int> onTap;
+
+  const _CapsulePill({
+    required this.items,
+    required this.activeIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final glassFill = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.white.withOpacity(0.55);
+    final glassBorder = isDark
+        ? Colors.white.withOpacity(0.16)
+        : Colors.black.withOpacity(0.08);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(36),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: glassFill,
+            borderRadius: BorderRadius.circular(36),
+            border: Border.all(color: glassBorder, width: 1),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final tabWidth = constraints.maxWidth / items.length;
+              return Stack(
+                children: [
+                  if (activeIndex >= 0 && activeIndex < items.length)
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 320),
+                      curve: Curves.easeOutCubic,
+                      left: tabWidth * activeIndex,
+                      top: 0,
+                      bottom: 0,
+                      width: tabWidth,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                    ),
+                  Row(
+                    children: List.generate(items.length, (i) {
+                      final item = items[i];
+                      final active = i == activeIndex;
+                      return Expanded(
+                        child: _PillTab(
+                          item: item,
+                          active: active,
+                          onTap: () => onTap(i),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -115,12 +164,12 @@ class AppleNavBar extends StatelessWidget {
   }
 }
 
-class _NavTab extends StatelessWidget {
+class _PillTab extends StatelessWidget {
   final AppleNavItem item;
   final bool active;
   final VoidCallback onTap;
 
-  const _NavTab({
+  const _PillTab({
     required this.item,
     required this.active,
     required this.onTap,
@@ -129,29 +178,27 @@ class _NavTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = active
-        ? AppColors.accent
-        : theme.colorScheme.onSurface.withOpacity(0.6);
+    final inactive = theme.colorScheme.onSurface.withOpacity(0.7);
+    final color = active ? Colors.white : inactive;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 14, bottom: 6),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedScale(
-              scale: active ? 1.12 : 1.0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
+              scale: active ? 1.05 : 1.0,
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
               child: Icon(
                 active ? (item.activeIcon ?? item.icon) : item.icon,
                 color: color,
-                size: 24,
+                size: 22,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
@@ -162,6 +209,57 @@ class _NavTab extends StatelessWidget {
               child: Text(item.label),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  final AppleNavItem item;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _CircleButton({
+    required this.item,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final glassFill = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.white.withOpacity(0.55);
+    final glassBorder = isDark
+        ? Colors.white.withOpacity(0.16)
+        : Colors.black.withOpacity(0.08);
+    final iconColor = active
+        ? Colors.white
+        : theme.colorScheme.onSurface.withOpacity(0.85);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active ? AppColors.accent : glassFill,
+              border: Border.all(color: glassBorder, width: 1),
+            ),
+            child: Icon(
+              active ? (item.activeIcon ?? item.icon) : item.icon,
+              color: iconColor,
+              size: 24,
+            ),
+          ),
         ),
       ),
     );

@@ -45,16 +45,16 @@ class MiniPlayer extends ConsumerWidget {
       ),
       child: Padding(
         key: ValueKey(song.videoId),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
               decoration: BoxDecoration(
                 color: glassFill,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: glassBorder, width: 1.2),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: glassBorder, width: 1),
               ),
               child: _SwipeableMiniBody(
                 onTap: () => _openPlayer(context),
