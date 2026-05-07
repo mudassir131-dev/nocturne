@@ -4,7 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../utils/theme.dart';
+import 'downloads_screen.dart';
 import 'equalizer_screen.dart';
+import 'history_screen.dart';
+import 'queue_screen.dart';
+import 'sleep_timer_screen.dart';
+import 'storage_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -121,6 +126,56 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const EqualizerScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.queue_music,
+            title: 'Now Playing Queue',
+            subtitle: 'Reorder, skip and trim the queue',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const QueueScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.history,
+            title: 'Listening History',
+            subtitle: 'Recently played tracks',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HistoryScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.bedtime_outlined,
+            title: 'Sleep Timer',
+            subtitle: 'Pause playback after a delay',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const SleepTimerScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.download_outlined,
+            title: 'Downloads',
+            subtitle: 'Songs saved for offline listening',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const DownloadsScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.sd_card_outlined,
+            title: 'Storage & Quality',
+            subtitle: 'Download quality + manage offline files',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const StorageScreen(),
               ),
             ),
           ),

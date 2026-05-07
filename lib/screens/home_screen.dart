@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/song.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
+import '../services/settings_service.dart';
 import '../state/player_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/album_card.dart';
+import '../widgets/shimmer_box.dart';
 import '../widgets/song_tile.dart';
 import 'album_screen.dart';
 
@@ -37,6 +39,8 @@ class HomeScreen extends ConsumerWidget {
     final db = ref.watch(databaseServiceProvider);
     final recently = db.recentlyPlayedLocal();
     final recsAsync = ref.watch(recommendedProvider);
+    final lastSong = SettingsService.instance.lastSong;
+    final lastPosition = SettingsService.instance.lastPosition;
 
     return SafeArea(
       child: ListView(
@@ -73,6 +77,24 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (lastSong != null && lastPosition.inSeconds > 5)
+            _ResumeBanner(
+              song: lastSong,
+              position: lastPosition,
+              onResume: () async {
+                await ref
+                    .read(playerControllerProvider)
+                    .playSong(lastSong, queue: [lastSong, ...recently]);
+                await Future<void>.delayed(const Duration(milliseconds: 500));
+                await ref
+                    .read(playerControllerProvider)
+                    .seek(lastPosition);
+              },
+              onDismiss: () async {
+                await SettingsService.instance.snapshot(null, Duration.zero);
+                (context as Element).markNeedsBuild();
+              },
+            ),
           if (recently.isNotEmpty) ...[
             const _SectionHeader(title: 'Recently Played'),
             SizedBox(
@@ -97,7 +119,7 @@ class HomeScreen extends ConsumerWidget {
           ],
           const _SectionHeader(title: 'Recommended For You'),
           recsAsync.when(
-            loading: () => const _Shimmer(count: 5),
+            loading: () => const ShimmerSongList(count: 5),
             error: (e, _) => _ErrorBox(
               message: 'Could not load recommendations.\n$e',
             ),
@@ -172,48 +194,80 @@ class _ProfileAvatar extends StatelessWidget {
   }
 }
 
-class _Shimmer extends StatelessWidget {
-  final int count;
-  const _Shimmer({required this.count});
+class _ResumeBanner extends StatelessWidget {
+  final Song song;
+  final Duration position;
+  final Future<void> Function() onResume;
+  final Future<void> Function() onDismiss;
+
+  const _ResumeBanner({
+    required this.song,
+    required this.position,
+    required this.onResume,
+    required this.onDismiss,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        count,
-        (_) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 12,
-                      width: double.infinity,
-                      color: AppColors.card,
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      height: 10,
-                      width: 120,
-                      color: AppColors.card,
-                    ),
-                  ],
-                ),
-              ),
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
+    final mins = position.inMinutes;
+    final secs = (position.inSeconds % 60).toString().padLeft(2, '0');
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary.withOpacity(0.18),
+              theme.colorScheme.primary.withOpacity(0.05),
             ],
           ),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.history, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Continue where you left off',
+                    style: TextStyle(
+                      color: fg,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    '${song.title}  ·  $mins:$secs',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: fg.withOpacity(0.7)),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: onResume,
+              child: Text(
+                'Play',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, color: fg.withOpacity(0.5), size: 18),
+              onPressed: onDismiss,
+            ),
+          ],
         ),
       ),
     );

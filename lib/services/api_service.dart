@@ -43,6 +43,33 @@ class ApiService {
     return const [];
   }
 
+  /// Build a "smart shuffle" queue based on a seed song. Searches for
+  /// similar tracks (artist + genre cues) and de-duplicates against the
+  /// seed itself.
+  Future<List<Song>> similarTo(Song seed) async {
+    final queries = <String>[
+      '${seed.artist} hits',
+      '${seed.artist} ${seed.title.split(' ').take(2).join(' ')}',
+      '${seed.artist} top songs',
+    ];
+    final pool = <String, Song>{seed.videoId: seed};
+    for (final q in queries) {
+      try {
+        final results = await search(q);
+        for (final s in results) {
+          pool.putIfAbsent(s.videoId, () => s);
+        }
+      } catch (_) {
+        // Continue with whatever we have.
+      }
+      if (pool.length > 30) break;
+    }
+    final list = pool.values.toList()
+      ..removeWhere((s) => s.videoId == seed.videoId);
+    list.shuffle();
+    return [seed, ...list.take(29)];
+  }
+
   /// Public stream URL for the given videoId (handed to just_audio).
   String streamUrl(String videoId) =>
       '${AppConfig.backendBaseUrl}/stream/$videoId';

@@ -10,6 +10,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'screens/root_screen.dart';
 import 'services/audio_service.dart' as nocturne_audio;
+import 'services/settings_service.dart';
 import 'utils/theme.dart';
 
 /// The bootstrapper renders a splash immediately and then runs each platform
@@ -40,7 +41,8 @@ class _BootstrapApp extends StatefulWidget {
   State<_BootstrapApp> createState() => _BootstrapAppState();
 }
 
-class _BootstrapAppState extends State<_BootstrapApp> {
+class _BootstrapAppState extends State<_BootstrapApp>
+    with WidgetsBindingObserver {
   nocturne_audio.NocturneAudioHandler? _audioHandler;
   final List<String> _warnings = [];
   bool _ready = false;
@@ -48,7 +50,36 @@ class _BootstrapAppState extends State<_BootstrapApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bootstrap();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      _snapshotForResume();
+    }
+  }
+
+  Future<void> _snapshotForResume() async {
+    final h = _audioHandler;
+    if (h == null) return;
+    try {
+      await SettingsService.instance.snapshot(
+        h.currentSong,
+        h.player.position,
+      );
+    } catch (_) {
+      // Best-effort.
+    }
   }
 
   Future<void> _bootstrap() async {
@@ -65,7 +96,12 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       await Hive.initFlutter();
       await Hive.openBox<dynamic>('liked_songs');
       await Hive.openBox<dynamic>('recently_played');
+      await Hive.openBox<dynamic>('downloads');
     }, timeoutSeconds: 5);
+
+    await _runStep('Settings', () async {
+      await SettingsService.bootstrap();
+    }, timeoutSeconds: 3);
 
     await _runStep('Firebase', () async {
       // Throws (or no-ops) when Firebase isn't configured yet — that's fine,

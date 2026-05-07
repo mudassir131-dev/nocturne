@@ -35,7 +35,7 @@ class LiquidGlassSearchBar extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.searchBar),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
         child: Container(
           decoration: BoxDecoration(
             color: glassFill,

@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../state/player_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/liquid_glass_searchbar.dart';
+import '../widgets/shimmer_box.dart';
 import '../widgets/song_tile.dart';
 
 class _SearchState {
@@ -219,9 +220,7 @@ class _Results extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (state.loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.accent),
-      );
+      return const ShimmerSongList(count: 8);
     }
     if (state.error != null) {
       return Padding(
