@@ -22,55 +22,88 @@ class StreamResolver {
   final Dio _dio;
   final YoutubeExplode _yt = YoutubeExplode();
 
-  /// Public Piped API instances (rotated; the first one to respond wins).
-  /// Piped wraps audio URLs in its own `proxy.piped.*` domain so they're
-  /// guaranteed to work from any client IP.
+  /// Public Piped API instances. We race them in parallel so the first
+  /// healthy one wins; dead/degraded instances no longer block the chain.
   static const List<String> _pipedInstances = [
     'https://api.piped.private.coffee',
     'https://pipedapi.kavin.rocks',
     'https://pipedapi.adminforge.de',
-    'https://pipedapi.r4fo.com',
   ];
 
-  /// Public Invidious API instances. Returns direct `googlevideo.com` URLs
-  /// (with `&ipbypass=yes` so any client can fetch them).
+  /// Public Invidious API instances. Also raced in parallel.
   static const List<String> _invidiousInstances = [
     'https://invidious.f5.si',
-    'https://inv.thepixora.com',
     'https://invidious.einfachzocken.eu',
   ];
 
   Future<String?> resolve(String videoId) async {
-    // 1) Piped (most reliable when public instances are healthy)
-    for (final base in _pipedInstances) {
-      final url = await _runWithTimeout(
-        () => _resolveViaPiped(base, videoId),
-        seconds: 6,
-        label: 'piped@$base',
-      );
-      if (url != null) return url;
-    }
-    // 2) Invidious
-    for (final base in _invidiousInstances) {
-      final url = await _runWithTimeout(
-        () => _resolveViaInvidious(base, videoId),
-        seconds: 6,
-        label: 'invidious@$base',
-      );
-      if (url != null) return url;
-    }
-    // 3) On-device extraction
-    final url = await _runWithTimeout(
+    // 1) Race all Piped + Invidious instances in parallel; first one to
+    //    return a non-null URL wins. Each call has its own short timeout
+    //    so dead hosts can't stall the chain (~3s per attempt).
+    final racers = <Future<String?>>[
+      for (final base in _pipedInstances)
+        _runWithTimeout(
+          () => _resolveViaPiped(base, videoId),
+          seconds: 4,
+          label: 'piped@$base',
+        ),
+      for (final base in _invidiousInstances)
+        _runWithTimeout(
+          () => _resolveViaInvidious(base, videoId),
+          seconds: 4,
+          label: 'invidious@$base',
+        ),
+    ];
+    final winner = await _firstNonNull(racers).timeout(
+      const Duration(seconds: 6),
+      onTimeout: () => null,
+    );
+    if (winner != null) return winner;
+
+    // 2) On-device extraction
+    final viaYt = await _runWithTimeout(
       () => _resolveViaYoutubeExplode(videoId),
-      seconds: 10,
+      seconds: 8,
       label: 'youtube_explode',
     );
-    if (url != null) return url;
+    if (viaYt != null) return viaYt;
 
-    // 4) Last-resort backend fallback (only useful if YTDLP_COOKIES_BASE64 is set)
+    // 3) Last-resort backend fallback (only useful if YTDLP_COOKIES_BASE64 is set)
     final fallback = '${AppConfig.backendBaseUrl}/stream/$videoId';
     if (kDebugMode) debugPrint('[StreamResolver] using backend fallback: $fallback');
     return fallback;
+  }
+
+  /// Returns the first non-null result among [futures], or null if all
+  /// resolve to null. Doesn't cancel the other in-flight requests (they
+  /// just complete in the background and are discarded).
+  Future<String?> _firstNonNull(List<Future<String?>> futures) {
+    final completer = Completer<String?>();
+    var pending = futures.length;
+    if (pending == 0) {
+      completer.complete(null);
+      return completer.future;
+    }
+    for (final f in futures) {
+      f.then((value) {
+        if (completer.isCompleted) return;
+        if (value != null && value.isNotEmpty) {
+          completer.complete(value);
+          return;
+        }
+        pending -= 1;
+        if (pending == 0 && !completer.isCompleted) {
+          completer.complete(null);
+        }
+      }).catchError((_) {
+        if (completer.isCompleted) return;
+        pending -= 1;
+        if (pending == 0 && !completer.isCompleted) {
+          completer.complete(null);
+        }
+      });
+    }
+    return completer.future;
   }
 
   void dispose() {

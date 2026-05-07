@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/liquid_glass_dock.dart';
+import '../widgets/apple_nav_bar.dart';
 import '../widgets/mini_player.dart';
 import 'home_screen.dart';
-import 'liked_screen.dart';
 import 'library_screen.dart';
-import 'profile_screen.dart';
+import 'new_screen.dart';
+import 'radio_screen.dart';
 import 'search_screen.dart';
 
-/// Top-level scaffold with the liquid-glass bottom dock and the mini player
-/// floating above it.
+/// Apple-Music-style top-level scaffold:
+/// 5-tab nav (Home, New, Radio, Library, Search) backed by a PageView so
+/// content slides in from left/right with spring physics. Mini player sits
+/// just above the full-width liquid-glass nav bar.
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
 
@@ -20,61 +22,98 @@ class RootScreen extends ConsumerStatefulWidget {
 
 class _RootScreenState extends ConsumerState<RootScreen> {
   int _index = 0;
+  late final PageController _pageController = PageController();
 
-  static const List<DockItem> _items = [
-    DockItem(icon: Icons.home_filled, label: 'Home'),
-    DockItem(icon: Icons.search, label: 'Search'),
-    DockItem(icon: Icons.library_music, label: 'Library'),
-    DockItem(icon: Icons.favorite, label: 'Liked'),
-    DockItem(icon: Icons.person, label: 'Profile'),
+  static const List<AppleNavItem> _items = [
+    AppleNavItem(
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_filled,
+      label: 'Home',
+    ),
+    AppleNavItem(
+      icon: Icons.grid_view_outlined,
+      activeIcon: Icons.grid_view_rounded,
+      label: 'New',
+    ),
+    AppleNavItem(
+      icon: Icons.radio_outlined,
+      activeIcon: Icons.radio,
+      label: 'Radio',
+    ),
+    AppleNavItem(
+      icon: Icons.library_music_outlined,
+      activeIcon: Icons.library_music,
+      label: 'Library',
+    ),
+    AppleNavItem(
+      icon: Icons.search_outlined,
+      activeIcon: Icons.search,
+      label: 'Search',
+    ),
   ];
 
-  Widget _pageFor(int index) {
-    switch (index) {
-      case 0:
-        return const HomeScreen();
-      case 1:
-        return const SearchScreen();
-      case 2:
-        return const LibraryScreen();
-      case 3:
-        return const LikedScreen();
-      case 4:
-      default:
-        return const ProfileScreen();
-    }
+  static const List<Widget> _pages = [
+    HomeScreen(),
+    NewScreen(),
+    RadioScreen(),
+    LibraryScreen(),
+    SearchScreen(),
+  ];
+
+  void _switchTo(int i) {
+    if (i == _index) return;
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        child: KeyedSubtree(
-          key: ValueKey<int>(_index),
-          child: _pageFor(_index),
-        ),
+      body: PageView(
+        controller: _pageController,
+        physics: const _SpringPageScrollPhysics(),
+        onPageChanged: (i) => setState(() => _index = i),
+        children: _pages,
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: MiniPlayer(),
-            ),
-            LiquidGlassDock(
-              items: _items,
-              currentIndex: _index,
-              onTap: (i) => setState(() => _index = i),
-            ),
-          ],
-        ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const MiniPlayer(),
+          AppleNavBar(
+            items: _items,
+            currentIndex: _index,
+            onTap: _switchTo,
+          ),
+        ],
       ),
     );
   }
+}
+
+/// Bouncy spring-style PageView physics so swiping between tabs feels closer
+/// to iOS than the default clamping physics.
+class _SpringPageScrollPhysics extends PageScrollPhysics {
+  const _SpringPageScrollPhysics({super.parent});
+
+  @override
+  _SpringPageScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return _SpringPageScrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  SpringDescription get spring => const SpringDescription(
+        mass: 60,
+        stiffness: 120,
+        damping: 1.2,
+      );
 }

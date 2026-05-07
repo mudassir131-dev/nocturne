@@ -4,7 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../utils/theme.dart';
+import 'downloads_screen.dart';
 import 'equalizer_screen.dart';
+import 'history_screen.dart';
+import 'queue_screen.dart';
+import 'sleep_timer_screen.dart';
+import 'storage_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -61,19 +66,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = _safeUser();
     final theme = Theme.of(context);
     final fg = theme.colorScheme.onSurface;
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 200),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile'),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
-          Text(
-            'Profile',
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-            ),
-          ),
-          const SizedBox(height: 20),
           _UserCard(user: user),
           const SizedBox(height: 16),
           if (user == null)
@@ -121,6 +122,56 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const EqualizerScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.queue_music,
+            title: 'Now Playing Queue',
+            subtitle: 'Reorder, skip and trim the queue',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const QueueScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.history,
+            title: 'Listening History',
+            subtitle: 'Recently played tracks',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HistoryScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.bedtime_outlined,
+            title: 'Sleep Timer',
+            subtitle: 'Pause playback after a delay',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const SleepTimerScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.download_outlined,
+            title: 'Downloads',
+            subtitle: 'Songs saved for offline listening',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const DownloadsScreen(),
+              ),
+            ),
+          ),
+          _SettingTile(
+            icon: Icons.sd_card_outlined,
+            title: 'Storage & Quality',
+            subtitle: 'Download quality + manage offline files',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const StorageScreen(),
               ),
             ),
           ),
@@ -297,43 +348,60 @@ class _AboutCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(AppRadius.card),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Nocturne ${AppBranding.version}',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.asset(
+              'assets/images/logo.png',
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            AppBranding.tagline,
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              AppBranding.developer,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                letterSpacing: 1.0,
-              ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nocturne ${AppBranding.version}',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppBranding.tagline,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    AppBranding.developer,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

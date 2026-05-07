@@ -45,20 +45,24 @@ class MiniPlayer extends ConsumerWidget {
       ),
       child: Padding(
         key: ValueKey(song.videoId),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
               decoration: BoxDecoration(
                 color: glassFill,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: glassBorder, width: 1.2),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: glassBorder, width: 1),
               ),
-              child: GestureDetector(
+              child: _SwipeableMiniBody(
                 onTap: () => _openPlayer(context),
-                behavior: HitTestBehavior.opaque,
+                onSwipeUp: () => _openPlayer(context),
+                onSwipeRightNext: () =>
+                    ref.read(playerControllerProvider).next(),
+                onSwipeLeftPrev: () =>
+                    ref.read(playerControllerProvider).previous(),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -163,6 +167,8 @@ class _Art extends StatelessWidget {
       width: 40,
       height: 40,
       fit: BoxFit.cover,
+      memCacheWidth: 160,
+      memCacheHeight: 160,
     );
   }
 }
@@ -174,19 +180,83 @@ class _PlayPauseButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playing = ref.watch(isPlayingProvider).value ?? false;
+    final buffering = ref.watch(isBufferingProvider).value ?? false;
     return IconButton(
-      icon: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        transitionBuilder: (child, anim) =>
-            ScaleTransition(scale: anim, child: child),
-        child: Icon(
-          playing ? Icons.pause : Icons.play_arrow,
-          key: ValueKey(playing),
-          color: color,
-          size: 28,
-        ),
-      ),
+      icon: buffering
+          ? SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(color),
+              ),
+            )
+          : AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                playing ? Icons.pause : Icons.play_arrow,
+                key: ValueKey(playing),
+                color: color,
+                size: 28,
+              ),
+            ),
       onPressed: () => ref.read(playerControllerProvider).togglePlay(),
+    );
+  }
+}
+
+/// Wraps the mini-player body with horizontal + vertical drag detection.
+/// Drag up → open full player. Drag right → next song. Drag left → previous.
+class _SwipeableMiniBody extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback onSwipeUp;
+  final VoidCallback onSwipeRightNext;
+  final VoidCallback onSwipeLeftPrev;
+
+  const _SwipeableMiniBody({
+    required this.child,
+    required this.onTap,
+    required this.onSwipeUp,
+    required this.onSwipeRightNext,
+    required this.onSwipeLeftPrev,
+  });
+
+  @override
+  State<_SwipeableMiniBody> createState() => _SwipeableMiniBodyState();
+}
+
+class _SwipeableMiniBodyState extends State<_SwipeableMiniBody> {
+  double _dx = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onVerticalDragEnd: (d) {
+        final v = d.primaryVelocity ?? 0;
+        if (v < -300) widget.onSwipeUp();
+      },
+      onHorizontalDragUpdate: (d) {
+        setState(() => _dx += d.delta.dx);
+      },
+      onHorizontalDragEnd: (d) {
+        final v = d.primaryVelocity ?? 0;
+        if (v > 600 || _dx > 80) {
+          widget.onSwipeRightNext();
+        } else if (v < -600 || _dx < -80) {
+          widget.onSwipeLeftPrev();
+        }
+        setState(() => _dx = 0);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        transform: Matrix4.translationValues(_dx * 0.4, 0, 0),
+        child: widget.child,
+      ),
     );
   }
 }

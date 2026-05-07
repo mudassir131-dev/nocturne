@@ -252,6 +252,8 @@ class _Header extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: coverUrl,
               fit: BoxFit.cover,
+              memCacheWidth: 720,
+              memCacheHeight: 720,
             ),
           )
         else
@@ -289,6 +291,8 @@ class _Header extends StatelessWidget {
                         ? CachedNetworkImage(
                             imageUrl: coverUrl,
                             fit: BoxFit.cover,
+                            memCacheWidth: 480,
+                            memCacheHeight: 480,
                           )
                         : Container(
                             decoration: BoxDecoration(

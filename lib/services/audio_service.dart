@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/song.dart';
+import 'settings_service.dart';
 import 'stream_resolver.dart';
 
 /// Provider for the platform AudioHandler. Overridden in `main.dart`
@@ -16,6 +17,14 @@ final audioHandlerProvider = Provider<NocturneAudioHandler>(
     'audioHandlerProvider must be overridden in main()',
   ),
 );
+
+/// Reactive view of the queue + current index. Used by the queue screen
+/// so reorders/inserts/deletes show up live.
+final queueSnapshotProvider =
+    StreamProvider<({List<Song> songs, int currentIndex})>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.queueChangesStream;
+});
 
 /// Background audio handler bridging just_audio with audio_service so
 /// playback continues when the app is backgrounded and is controllable
@@ -32,16 +41,42 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   final List<Song> _queue = [];
   final StreamController<int> _indexController =
       StreamController<int>.broadcast();
+  final StreamController<({List<Song> songs, int currentIndex})>
+      _queueController =
+      StreamController<({List<Song> songs, int currentIndex})>.broadcast();
   final Random _rng = Random();
   int _currentIndex = -1;
   bool _shuffle = false;
   LoopMode _loopMode = LoopMode.off;
   List<int> _shuffleOrder = const [];
 
+  // Crossfade / fade state.
+  Duration _crossfade = Duration.zero;
+  Timer? _fadeTimer;
+  bool _fadingOut = false;
+  StreamSubscription<Duration>? _positionSub;
+
+  // Sleep timer.
+  Timer? _sleepTimer;
+  DateTime? _sleepFiresAt;
+  final StreamController<DateTime?> _sleepController =
+      StreamController<DateTime?>.broadcast();
+
   NocturneAudioHandler() {
     _player = AudioPlayer(
       audioPipeline: AudioPipeline(
         androidAudioEffects: [_loudness, _equalizer],
+      ),
+      // Tuned for fast start on slow connections: start playing as soon as
+      // ~1s of audio is buffered (default is 2.5s) and don't pre-fetch a
+      // huge buffer up front.
+      audioLoadConfiguration: const AudioLoadConfiguration(
+        androidLoadControl: AndroidLoadControl(
+          minBufferDuration: Duration(seconds: 5),
+          maxBufferDuration: Duration(seconds: 50),
+          bufferForPlaybackDuration: Duration(seconds: 1),
+          bufferForPlaybackAfterRebufferDuration: Duration(seconds: 3),
+        ),
       ),
     );
     _player.playbackEventStream.listen(_broadcastState);
@@ -50,6 +85,16 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
         _onTrackCompleted();
       }
     });
+    _positionSub = _player.positionStream.listen(_onPosition);
+    // Apply persisted speed on boot.
+    try {
+      _player.setSpeed(SettingsService.instance.playbackSpeed);
+      _crossfade = Duration(
+        seconds: SettingsService.instance.crossfadeSeconds,
+      );
+    } catch (_) {
+      // SettingsService not yet bootstrapped (tests).
+    }
   }
 
   // ---------- public surface ----------
@@ -61,10 +106,19 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   int get currentIndex => _currentIndex;
   bool get shuffleEnabled => _shuffle;
   LoopMode get loopMode => _loopMode;
+  Duration get crossfade => _crossfade;
+  double get speed => _player.speed;
+  DateTime? get sleepFiresAt => _sleepFiresAt;
+  Stream<DateTime?> get sleepTimerStream => _sleepController.stream;
 
   /// Fires whenever the active track index changes (skip, completed,
   /// shuffle pick). Subscribed by `currentSongProvider`.
   Stream<int> get currentIndexStream => _indexController.stream;
+
+  /// Fires whenever the queue contents OR current index change.
+  Stream<({List<Song> songs, int currentIndex})> get queueChangesStream {
+    return _queueController.stream;
+  }
 
   Song? get currentSong =>
       (_currentIndex >= 0 && _currentIndex < _queue.length)
@@ -87,13 +141,82 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
     await _playIndex(startIndex.clamp(0, songs.length - 1));
   }
 
+  /// Append a song to the end of the queue.
+  Future<void> addToQueue(Song song) async {
+    _queue.add(song);
+    queue.add(_queue.map(_toMediaItem).toList());
+    if (_shuffle) _rebuildShuffleOrder(pinFirst: _currentIndex);
+    _emitQueueChanged();
+  }
+
+  /// Insert [song] right after the currently playing item.
+  Future<void> playNextInQueue(Song song) async {
+    if (_queue.isEmpty || _currentIndex < 0) {
+      await setQueue([song]);
+      return;
+    }
+    _queue.insert(_currentIndex + 1, song);
+    queue.add(_queue.map(_toMediaItem).toList());
+    if (_shuffle) _rebuildShuffleOrder(pinFirst: _currentIndex);
+    _emitQueueChanged();
+  }
+
+  /// Remove a queue entry by index. If the entry being removed is the
+  /// currently playing one we advance to the next.
+  Future<void> removeFromQueue(int index) async {
+    if (index < 0 || index >= _queue.length) return;
+    final wasCurrent = index == _currentIndex;
+    _queue.removeAt(index);
+    if (index < _currentIndex) {
+      _currentIndex--;
+    }
+    queue.add(_queue.map(_toMediaItem).toList());
+    if (_shuffle) _rebuildShuffleOrder(pinFirst: _currentIndex);
+    if (_queue.isEmpty) {
+      _setIndex(-1);
+      mediaItem.add(null);
+      await _player.stop();
+      _emitQueueChanged();
+      return;
+    }
+    if (wasCurrent) {
+      final next = _currentIndex.clamp(0, _queue.length - 1);
+      await _playIndex(next);
+    } else {
+      _emitQueueChanged();
+    }
+  }
+
+  /// Drag-reorder helper for the queue management screen.
+  Future<void> reorderQueue(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 || oldIndex >= _queue.length) return;
+    if (newIndex > oldIndex) newIndex--;
+    final item = _queue.removeAt(oldIndex);
+    _queue.insert(newIndex.clamp(0, _queue.length), item);
+    if (_currentIndex == oldIndex) {
+      _currentIndex = newIndex;
+    } else if (oldIndex < _currentIndex && newIndex >= _currentIndex) {
+      _currentIndex--;
+    } else if (oldIndex > _currentIndex && newIndex <= _currentIndex) {
+      _currentIndex++;
+    }
+    queue.add(_queue.map(_toMediaItem).toList());
+    if (_shuffle) _rebuildShuffleOrder(pinFirst: _currentIndex);
+    _emitQueueChanged();
+  }
+
+  /// Jump to a specific queue index (used by the queue UI).
+  Future<void> playIndex(int index) => _playIndex(index);
+
   // ---------- queue navigation ----------
 
   Future<void> _playIndex(int index) async {
     if (index < 0 || index >= _queue.length) return;
+    _cancelFade();
     _setIndex(index);
     final song = _queue[index];
     mediaItem.add(_toMediaItem(song));
+    _emitQueueChanged();
 
     final url = await _resolveStreamUrl(song.videoId);
     if (url == null) {
@@ -105,7 +228,16 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
 
     try {
       await _player.setUrl(url);
-      await _player.play();
+      await _player.setSpeed(SettingsService.instance.playbackSpeed);
+      // Fade in if crossfade is configured.
+      if (_crossfade > Duration.zero) {
+        await _player.setVolume(0);
+        await _player.play();
+        _runVolumeFade(from: 0, to: 1, dur: _crossfade);
+      } else {
+        await _player.setVolume(1.0);
+        await _player.play();
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('[audio] playback failed: $e');
       // Keep handler alive even if a single track fails to load.
@@ -115,6 +247,13 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   void _setIndex(int i) {
     _currentIndex = i;
     _indexController.add(i);
+  }
+
+  void _emitQueueChanged() {
+    _queueController.add((
+      songs: List<Song>.unmodifiable(_queue),
+      currentIndex: _currentIndex,
+    ));
   }
 
   Future<String?> _resolveStreamUrl(String videoId) =>
@@ -221,6 +360,18 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
     await _playIndex(p);
   }
 
+  @override
+  Future<void> skipToQueueItem(int index) async {
+    await _playIndex(index);
+  }
+
+  @override
+  Future<void> setSpeed(double speed) async {
+    final s = speed.clamp(0.5, 2.0);
+    await _player.setSpeed(s);
+    await SettingsService.instance.setPlaybackSpeed(s);
+  }
+
   Future<void> toggleShuffle(bool enabled) async {
     _shuffle = enabled;
     if (enabled) {
@@ -247,6 +398,103 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
     };
     playbackState.add(playbackState.value.copyWith(repeatMode: repeat));
   }
+
+  // ---------- Crossfade ----------
+
+  Future<void> setCrossfade(Duration d) async {
+    _crossfade = Duration(seconds: d.inSeconds.clamp(0, 12));
+    await SettingsService.instance.setCrossfadeSeconds(_crossfade.inSeconds);
+  }
+
+  void _onPosition(Duration pos) {
+    if (_crossfade <= Duration.zero) return;
+    final dur = _player.duration;
+    if (dur == null) return;
+    final remaining = dur - pos;
+    if (remaining <= _crossfade && !_fadingOut && _player.playing) {
+      // Start fading out the current track. When fade hits 0 we advance
+      // and the next track will fade in via _playIndex.
+      _fadingOut = true;
+      _runVolumeFade(
+        from: _player.volume,
+        to: 0,
+        dur: remaining < _crossfade ? remaining : _crossfade,
+        onComplete: () {
+          _fadingOut = false;
+          if (_loopMode == LoopMode.one) return;
+          final next = _nextIndex();
+          if (next != null) _playIndex(next);
+        },
+      );
+    }
+  }
+
+  void _runVolumeFade({
+    required double from,
+    required double to,
+    required Duration dur,
+    VoidCallback? onComplete,
+  }) {
+    _cancelFade();
+    if (dur <= Duration.zero) {
+      _player.setVolume(to);
+      onComplete?.call();
+      return;
+    }
+    final steps = (dur.inMilliseconds / 50).clamp(1, 240).toInt();
+    var step = 0;
+    _player.setVolume(from);
+    _fadeTimer = Timer.periodic(
+      Duration(milliseconds: dur.inMilliseconds ~/ steps),
+      (t) {
+        step++;
+        final v = (from + (to - from) * (step / steps)).clamp(0.0, 1.0);
+        _player.setVolume(v);
+        if (step >= steps) {
+          t.cancel();
+          _fadeTimer = null;
+          _player.setVolume(to);
+          onComplete?.call();
+        }
+      },
+    );
+  }
+
+  void _cancelFade() {
+    _fadeTimer?.cancel();
+    _fadeTimer = null;
+    _fadingOut = false;
+  }
+
+  // ---------- Sleep timer ----------
+
+  void setSleepTimer(Duration? d) {
+    _sleepTimer?.cancel();
+    if (d == null || d <= Duration.zero) {
+      _sleepTimer = null;
+      _sleepFiresAt = null;
+      _sleepController.add(null);
+      return;
+    }
+    _sleepFiresAt = DateTime.now().add(d);
+    _sleepController.add(_sleepFiresAt);
+    _sleepTimer = Timer(d, () async {
+      // Soft pause — fade out over 3s for niceness.
+      _runVolumeFade(
+        from: _player.volume,
+        to: 0,
+        dur: const Duration(seconds: 3),
+        onComplete: () async {
+          await _player.pause();
+          await _player.setVolume(1.0);
+        },
+      );
+      _sleepFiresAt = null;
+      _sleepController.add(null);
+    });
+  }
+
+  // ---------- Internals ----------
 
   void _broadcastState(PlaybackEvent event) {
     final playing = _player.playing;
@@ -278,7 +526,12 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> dispose() async {
+    _sleepTimer?.cancel();
+    _cancelFade();
+    await _positionSub?.cancel();
     await _indexController.close();
+    await _queueController.close();
+    await _sleepController.close();
     await _player.dispose();
     _resolver.dispose();
   }

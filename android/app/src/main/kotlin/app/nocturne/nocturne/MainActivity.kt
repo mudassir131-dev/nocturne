@@ -1,8 +1,10 @@
 package app.nocturne.nocturne
 
-import io.flutter.embedding.android.FlutterFragmentActivity
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 
-// audio_service requires FlutterFragmentActivity (not FlutterActivity) so that
-// MediaSessionCompat callbacks can attach to the same FragmentManager the
-// plugin uses internally. See: https://pub.dev/packages/audio_service
-class MainActivity : FlutterFragmentActivity()
+// audio_service requires AudioServiceFragmentActivity so the plugin can
+// attach to the cached FlutterEngine it manages internally. Extending plain
+// FlutterFragmentActivity throws "The Activity class declared in your
+// AndroidManifest.xml is wrong or has not provided the correct FlutterEngine"
+// at AudioService.init time. See: https://pub.dev/packages/audio_service#android
+class MainActivity : AudioServiceFragmentActivity()
