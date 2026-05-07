@@ -38,31 +38,38 @@ class ShimmerBox extends StatelessWidget {
 
 class ShimmerSongList extends StatelessWidget {
   final int count;
-  const ShimmerSongList({super.key, this.count = 6});
+  final bool shrinkWrap;
+  const ShimmerSongList({
+    super.key,
+    this.count = 6,
+    this.shrinkWrap = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        count,
-        (_) => const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            children: [
-              ShimmerBox(height: 50, width: 50),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShimmerBox(height: 12),
-                    SizedBox(height: 6),
-                    ShimmerBox(height: 10, width: 140),
-                  ],
-                ),
+    return ListView.builder(
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap
+          ? const NeverScrollableScrollPhysics()
+          : const ClampingScrollPhysics(),
+      itemCount: count,
+      itemBuilder: (_, __) => const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            ShimmerBox(height: 50, width: 50),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerBox(height: 12),
+                  SizedBox(height: 6),
+                  ShimmerBox(height: 10, width: 140),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

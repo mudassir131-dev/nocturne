@@ -66,19 +66,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = _safeUser();
     final theme = Theme.of(context);
     final fg = theme.colorScheme.onSurface;
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 200),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile'),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
-          Text(
-            'Profile',
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-            ),
-          ),
-          const SizedBox(height: 20),
           _UserCard(user: user),
           const SizedBox(height: 16),
           if (user == null)

@@ -220,7 +220,7 @@ class _Results extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (state.loading) {
-      return const ShimmerSongList(count: 8);
+      return const ShimmerSongList(count: 8, shrinkWrap: false);
     }
     if (state.error != null) {
       return Padding(
