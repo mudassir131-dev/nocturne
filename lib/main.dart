@@ -220,6 +220,12 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Image.asset(
+              'assets/images/logo.png',
+              width: 140,
+              height: 140,
+            ),
+            const SizedBox(height: 18),
             ShaderMask(
               shaderCallback: (rect) => const LinearGradient(
                 colors: [AppColors.accent, Color(0xFFFF7043)],
@@ -228,7 +234,7 @@ class _SplashScreen extends StatelessWidget {
                 'Nocturne',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 40,
+                  fontSize: 36,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 2.5,
                   shadows: [
