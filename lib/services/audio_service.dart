@@ -67,6 +67,17 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
       audioPipeline: AudioPipeline(
         androidAudioEffects: [_loudness, _equalizer],
       ),
+      // Tuned for fast start on slow connections: start playing as soon as
+      // ~1s of audio is buffered (default is 2.5s) and don't pre-fetch a
+      // huge buffer up front.
+      audioLoadConfiguration: const AudioLoadConfiguration(
+        androidLoadControl: AndroidLoadControl(
+          minBufferDuration: Duration(seconds: 5),
+          maxBufferDuration: Duration(seconds: 50),
+          bufferForPlaybackDuration: Duration(seconds: 1),
+          bufferForPlaybackAfterRebufferDuration: Duration(seconds: 3),
+        ),
+      ),
     );
     _player.playbackEventStream.listen(_broadcastState);
     _player.processingStateStream.listen((state) {
