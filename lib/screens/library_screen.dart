@@ -1,70 +1,236 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/song.dart';
 import '../services/database_service.dart';
+import '../state/player_provider.dart';
 import '../utils/theme.dart';
+import '../widgets/album_card.dart';
 import 'liked_screen.dart';
 
+/// Main library hub: pinned items grid + red-icon list rows + Recently
+/// Added carousel.
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(databaseServiceProvider);
-    final likedCount = db.likedSongsLocal().length;
     final theme = Theme.of(context);
     final fg = theme.colorScheme.onSurface;
+    final liked = db.likedSongsLocal();
+    final recent = db.recentlyPlayedLocal();
 
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 180),
         children: [
-          Text(
-            'Your Library',
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Library',
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 32,
+                  ),
+                ),
+              ),
+              const _ProfileAvatar(),
+              IconButton(
+                icon: Icon(CupertinoIcons.ellipsis, color: fg),
+                onPressed: () => _showLibraryMenu(context),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          _LikedSongsCard(count: likedCount),
+          _PinnedGrid(liked: liked),
           const SizedBox(height: 24),
-          const _SectionHeader(title: 'Playlists'),
           StreamBuilder<List<PlaylistSummary>>(
             stream: db.watchPlaylists(),
             builder: (context, snap) {
               final playlists = snap.data ?? const <PlaylistSummary>[];
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: playlists.length + 1,
-                itemBuilder: (context, i) {
-                  if (i == 0) {
-                    return _CreatePlaylistTile(onTap: () {
-                      _showCreateDialog(context, ref);
-                    });
-                  }
-                  final p = playlists[i - 1];
-                  return _PlaylistCard(playlist: p);
-                },
+              return Column(
+                children: [
+                  _LibraryRow(
+                    icon: CupertinoIcons.music_note_list,
+                    label: 'Playlists',
+                    count: playlists.length,
+                    onTap: () => _showPlaylistsSheet(context, ref, playlists),
+                  ),
+                  _LibraryRow(
+                    icon: CupertinoIcons.music_mic,
+                    label: 'Artists',
+                    count: 0,
+                    onTap: () {},
+                  ),
+                  _LibraryRow(
+                    icon: CupertinoIcons.square_stack,
+                    label: 'Albums',
+                    count: 0,
+                    onTap: () {},
+                  ),
+                  _LibraryRow(
+                    icon: CupertinoIcons.music_note,
+                    label: 'Songs',
+                    count: liked.length,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const LikedScreen(),
+                      ),
+                    ),
+                  ),
+                  _LibraryRow(
+                    icon: CupertinoIcons.tag_fill,
+                    label: 'Genres',
+                    onTap: () {},
+                  ),
+                  _LibraryRow(
+                    icon: CupertinoIcons.cloud_download_fill,
+                    label: 'Downloaded',
+                    onTap: () {},
+                  ),
+                ],
               );
             },
           ),
-          const SizedBox(height: 24),
-          const _SectionHeader(title: 'Albums'),
-          const _EmptyHint(text: 'Albums you save will appear here.'),
-          const SizedBox(height: 24),
-          const _SectionHeader(title: 'Artists'),
-          const _EmptyHint(text: 'Artists you follow will appear here.'),
+          if (recent.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Recently Added',
+              style: TextStyle(
+                color: fg,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: recent.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, i) {
+                  final s = recent[i];
+                  return AlbumCard(
+                    title: s.title,
+                    subtitle: s.artist,
+                    imageUrl: s.thumbnail,
+                    onTap: () => ref
+                        .read(playerControllerProvider)
+                        .playQueue(recent, startIndex: i),
+                  );
+                },
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _showLibraryMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) {
+        final fg = Theme.of(context).colorScheme.onSurface;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(CupertinoIcons.sort_down,
+                    color: AppColors.accent),
+                title: Text('Sort by recent', style: TextStyle(color: fg)),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              ListTile(
+                leading: const Icon(CupertinoIcons.cloud_download,
+                    color: AppColors.accent),
+                title: Text('Available offline only',
+                    style: TextStyle(color: fg)),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPlaylistsSheet(
+    BuildContext context,
+    WidgetRef ref,
+    List<PlaylistSummary> playlists,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (_) {
+        final fg = Theme.of(context).colorScheme.onSurface;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Playlists',
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (playlists.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      'Sign in with Google to create playlists.',
+                      style: TextStyle(color: Theme.of(context).hintColor),
+                    ),
+                  )
+                else
+                  for (final p in playlists)
+                    ListTile(
+                      leading: const Icon(
+                        CupertinoIcons.music_note_list,
+                        color: AppColors.accent,
+                      ),
+                      title: Text(p.name, style: TextStyle(color: fg)),
+                      subtitle: Text(
+                        '${p.songCount} songs',
+                        style: TextStyle(color: Theme.of(context).hintColor),
+                      ),
+                    ),
+                TextButton.icon(
+                  onPressed: () => _showCreateDialog(context, ref),
+                  icon: const Icon(Icons.add, color: AppColors.accent),
+                  label: const Text(
+                    'New Playlist',
+                    style: TextStyle(color: AppColors.accent),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -76,10 +242,7 @@ class LibraryScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: theme.cardColor,
-        title: Text(
-          'New playlist',
-          style: TextStyle(color: fg),
-        ),
+        title: Text('New playlist', style: TextStyle(color: fg)),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -108,9 +271,7 @@ class LibraryScreen extends ConsumerWidget {
               if (id == null) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                      'Sign in with Google to sync playlists.',
-                    ),
+                    content: Text('Sign in with Google to sync playlists.'),
                   ),
                 );
               }
@@ -126,71 +287,185 @@ class LibraryScreen extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
+/// Pinned shortcuts grid at the top of the library.
+class _PinnedGrid extends StatelessWidget {
+  final List<Song> liked;
+  const _PinnedGrid({required this.liked});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
+    final items = <_Pinned>[
+      const _Pinned(
+        icon: CupertinoIcons.heart_fill,
+        label: 'Liked Songs',
+        gradient: [Color(0xFFB71C1C), Color(0xFFE53935)],
       ),
+      const _Pinned(
+        icon: CupertinoIcons.cloud_download_fill,
+        label: 'Downloaded',
+        gradient: [Color(0xFF263238), Color(0xFF455A64)],
+      ),
+      const _Pinned(
+        icon: CupertinoIcons.music_note_list,
+        label: 'Playlists',
+        gradient: [Color(0xFF6A1B9A), Color(0xFF8E24AA)],
+      ),
+      const _Pinned(
+        icon: CupertinoIcons.music_mic,
+        label: 'Artists',
+        gradient: [Color(0xFF1E88E5), Color(0xFF26A69A)],
+      ),
+    ];
+
+    // The first pinned item shows mini-thumbs from liked songs when
+    // available so the grid has a personal touch.
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 2.4,
+      ),
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final p = items[i];
+        return InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          onTap: () {
+            if (i == 0) {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const LikedScreen()),
+              );
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: p.gradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.card),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                if (i == 0 && liked.isNotEmpty)
+                  ClipOval(
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: liked.first.thumbnail.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: liked.first.thumbnail,
+                              fit: BoxFit.cover,
+                            )
+                          : Icon(p.icon,
+                              color: Colors.white.withOpacity(0.95)),
+                    ),
+                  )
+                else
+                  Icon(p.icon, color: Colors.white, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    p.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Icon(CupertinoIcons.chevron_right,
+                    color: fg.withOpacity(0.5), size: 18),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _LikedSongsCard extends StatelessWidget {
-  final int count;
-  const _LikedSongsCard({required this.count});
+class _Pinned {
+  final IconData icon;
+  final String label;
+  final List<Color> gradient;
+  const _Pinned({
+    required this.icon,
+    required this.label,
+    required this.gradient,
+  });
+}
+
+class _LibraryRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int? count;
+  final VoidCallback onTap;
+  const _LibraryRow({
+    required this.icon,
+    required this.label,
+    this.count,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const LikedScreen()),
-      ),
+      onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          border: Border(
+            bottom: BorderSide(color: fg.withOpacity(0.07)),
           ),
-          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
-        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(Icons.favorite, color: Colors.white, size: 36),
+            Icon(icon, color: AppColors.accent, size: 24),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Liked Songs',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Text(
-                    '$count song${count == 1 ? '' : 's'}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.white70),
+            if (count != null && count! > 0)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            Icon(CupertinoIcons.chevron_right,
+                color: fg.withOpacity(0.45), size: 18),
           ],
         ),
       ),
@@ -198,105 +473,22 @@ class _LikedSongsCard extends StatelessWidget {
   }
 }
 
-class _CreatePlaylistTile extends StatelessWidget {
-  final VoidCallback onTap;
-  const _CreatePlaylistTile({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fg = theme.colorScheme.onSurface;
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: fg.withOpacity(0.10)),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.add, color: AppColors.accent, size: 36),
-              const SizedBox(height: 8),
-              Text(
-                'New Playlist',
-                style: TextStyle(color: fg),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaylistCard extends StatelessWidget {
-  final PlaylistSummary playlist;
-  const _PlaylistCard({required this.playlist});
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fg = theme.colorScheme.onSurface;
     return Container(
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
+        shape: BoxShape.circle,
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: fg.withOpacity(0.18)),
       ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: fg.withOpacity(0.08),
-                child: Center(
-                  child: Icon(
-                    Icons.queue_music,
-                    color: fg.withOpacity(0.5),
-                    size: 56,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            playlist.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            '${playlist.songCount} songs',
-            style: TextStyle(color: theme.hintColor),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyHint extends StatelessWidget {
-  final String text;
-  const _EmptyHint({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        text,
-        style: TextStyle(color: Theme.of(context).hintColor),
-      ),
+      child: Icon(CupertinoIcons.person_fill, color: fg.withOpacity(0.7)),
     );
   }
 }

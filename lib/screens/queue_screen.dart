@@ -77,7 +77,7 @@ class QueueScreen extends ConsumerWidget {
                             (currentIndex < 0 ? 0 : currentIndex) + listIndex;
                         final song = upcoming[listIndex];
                         final isCurrent = globalIndex == currentIndex;
-                        return _QueueRow(
+                        final row = _QueueRow(
                           key: ValueKey('${song.videoId}-$globalIndex'),
                           song: song,
                           listIndex: listIndex,
@@ -94,6 +94,29 @@ class QueueScreen extends ConsumerWidget {
                               : () => ref
                                   .read(playerControllerProvider)
                                   .removeAt(globalIndex),
+                        );
+                        if (isCurrent) {
+                          return row;
+                        }
+                        // Swipe-left to remove from queue (iOS-style).
+                        return Dismissible(
+                          key: ValueKey(
+                            'dismiss-${song.videoId}-$globalIndex',
+                          ),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            color: Colors.redAccent.withOpacity(0.85),
+                            child: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                            ),
+                          ),
+                          onDismissed: (_) => ref
+                              .read(playerControllerProvider)
+                              .removeAt(globalIndex),
+                          child: row,
                         );
                       },
                     ),

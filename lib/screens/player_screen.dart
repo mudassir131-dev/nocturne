@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:share_plus/share_plus.dart';
@@ -14,6 +15,7 @@ import '../utils/theme.dart';
 import '../widgets/dynamic_gradient_background.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/ios_progress_bar.dart';
+import 'album_screen.dart';
 import 'equalizer_screen.dart';
 import 'lyrics_screen.dart';
 import 'queue_screen.dart';
@@ -63,17 +65,19 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               child: Column(
                 children: [
                   _TopBar(song: song),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Expanded(child: _AlbumArt(song: song)),
-                  const SizedBox(height: 22),
-                  _TitleRow(song: song),
                   const SizedBox(height: 18),
-                  _ProgressSection(),
-                  const SizedBox(height: 12),
+                  _TitleRow(song: song),
+                  const SizedBox(height: 14),
+                  const _ProgressSection(),
+                  const SizedBox(height: 8),
                   _Controls(),
+                  const SizedBox(height: 12),
+                  const _VolumeSlider(),
                   const SizedBox(height: 16),
                   _Footer(song: song),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -138,8 +142,8 @@ class _AlbumArt extends ConsumerWidget {
     final playing = ref.watch(isPlayingProvider).value ?? false;
     return Center(
       child: AnimatedScale(
-        scale: playing ? 1.0 : 0.86,
-        duration: const Duration(milliseconds: 380),
+        scale: playing ? 1.0 : 0.85,
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 380),
@@ -232,15 +236,100 @@ class _TitleRow extends ConsumerWidget {
 }
 
 class _ProgressSection extends ConsumerWidget {
+  const _ProgressSection();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pos = ref.watch(positionProvider).value ?? Duration.zero;
     final dur = ref.watch(durationProvider).value ?? Duration.zero;
 
-    return IosProgressBar(
-      position: pos,
-      duration: dur,
-      onSeek: (p) => ref.read(playerControllerProvider).seek(p),
+    return Column(
+      children: [
+        IosProgressBar(
+          position: pos,
+          duration: dur,
+          onSeek: (p) => ref.read(playerControllerProvider).seek(p),
+        ),
+        const SizedBox(height: 6),
+        const Center(child: _LosslessBadge()),
+      ],
+    );
+  }
+}
+
+/// Small "Lossless" badge under the progress bar — shown whenever the
+/// resolved stream is opus / m4a (which we always prefer thanks to the
+/// backend's `bestaudio[ext=opus]/...` format selector). The actual
+/// codec isn't introspected from just_audio, so this is informational.
+class _LosslessBadge extends StatelessWidget {
+  const _LosslessBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: const Text(
+        'LOSSLESS',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+/// Volume slider mirroring iOS's player layout: speaker icon left,
+/// loud icon right, thin red track in the middle.
+class _VolumeSlider extends ConsumerStatefulWidget {
+  const _VolumeSlider();
+
+  @override
+  ConsumerState<_VolumeSlider> createState() => _VolumeSliderState();
+}
+
+class _VolumeSliderState extends ConsumerState<_VolumeSlider> {
+  double _value = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _value = ref.read(audioHandlerProvider).player.volume;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(CupertinoIcons.speaker_1_fill, color: Colors.white70, size: 16),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppColors.accent,
+              inactiveTrackColor: Colors.white.withOpacity(0.18),
+              thumbColor: Colors.white,
+              trackHeight: 2,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(
+              value: _value.clamp(0.0, 1.0),
+              onChanged: (v) {
+                setState(() => _value = v);
+                ref.read(audioHandlerProvider).player.setVolume(v);
+              },
+            ),
+          ),
+        ),
+        const Icon(CupertinoIcons.speaker_3_fill, color: Colors.white, size: 16),
+      ],
     );
   }
 }
@@ -265,6 +354,7 @@ class _ControlsState extends ConsumerState<_Controls> {
           icon: CupertinoIcons.shuffle,
           active: shuffle,
           onTap: () async {
+            HapticFeedback.selectionClick();
             await ctrl.setShuffle(!shuffle);
             if (mounted) setState(() {});
           },
@@ -272,7 +362,10 @@ class _ControlsState extends ConsumerState<_Controls> {
         IconButton(
           icon: const Icon(CupertinoIcons.backward_fill,
               color: Colors.white, size: 36),
-          onPressed: ctrl.previous,
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            ctrl.previous();
+          },
         ),
         AnimatedContainer(
           duration: const Duration(milliseconds: 220),
@@ -302,13 +395,19 @@ class _ControlsState extends ConsumerState<_Controls> {
                 size: 36,
               ),
             ),
-            onPressed: ctrl.togglePlay,
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              ctrl.togglePlay();
+            },
           ),
         ),
         IconButton(
           icon: const Icon(CupertinoIcons.forward_fill,
               color: Colors.white, size: 36),
-          onPressed: ctrl.next,
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            ctrl.next();
+          },
         ),
         _IconToggle(
           icon: repeat == LoopMode.one
@@ -316,6 +415,7 @@ class _ControlsState extends ConsumerState<_Controls> {
               : CupertinoIcons.repeat,
           active: repeat != LoopMode.off,
           onTap: () async {
+            HapticFeedback.selectionClick();
             final next = switch (repeat) {
               LoopMode.off => LoopMode.all,
               LoopMode.all => LoopMode.one,
@@ -389,7 +489,19 @@ class _Footer extends ConsumerWidget {
           },
         ),
         _FooterButton(
-          icon: CupertinoIcons.music_note_2,
+          icon: CupertinoIcons.rectangle_on_rectangle_angled,
+          label: 'AirPlay',
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('AirPlay routing coming soon.'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+        _FooterButton(
+          icon: CupertinoIcons.music_note_list,
           label: 'Queue',
           onTap: () {
             showModalBottomSheet<void>(
@@ -410,17 +522,6 @@ class _Footer extends ConsumerWidget {
                   fillOpacity: 0.18,
                   child: const QueueScreen(),
                 ),
-              ),
-            );
-          },
-        ),
-        _FooterButton(
-          icon: CupertinoIcons.equal_square,
-          label: 'EQ',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const EqualizerScreen(),
               ),
             );
           },
@@ -488,9 +589,9 @@ class _MoreMenuSheetState extends ConsumerState<_MoreMenuSheet> {
   @override
   Widget build(BuildContext context) {
     final handler = ref.watch(audioHandlerProvider);
-    final shuffle = handler.shuffleEnabled;
-    final repeat = handler.loopMode;
+    final db = ref.watch(databaseServiceProvider);
     final ctrl = ref.read(playerControllerProvider);
+    final liked = db.isLiked(widget.song.videoId);
 
     return SafeArea(
       child: Padding(
@@ -499,85 +600,305 @@ class _MoreMenuSheetState extends ConsumerState<_MoreMenuSheet> {
           radius: BorderRadius.circular(26),
           padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
           fillOpacity: 0.20,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              _MenuRow(
-                icon: CupertinoIcons.shuffle,
-                label: 'Shuffle',
-                trailing: _Toggle(active: shuffle),
-                onTap: () async {
-                  await ctrl.setShuffle(!shuffle);
-                  if (mounted) setState(() {});
-                },
-              ),
-              _MenuRow(
-                icon: repeat == LoopMode.one
-                    ? CupertinoIcons.repeat_1
-                    : CupertinoIcons.repeat,
-                label: switch (repeat) {
-                  LoopMode.off => 'Repeat: Off',
-                  LoopMode.all => 'Repeat: All',
-                  LoopMode.one => 'Repeat: One',
-                },
-                onTap: () async {
-                  final next = switch (repeat) {
-                    LoopMode.off => LoopMode.all,
-                    LoopMode.all => LoopMode.one,
-                    LoopMode.one => LoopMode.off,
-                  };
-                  await ctrl.setRepeat(next);
-                  if (mounted) setState(() {});
-                },
-              ),
-              _MenuRow(
-                icon: CupertinoIcons.moon_zzz,
-                label: _sleep == null
-                    ? 'Sleep timer'
-                    : 'Sleep in ${_sleep!.inMinutes} min',
-                onTap: () async {
-                  final picked = await _pickSleepDuration(context, _sleep);
-                  ctrl.setSleepTimer(picked);
-                  if (mounted) setState(() => _sleep = picked);
-                },
-              ),
-              _MenuRow(
-                icon: CupertinoIcons.share,
-                label: 'Share',
-                onTap: () {
-                  final url =
-                      'https://music.youtube.com/watch?v=${widget.song.videoId}';
-                  Share.share(
-                    '${widget.song.title} - ${widget.song.artist}\n$url',
-                  );
-                  Navigator.of(context).pop();
-                },
-              ),
-              _MenuRow(
-                icon: CupertinoIcons.cloud_download,
-                label: 'Download',
-                onTap: () {
-                  final api = ref.read(apiServiceProvider);
-                  final url = api.downloadUrl(widget.song.videoId);
-                  Share.shareUri(Uri.parse(url));
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
+                _MenuRow(
+                  icon: liked
+                      ? CupertinoIcons.heart_fill
+                      : CupertinoIcons.heart,
+                  label: liked ? 'Loved' : 'Love',
+                  iconColor: liked ? AppColors.accent : Colors.white,
+                  onTap: () async {
+                    HapticFeedback.selectionClick();
+                    if (liked) {
+                      await db.unlikeSong(widget.song.videoId);
+                    } else {
+                      await db.likeSong(widget.song);
+                    }
+                    if (mounted) setState(() {});
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.hand_thumbsdown,
+                  label: 'Dislike',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ctrl.next();
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('We\u2019ll show fewer like this.'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.cloud_download,
+                  label: 'Download',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    final api = ref.read(apiServiceProvider);
+                    final url = api.downloadUrl(widget.song.videoId);
+                    Share.shareUri(Uri.parse(url));
+                    Navigator.of(context).pop();
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.add_circled,
+                  label: 'Add to playlist',
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    await _showAddToPlaylistSheet(
+                      context,
+                      ref,
+                      widget.song,
+                    );
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.share,
+                  label: 'Share song',
+                  onTap: () {
+                    final url =
+                        'https://music.youtube.com/watch?v=${widget.song.videoId}';
+                    Share.share(
+                      '${widget.song.title} - ${widget.song.artist}\n$url',
+                    );
+                    Navigator.of(context).pop();
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.square_stack,
+                  label: 'Go to album',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    openArtistAlbum(context, seed: widget.song);
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.person_circle,
+                  label: 'Go to artist',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    openArtistAlbum(context, seed: widget.song);
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.moon_zzz,
+                  label: _sleep == null
+                      ? 'Sleep timer'
+                      : 'Sleep in ${_sleep!.inMinutes} min',
+                  onTap: () async {
+                    final picked = await _pickSleepDuration(context, _sleep);
+                    ctrl.setSleepTimer(picked);
+                    if (mounted) setState(() => _sleep = picked);
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.bolt,
+                  label: 'Crossfade settings',
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    await _showCrossfadeSheet(context, ref);
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.shuffle,
+                  label: 'Shuffle',
+                  trailing: _Toggle(active: handler.shuffleEnabled),
+                  onTap: () async {
+                    HapticFeedback.selectionClick();
+                    await ctrl.setShuffle(!handler.shuffleEnabled);
+                    if (mounted) setState(() {});
+                  },
+                ),
+                _MenuRow(
+                  icon: handler.loopMode == LoopMode.one
+                      ? CupertinoIcons.repeat_1
+                      : CupertinoIcons.repeat,
+                  label: switch (handler.loopMode) {
+                    LoopMode.off => 'Repeat: Off',
+                    LoopMode.all => 'Repeat: All',
+                    LoopMode.one => 'Repeat: One',
+                  },
+                  onTap: () async {
+                    HapticFeedback.selectionClick();
+                    final next = switch (handler.loopMode) {
+                      LoopMode.off => LoopMode.all,
+                      LoopMode.all => LoopMode.one,
+                      LoopMode.one => LoopMode.off,
+                    };
+                    await ctrl.setRepeat(next);
+                    if (mounted) setState(() {});
+                  },
+                ),
+                _MenuRow(
+                  icon: CupertinoIcons.equal_square,
+                  label: 'Equalizer',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const EqualizerScreen(),
+                    ));
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+Future<void> _showAddToPlaylistSheet(
+  BuildContext context,
+  WidgetRef ref,
+  Song song,
+) async {
+  final db = ref.read(databaseServiceProvider);
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) {
+      return StreamBuilder<List<PlaylistSummary>>(
+        stream: db.watchPlaylists(),
+        builder: (context, snap) {
+          final playlists = snap.data ?? const <PlaylistSummary>[];
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+              child: GlassPanel(
+                radius: BorderRadius.circular(26),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                fillOpacity: 0.22,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (playlists.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'Sign in with Google to create playlists.',
+                          style: TextStyle(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    for (final p in playlists)
+                      _MenuRow(
+                        icon: CupertinoIcons.music_note_list,
+                        label: '${p.name}  \u00b7  ${p.songCount}',
+                        onTap: () async {
+                          await db.addSongToPlaylist(p.id, song);
+                          if (context.mounted) Navigator.of(context).pop();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _showCrossfadeSheet(BuildContext context, WidgetRef ref) async {
+  final handler = ref.read(audioHandlerProvider);
+  double seconds = handler.crossfadeSeconds;
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (sheetContext) {
+      return StatefulBuilder(builder: (context, setState) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+            child: GlassPanel(
+              radius: BorderRadius.circular(26),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              fillOpacity: 0.22,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Crossfade',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Smoothly blend the end of one song into the next.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Text(
+                        seconds == 0
+                            ? 'Off'
+                            : '${seconds.toStringAsFixed(0)} sec',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '0 – 12 sec',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: AppColors.accent,
+                      inactiveTrackColor: Colors.white.withOpacity(0.18),
+                      thumbColor: Colors.white,
+                      trackHeight: 3,
+                    ),
+                    child: Slider(
+                      value: seconds.clamp(0, 12),
+                      min: 0,
+                      max: 12,
+                      divisions: 12,
+                      onChanged: (v) => setState(() => seconds = v),
+                      onChangeEnd: (v) => handler.setCrossfadeSeconds(v),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      });
+    },
+  );
 }
 
 Future<Duration?> _pickSleepDuration(BuildContext context, Duration? current) {
@@ -629,12 +950,14 @@ class _MenuRow extends StatelessWidget {
   final String label;
   final Widget? trailing;
   final VoidCallback onTap;
+  final Color? iconColor;
 
   const _MenuRow({
     required this.icon,
     required this.label,
     this.trailing,
     required this.onTap,
+    this.iconColor,
   });
 
   @override
@@ -648,7 +971,7 @@ class _MenuRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, color: Colors.white, size: 22),
+              Icon(icon, color: iconColor ?? Colors.white, size: 22),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(

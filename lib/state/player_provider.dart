@@ -93,4 +93,18 @@ class PlayerController {
       _handler.reorder(oldIndex, newIndex);
   void removeAt(int index) => _handler.removeAt(index);
   void setSleepTimer(Duration? d) => _handler.setSleepTimer(d);
+  void setCrossfadeSeconds(double s) => _handler.setCrossfadeSeconds(s);
+  Future<void> setSpeed(double s) => _handler.setSpeed(s);
 }
+
+/// Live sleep-timer countdown (null = no timer set).
+final sleepRemainingProvider = StreamProvider<Duration?>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.sleepRemainingStream;
+});
+
+/// Active playback speed.
+final playbackSpeedProvider = StreamProvider<double>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.player.speedStream;
+});
