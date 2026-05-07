@@ -11,6 +11,7 @@ import '../widgets/album_card.dart';
 import '../widgets/shimmer_box.dart';
 import '../widgets/song_tile.dart';
 import 'album_screen.dart';
+import 'profile_screen.dart';
 
 /// Recommended-songs feed sourced from a default search query so the home
 /// screen always has something to show, even before the user has any
@@ -181,15 +182,20 @@ class _ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fg = theme.colorScheme.onSurface;
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: theme.cardColor,
-        border: Border.all(color: fg.withOpacity(0.18)),
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
       ),
-      child: Icon(Icons.person, color: fg.withOpacity(0.7)),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.cardColor,
+          border: Border.all(color: fg.withOpacity(0.18)),
+        ),
+        child: Icon(Icons.person, color: fg.withOpacity(0.7)),
+      ),
     );
   }
 }
