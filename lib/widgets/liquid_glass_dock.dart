@@ -11,8 +11,9 @@ class DockItem {
   const DockItem({required this.icon, required this.label});
 }
 
-/// Floating, glassmorphic bottom navigation dock. Theme-aware so it
-/// reads correctly on both light and dark backgrounds.
+/// Floating glass dock with a "liquid" red indicator that slides smoothly
+/// to the selected tab. The indicator rides above the icons (frosted-glass
+/// pill) and is what gives the bar its iOS 26 feel.
 class LiquidGlassDock extends StatelessWidget {
   final List<DockItem> items;
   final int currentIndex;
@@ -24,6 +25,8 @@ class LiquidGlassDock extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
   });
+
+  static const double _height = 68;
 
   @override
   Widget build(BuildContext context) {
@@ -41,24 +44,79 @@ class LiquidGlassDock extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.dock),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: Container(
-            height: 68,
-            decoration: BoxDecoration(
-              color: glassFill,
-              borderRadius: BorderRadius.circular(AppRadius.dock),
-              border: Border.all(color: glassBorder, width: 1.5),
+          child: LayoutBuilder(builder: (context, constraints) {
+            final cellWidth = constraints.maxWidth / items.length;
+            return SizedBox(
+              height: _height,
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: glassFill,
+                      borderRadius: BorderRadius.circular(AppRadius.dock),
+                      border: Border.all(color: glassBorder, width: 1.5),
+                    ),
+                  ),
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    left: cellWidth * currentIndex + cellWidth * 0.16,
+                    top: 8,
+                    bottom: 8,
+                    width: cellWidth * 0.68,
+                    child: _LiquidIndicator(),
+                  ),
+                  Row(
+                    children: List.generate(items.length, (i) {
+                      final selected = i == currentIndex;
+                      return Expanded(
+                        child: _DockButton(
+                          item: items[i],
+                          selected: selected,
+                          onTap: () => onTap(i),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class _LiquidIndicator extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.accent.withOpacity(0.95),
+                AppColors.accent.withOpacity(0.65),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(items.length, (i) {
-                final selected = i == currentIndex;
-                return _DockButton(
-                  item: items[i],
-                  selected: selected,
-                  onTap: () => onTap(i),
-                );
-              }),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.25),
+              width: 1.0,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accent.withOpacity(0.45),
+                blurRadius: 16,
+                spreadRadius: 0,
+              ),
+            ],
           ),
         ),
       ),
@@ -81,30 +139,20 @@ class _DockButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fg = theme.colorScheme.onSurface;
-    final accent = theme.colorScheme.primary;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      decoration: BoxDecoration(
-        color: selected ? accent.withOpacity(0.18) : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            child: AnimatedScale(
-              duration: const Duration(milliseconds: 220),
-              scale: selected ? 1.08 : 1.0,
-              curve: Curves.easeOutCubic,
-              child: Icon(
-                item.icon,
-                size: 26,
-                color: selected ? accent : fg.withOpacity(0.6),
-              ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Center(
+          child: AnimatedScale(
+            scale: selected ? 1.10 : 1.0,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: Icon(
+              item.icon,
+              size: 26,
+              color: selected ? Colors.white : fg.withOpacity(0.6),
             ),
           ),
         ),

@@ -71,8 +71,7 @@ class Song {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Song && other.videoId == videoId);
+      identical(this, other) || (other is Song && other.videoId == videoId);
 
   @override
   int get hashCode => videoId.hashCode;

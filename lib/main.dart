@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'firebase_options.dart';
 import 'screens/root_screen.dart';
 import 'services/audio_service.dart' as nocturne_audio;
 import 'utils/theme.dart';
@@ -65,12 +66,16 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       await Hive.initFlutter();
       await Hive.openBox<dynamic>('liked_songs');
       await Hive.openBox<dynamic>('recently_played');
+      await Hive.openBox<dynamic>('recent_searches');
     }, timeoutSeconds: 5);
 
     await _runStep('Firebase', () async {
-      // Throws (or no-ops) when Firebase isn't configured yet — that's fine,
-      // we keep going and Firebase-dependent features stay disabled.
-      await Firebase.initializeApp();
+      // Initialize with the generated platform options. The bootstrapper
+      // will swallow any error and continue without Firebase, so even if
+      // the project ID is misconfigured the app still launches.
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     }, timeoutSeconds: 5);
 
     await _runStep('AudioService', () async {
@@ -134,8 +139,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
           // Recolour status / nav bars based on the resolved brightness so
           // they remain readable under both light and dark themes.
           final brightness = Theme.of(context).brightness;
-          final iconBrightness =
-              brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+          final iconBrightness = brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark;
           SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: iconBrightness,
@@ -216,8 +222,7 @@ class _SplashScreen extends StatelessWidget {
               height: 28,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(AppColors.accent),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
               ),
             ),
             const SizedBox(height: 32),

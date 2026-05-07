@@ -40,6 +40,14 @@ final queueProvider = Provider<List<Song>>((ref) {
   return handler.songs;
 });
 
+/// Emits whenever the queue contents change (reorder, remove, replace).
+/// Useful for widgets that need to rebuild on structural queue mutations
+/// without subscribing to the heavier stream of media item updates.
+final queueRevisionProvider = StreamProvider<int>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.queueRevisionStream;
+});
+
 /// Convenience high-level controller exposed to the UI.
 final playerControllerProvider =
     Provider<PlayerController>((ref) => PlayerController(ref));
@@ -80,4 +88,9 @@ class PlayerController {
   Future<void> previous() => _handler.skipToPrevious();
   Future<void> setShuffle(bool enabled) => _handler.toggleShuffle(enabled);
   Future<void> setRepeat(LoopMode mode) => _handler.setLoopMode(mode);
+  Future<void> jumpTo(int index) => _handler.playIndex(index);
+  void reorder(int oldIndex, int newIndex) =>
+      _handler.reorder(oldIndex, newIndex);
+  void removeAt(int index) => _handler.removeAt(index);
+  void setSleepTimer(Duration? d) => _handler.setSleepTimer(d);
 }

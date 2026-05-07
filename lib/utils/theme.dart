@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized color palette for the Nocturne app.
 class AppColors {
@@ -49,7 +48,9 @@ class AppTheme {
 
   static ThemeData dark() {
     final base = ThemeData.dark(useMaterial3: true);
-    final textTheme = GoogleFonts.interTextTheme(base.textTheme).apply(
+    final textTheme = base.textTheme.apply(
+      fontFamily: 'SF Pro Display',
+      fontFamilyFallback: const ['Inter', 'Roboto'],
       bodyColor: AppColors.textPrimary,
       displayColor: AppColors.textPrimary,
     );
@@ -106,7 +107,9 @@ class AppTheme {
 
   static ThemeData light() {
     final base = ThemeData.light(useMaterial3: true);
-    final textTheme = GoogleFonts.interTextTheme(base.textTheme).apply(
+    final textTheme = base.textTheme.apply(
+      fontFamily: 'SF Pro Display',
+      fontFamilyFallback: const ['Inter', 'Roboto'],
       bodyColor: AppColors.lightTextPrimary,
       displayColor: AppColors.lightTextPrimary,
     );

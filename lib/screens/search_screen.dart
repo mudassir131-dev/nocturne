@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/song.dart';
 import '../services/api_service.dart';
@@ -60,6 +62,7 @@ class _SearchNotifier extends StateNotifier<_SearchState> {
       final api = _ref.read(apiServiceProvider);
       final res = await api.search(q);
       state = state.copyWith(loading: false, results: res);
+      _RecentSearches.push(q);
     } catch (e) {
       state = state.copyWith(loading: false, error: e.toString());
     }
@@ -128,14 +131,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               controller: _controller,
               onChanged: notifier.onChanged,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Expanded(
               child: state.query.isEmpty
-                  ? _CategoriesGrid(
+                  ? _Browse(
                       categories: _categories,
-                      onTap: (c) {
-                        _controller.text = c.label;
-                        notifier.onChanged(c.label);
+                      onPick: (label) {
+                        _controller.text = label;
+                        notifier.onChanged(label);
                       },
                     )
                   : _Results(state: state),
@@ -147,69 +150,176 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-class _Category {
-  final String label;
-  final List<Color> gradient;
-  const _Category(this.label, this.gradient);
-}
-
-class _CategoriesGrid extends StatelessWidget {
+class _Browse extends StatelessWidget {
   final List<_Category> categories;
-  final ValueChanged<_Category> onTap;
+  final ValueChanged<String> onPick;
 
-  const _CategoriesGrid({required this.categories, required this.onTap});
+  const _Browse({required this.categories, required this.onPick});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.only(bottom: 180),
-      itemCount: categories.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.6,
-      ),
-      itemBuilder: (_, i) {
-        final c = categories[i];
-        return GestureDetector(
-          onTap: () => onTap(c),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: c.gradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.card),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.20),
-                    width: 1,
-                  ),
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    c.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
+    return ValueListenableBuilder<Box<dynamic>>(
+      valueListenable: _RecentSearches.box.listenable(),
+      builder: (context, box, _) {
+        final recents = _RecentSearches.list();
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 180),
+          children: [
+            if (recents.isNotEmpty) ...[
+              _SectionHeader(
+                title: 'Recent',
+                onClear: _RecentSearches.clear,
+              ),
+              const SizedBox(height: 8),
+              _RecentChips(items: recents, onTap: onPick),
+              const SizedBox(height: 20),
+            ],
+            const _SectionHeader(title: 'Browse'),
+            const SizedBox(height: 8),
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: categories.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.6,
+              ),
+              itemBuilder: (_, i) {
+                final c = categories[i];
+                return GestureDetector(
+                  onTap: () => onPick(c.label),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: c.gradient,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.card),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.20),
+                            width: 1,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(14),
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Text(
+                            c.label,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          ),
+          ],
         );
       },
     );
   }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onClear;
+  const _SectionHeader({required this.title, this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+        ),
+        if (onClear != null)
+          TextButton(
+            onPressed: onClear,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).hintColor,
+            ),
+            child: const Text('Clear'),
+          ),
+      ],
+    );
+  }
+}
+
+class _RecentChips extends StatelessWidget {
+  final List<String> items;
+  final ValueChanged<String> onTap;
+
+  const _RecentChips({required this.items, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = Theme.of(context).colorScheme.onSurface;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((q) {
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => onTap(q),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: fg.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: fg.withOpacity(0.18)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(CupertinoIcons.clock,
+                    size: 14, color: fg.withOpacity(0.6)),
+                const SizedBox(width: 6),
+                Text(
+                  q,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => _RecentSearches.remove(q),
+                  child: Icon(CupertinoIcons.xmark,
+                      size: 14, color: fg.withOpacity(0.5)),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _Category {
+  final String label;
+  final List<Color> gradient;
+  const _Category(this.label, this.gradient);
 }
 
 class _Results extends ConsumerWidget {
@@ -254,5 +364,57 @@ class _Results extends ConsumerWidget {
         );
       },
     );
+  }
+}
+
+/// Persisted recent-search history. Backed by the `recent_searches` Hive
+/// box (lazily opened on first access). Capped at 12 entries.
+class _RecentSearches {
+  static const int _limit = 12;
+  static const String _boxName = 'recent_searches';
+
+  static Box<dynamic> get box {
+    if (!Hive.isBoxOpen(_boxName)) {
+      // Sync open works because Hive.initFlutter is called from main()
+      // before the first frame, but the boxes might not have been opened
+      // for non-critical features yet.
+      Hive.openBox<dynamic>(_boxName);
+    }
+    return Hive.box<dynamic>(_boxName);
+  }
+
+  static List<String> list() {
+    if (!Hive.isBoxOpen(_boxName)) return const [];
+    final raw = Hive.box<dynamic>(_boxName).get('items');
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList(growable: false);
+    }
+    return const [];
+  }
+
+  static Future<void> push(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    if (!Hive.isBoxOpen(_boxName)) {
+      await Hive.openBox<dynamic>(_boxName);
+    }
+    final current = list().toList();
+    current.removeWhere((e) => e.toLowerCase() == q.toLowerCase());
+    current.insert(0, q);
+    if (current.length > _limit) {
+      current.removeRange(_limit, current.length);
+    }
+    await Hive.box<dynamic>(_boxName).put('items', current);
+  }
+
+  static Future<void> remove(String query) async {
+    if (!Hive.isBoxOpen(_boxName)) return;
+    final current = list().toList()..removeWhere((e) => e == query);
+    await Hive.box<dynamic>(_boxName).put('items', current);
+  }
+
+  static Future<void> clear() async {
+    if (!Hive.isBoxOpen(_boxName)) return;
+    await Hive.box<dynamic>(_boxName).delete('items');
   }
 }

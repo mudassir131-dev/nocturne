@@ -124,7 +124,8 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.surround_sound, color: theme.colorScheme.primary),
+                      Icon(Icons.surround_sound,
+                          color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
                         'Spatial / Bass Boost',

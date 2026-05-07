@@ -38,8 +38,7 @@ class LibraryScreen extends ConsumerWidget {
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -102,9 +101,8 @@ class LibraryScreen extends ConsumerWidget {
                 Navigator.of(ctx).pop();
                 return;
               }
-              final id = await ref
-                  .read(databaseServiceProvider)
-                  .createPlaylist(name);
+              final id =
+                  await ref.read(databaseServiceProvider).createPlaylist(name);
               if (!ctx.mounted) return;
               Navigator.of(ctx).pop();
               if (id == null) {

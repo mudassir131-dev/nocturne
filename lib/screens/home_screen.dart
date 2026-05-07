@@ -88,8 +88,7 @@ class HomeScreen extends ConsumerWidget {
                     title: s.title,
                     subtitle: s.artist,
                     imageUrl: s.thumbnail,
-                    onTap: () =>
-                        openArtistAlbum(context, seed: s),
+                    onTap: () => openArtistAlbum(context, seed: s),
                   );
                 },
               ),

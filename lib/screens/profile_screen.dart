@@ -158,9 +158,8 @@ class _UserCard extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-            backgroundImage: (user?.photoURL != null)
-                ? NetworkImage(user!.photoURL!)
-                : null,
+            backgroundImage:
+                (user?.photoURL != null) ? NetworkImage(user!.photoURL!) : null,
             child: user?.photoURL == null
                 ? Icon(Icons.person, color: theme.colorScheme.onSurface)
                 : null,

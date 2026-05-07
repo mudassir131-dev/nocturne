@@ -10,7 +10,8 @@ import 'profile_screen.dart';
 import 'search_screen.dart';
 
 /// Top-level scaffold with the liquid-glass bottom dock and the mini player
-/// floating above it.
+/// floating above it. The body is a [PageView] so users can swipe
+/// horizontally between tabs (with the red indicator sliding in sync).
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
 
@@ -19,6 +20,7 @@ class RootScreen extends ConsumerStatefulWidget {
 }
 
 class _RootScreenState extends ConsumerState<RootScreen> {
+  late final PageController _controller;
   int _index = 0;
 
   static const List<DockItem> _items = [
@@ -29,34 +31,44 @@ class _RootScreenState extends ConsumerState<RootScreen> {
     DockItem(icon: Icons.person, label: 'Profile'),
   ];
 
-  Widget _pageFor(int index) {
-    switch (index) {
-      case 0:
-        return const HomeScreen();
-      case 1:
-        return const SearchScreen();
-      case 2:
-        return const LibraryScreen();
-      case 3:
-        return const LikedScreen();
-      case 4:
-      default:
-        return const ProfileScreen();
-    }
+  static const List<Widget> _pages = [
+    HomeScreen(),
+    SearchScreen(),
+    LibraryScreen(),
+    LikedScreen(),
+    ProfileScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(initialPage: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _selectTab(int i) {
+    if (i == _index) return;
+    _controller.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        child: KeyedSubtree(
-          key: ValueKey<int>(_index),
-          child: _pageFor(_index),
-        ),
+      body: PageView(
+        controller: _controller,
+        physics: const _IosTabsPhysics(),
+        onPageChanged: (i) => setState(() => _index = i),
+        children: _pages,
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -70,11 +82,26 @@ class _RootScreenState extends ConsumerState<RootScreen> {
             LiquidGlassDock(
               items: _items,
               currentIndex: _index,
-              onTap: (i) => setState(() => _index = i),
+              onTap: _selectTab,
             ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Slightly springier scroll feel for tab swiping.
+class _IosTabsPhysics extends PageScrollPhysics {
+  const _IosTabsPhysics();
+
+  @override
+  SpringDescription get spring => const SpringDescription(
+        mass: 0.5,
+        stiffness: 110,
+        damping: 14,
+      );
+
+  @override
+  PageScrollPhysics applyTo(ScrollPhysics? ancestor) => const _IosTabsPhysics();
 }

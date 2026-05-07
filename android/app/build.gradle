@@ -23,9 +23,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.nocturne.nocturne"
+        // Aligned with the Firebase project's google-services.json
+        // (`client.client_info.android_client_info.package_name`).
+        applicationId = "com.nocturne.app"
         // 21 is required by firebase_auth + just_audio + audio_service.
-        minSdk = 21
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

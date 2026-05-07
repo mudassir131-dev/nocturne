@@ -32,11 +32,16 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   final List<Song> _queue = [];
   final StreamController<int> _indexController =
       StreamController<int>.broadcast();
+  final StreamController<int> _queueRevisionController =
+      StreamController<int>.broadcast();
   final Random _rng = Random();
   int _currentIndex = -1;
+  int _queueRevision = 0;
   bool _shuffle = false;
   LoopMode _loopMode = LoopMode.off;
   List<int> _shuffleOrder = const [];
+  Timer? _sleepTimer;
+  Duration? _sleepRemaining;
 
   NocturneAudioHandler() {
     _player = AudioPlayer(
@@ -66,17 +71,24 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   /// shuffle pick). Subscribed by `currentSongProvider`.
   Stream<int> get currentIndexStream => _indexController.stream;
 
-  Song? get currentSong =>
-      (_currentIndex >= 0 && _currentIndex < _queue.length)
-          ? _queue[_currentIndex]
-          : null;
+  /// Fires whenever the queue contents (not just the index) change. The
+  /// emitted int is a monotonically increasing revision so listeners can
+  /// `.distinct()` cheaply.
+  Stream<int> get queueRevisionStream => _queueRevisionController.stream;
+
+  /// Active sleep-timer remaining duration (null when no timer is set).
+  Duration? get sleepRemaining => _sleepRemaining;
+
+  Song? get currentSong => (_currentIndex >= 0 && _currentIndex < _queue.length)
+      ? _queue[_currentIndex]
+      : null;
 
   /// Replace the queue with [songs] and start playback at [startIndex].
   Future<void> setQueue(List<Song> songs, {int startIndex = 0}) async {
     _queue
       ..clear()
       ..addAll(songs);
-    queue.add(_queue.map(_toMediaItem).toList());
+    _bumpQueueRevision();
     if (_shuffle) _rebuildShuffleOrder(pinFirst: startIndex);
     if (songs.isEmpty) {
       _setIndex(-1);
@@ -85,6 +97,66 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
       return;
     }
     await _playIndex(startIndex.clamp(0, songs.length - 1));
+  }
+
+  /// Jump the queue to a specific [index] without reshuffling.
+  Future<void> playIndex(int index) async {
+    if (index < 0 || index >= _queue.length) return;
+    await _playIndex(index);
+  }
+
+  /// Reorder the queue so the song at [oldIndex] moves to [newIndex].
+  /// Both indices are global (queue-relative). Tracks the active item so
+  /// the currently-playing track keeps highlighting correctly.
+  void reorder(int oldIndex, int newIndex) {
+    if (oldIndex == newIndex) return;
+    if (oldIndex < 0 || oldIndex >= _queue.length) return;
+    if (newIndex < 0 || newIndex >= _queue.length) return;
+    final song = _queue.removeAt(oldIndex);
+    _queue.insert(newIndex, song);
+    if (_currentIndex == oldIndex) {
+      _setIndex(newIndex);
+    } else {
+      // Adjust the active index as items slide past it.
+      if (oldIndex < _currentIndex && newIndex >= _currentIndex) {
+        _setIndex(_currentIndex - 1);
+      } else if (oldIndex > _currentIndex && newIndex <= _currentIndex) {
+        _setIndex(_currentIndex + 1);
+      }
+    }
+    if (_shuffle) _rebuildShuffleOrder(pinFirst: _currentIndex);
+    _bumpQueueRevision();
+  }
+
+  /// Remove the queue entry at [index]. Refuses to remove the actively
+  /// playing track (callers should `skipToNext` first).
+  void removeAt(int index) {
+    if (index < 0 || index >= _queue.length) return;
+    if (index == _currentIndex) return;
+    _queue.removeAt(index);
+    if (index < _currentIndex) {
+      _setIndex(_currentIndex - 1);
+    }
+    if (_shuffle) _rebuildShuffleOrder(pinFirst: _currentIndex);
+    _bumpQueueRevision();
+  }
+
+  void _bumpQueueRevision() {
+    queue.add(_queue.map(_toMediaItem).toList());
+    _queueRevision += 1;
+    _queueRevisionController.add(_queueRevision);
+  }
+
+  /// Schedule the player to pause after [duration]. Pass `null` to clear.
+  void setSleepTimer(Duration? duration) {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepRemaining = duration;
+    if (duration == null) return;
+    _sleepTimer = Timer(duration, () {
+      _sleepRemaining = null;
+      _player.pause();
+    });
   }
 
   // ---------- queue navigation ----------
@@ -278,7 +350,9 @@ class NocturneAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> dispose() async {
+    _sleepTimer?.cancel();
     await _indexController.close();
+    await _queueRevisionController.close();
     await _player.dispose();
     _resolver.dispose();
   }

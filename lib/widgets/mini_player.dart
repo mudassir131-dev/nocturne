@@ -204,7 +204,8 @@ class _ProgressBar extends ConsumerWidget {
       height: 2,
       child: LinearProgressIndicator(
         value: total > 0 ? progress : null,
-        backgroundColor: (isDark ? Colors.white : Colors.black).withOpacity(0.15),
+        backgroundColor:
+            (isDark ? Colors.white : Colors.black).withOpacity(0.15),
         valueColor: const AlwaysStoppedAnimation(AppColors.accent),
       ),
     );
