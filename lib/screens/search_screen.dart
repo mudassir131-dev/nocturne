@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/song.dart';
 import '../services/api_service.dart';
@@ -60,6 +62,7 @@ class _SearchNotifier extends StateNotifier<_SearchState> {
       final api = _ref.read(apiServiceProvider);
       final res = await api.search(q);
       state = state.copyWith(loading: false, results: res);
+      _RecentSearches.push(q);
     } catch (e) {
       state = state.copyWith(loading: false, error: e.toString());
     }
@@ -77,6 +80,19 @@ final _searchProvider =
   (ref) => _SearchNotifier(ref),
 );
 
+/// Filter tab on the results page.
+enum _ResultFilter { top, songs, albums, artists, playlists }
+
+extension on _ResultFilter {
+  String get label => switch (this) {
+        _ResultFilter.top => 'Top',
+        _ResultFilter.songs => 'Songs',
+        _ResultFilter.albums => 'Albums',
+        _ResultFilter.artists => 'Artists',
+        _ResultFilter.playlists => 'Playlists',
+      };
+}
+
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -86,16 +102,40 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
+  _ResultFilter _filter = _ResultFilter.top;
 
+  /// Six "Browse Categories" gradient cards as specified.
   static const _categories = <_Category>[
-    _Category('Pop', [Color(0xFFE53935), Color(0xFFFF7043)]),
-    _Category('Hip Hop', [Color(0xFF6A1B9A), Color(0xFF8E24AA)]),
-    _Category('Rock', [Color(0xFF263238), Color(0xFF455A64)]),
-    _Category('Lo-fi', [Color(0xFF1E88E5), Color(0xFF26A69A)]),
-    _Category('Trending', [Color(0xFFE53935), Color(0xFFFFB300)]),
-    _Category('Chill', [Color(0xFF7E57C2), Color(0xFF26C6DA)]),
-    _Category('Workout', [Color(0xFFFF6F00), Color(0xFFD81B60)]),
-    _Category('Jazz', [Color(0xFF3E2723), Color(0xFF8D6E63)]),
+    _Category(
+      'Pop',
+      [Color(0xFFEC407A), Color(0xFFF06292)],
+      CupertinoIcons.music_mic,
+    ),
+    _Category(
+      'Hip-Hop',
+      [Color(0xFFFF7043), Color(0xFFFFA726)],
+      CupertinoIcons.headphones,
+    ),
+    _Category(
+      'Rock',
+      [Color(0xFFE53935), Color(0xFFB71C1C)],
+      CupertinoIcons.music_note_2,
+    ),
+    _Category(
+      'Lo-Fi',
+      [Color(0xFF7E57C2), Color(0xFF5E35B1)],
+      CupertinoIcons.cloud_moon,
+    ),
+    _Category(
+      'Trending',
+      [Color(0xFF1E88E5), Color(0xFF26C6DA)],
+      CupertinoIcons.flame,
+    ),
+    _Category(
+      'Desi',
+      [Color(0xFF43A047), Color(0xFF2E7D32)],
+      CupertinoIcons.star_circle,
+    ),
   ];
 
   @override
@@ -109,40 +149,324 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final state = ref.watch(_searchProvider);
     final notifier = ref.read(_searchProvider.notifier);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Search',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
+    return Scaffold(
+      // Solid background so the search route doesn't bleed through into
+      // the underlying home page + dock + mini-player.
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Search',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 28,
+                      ),
+                    ),
+                  ),
+                  // Close button so the user can dismiss search back to
+                  // the previous tab (the dock + mini-player are hidden
+                  // while search is open since the route is opaque).
+                  IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: Icon(
+                      CupertinoIcons.xmark,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    splashRadius: 20,
+                    tooltip: 'Close',
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            LiquidGlassSearchBar(
-              controller: _controller,
-              onChanged: notifier.onChanged,
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: state.query.isEmpty
-                  ? _CategoriesGrid(
-                      categories: _categories,
-                      onTap: (c) {
-                        _controller.text = c.label;
-                        notifier.onChanged(c.label);
-                      },
-                    )
-                  : _Results(state: state),
-            ),
-          ],
+              const SizedBox(height: 8),
+              LiquidGlassSearchBar(
+                controller: _controller,
+                onChanged: notifier.onChanged,
+                trailing: Icon(
+                  CupertinoIcons.mic_fill,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: state.query.isEmpty
+                    ? _Browse(
+                        categories: _categories,
+                        onPick: (label) {
+                          _controller.text = label;
+                          notifier.onChanged(label);
+                        },
+                      )
+                    : Column(
+                        children: [
+                          _FilterTabs(
+                            filter: _filter,
+                            onChanged: (f) => setState(() => _filter = f),
+                          ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: _Results(state: state, filter: _filter),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _FilterTabs extends StatelessWidget {
+  final _ResultFilter filter;
+  final ValueChanged<_ResultFilter> onChanged;
+  const _FilterTabs({required this.filter, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final f in _ResultFilter.values)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _FilterChip(
+                label: f.label,
+                active: filter == f,
+                onTap: () => onChanged(f),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  const _FilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? AppColors.accent : Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active
+                ? AppColors.accent
+                : Colors.white.withOpacity(0.18),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : Colors.white.withOpacity(0.8),
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Browse extends StatelessWidget {
+  final List<_Category> categories;
+  final ValueChanged<String> onPick;
+
+  const _Browse({required this.categories, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Box<dynamic>>(
+      valueListenable: _RecentSearches.box.listenable(),
+      builder: (context, box, _) {
+        final recents = _RecentSearches.list();
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 180),
+          children: [
+            if (recents.isNotEmpty) ...[
+              _SectionHeader(
+                title: 'Recent',
+                onClear: _RecentSearches.clear,
+              ),
+              const SizedBox(height: 8),
+              _RecentChips(items: recents, onTap: onPick),
+              const SizedBox(height: 20),
+            ],
+            const _SectionHeader(title: 'Browse Categories'),
+            const SizedBox(height: 8),
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: categories.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
+              ),
+              itemBuilder: (_, i) {
+                final c = categories[i];
+                return GestureDetector(
+                  onTap: () => onPick(c.label),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: c.gradient,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.card),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.20),
+                            width: 1,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(14),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Icon(
+                                c.icon,
+                                color: Colors.white.withOpacity(0.85),
+                                size: 26,
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.bottomLeft,
+                              child: Text(
+                                c.label,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onClear;
+  const _SectionHeader({required this.title, this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+        ),
+        if (onClear != null)
+          TextButton(
+            onPressed: onClear,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).hintColor,
+            ),
+            child: const Text('Clear'),
+          ),
+      ],
+    );
+  }
+}
+
+class _RecentChips extends StatelessWidget {
+  final List<String> items;
+  final ValueChanged<String> onTap;
+
+  const _RecentChips({required this.items, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = Theme.of(context).colorScheme.onSurface;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((q) {
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => onTap(q),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: fg.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: fg.withOpacity(0.18)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(CupertinoIcons.clock,
+                    size: 14, color: fg.withOpacity(0.6)),
+                const SizedBox(width: 6),
+                Text(
+                  q,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => _RecentSearches.remove(q),
+                  child: Icon(CupertinoIcons.xmark,
+                      size: 14, color: fg.withOpacity(0.5)),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -150,71 +474,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 class _Category {
   final String label;
   final List<Color> gradient;
-  const _Category(this.label, this.gradient);
-}
-
-class _CategoriesGrid extends StatelessWidget {
-  final List<_Category> categories;
-  final ValueChanged<_Category> onTap;
-
-  const _CategoriesGrid({required this.categories, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.only(bottom: 180),
-      itemCount: categories.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.6,
-      ),
-      itemBuilder: (_, i) {
-        final c = categories[i];
-        return GestureDetector(
-          onTap: () => onTap(c),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: c.gradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.card),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.20),
-                    width: 1,
-                  ),
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    c.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  final IconData icon;
+  const _Category(this.label, this.gradient, this.icon);
 }
 
 class _Results extends ConsumerWidget {
   final _SearchState state;
-  const _Results({required this.state});
+  final _ResultFilter filter;
+  const _Results({required this.state, required this.filter});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -240,6 +507,10 @@ class _Results extends ConsumerWidget {
         ),
       );
     }
+    // The backend returns videos only; the Songs/Albums/Artists/Playlists
+    // filters are surfaced for parity with iOS but currently render the
+    // same flat song list. Once the backend grows those resource types
+    // we can switch on `filter` here.
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 180),
       itemCount: state.results.length,
@@ -254,5 +525,54 @@ class _Results extends ConsumerWidget {
         );
       },
     );
+  }
+}
+
+/// Persisted recent-search history. Backed by the `recent_searches` Hive
+/// box (lazily opened on first access). Capped at 12 entries.
+class _RecentSearches {
+  static const int _limit = 12;
+  static const String _boxName = 'recent_searches';
+
+  static Box<dynamic> get box {
+    if (!Hive.isBoxOpen(_boxName)) {
+      Hive.openBox<dynamic>(_boxName);
+    }
+    return Hive.box<dynamic>(_boxName);
+  }
+
+  static List<String> list() {
+    if (!Hive.isBoxOpen(_boxName)) return const [];
+    final raw = Hive.box<dynamic>(_boxName).get('items');
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList(growable: false);
+    }
+    return const [];
+  }
+
+  static Future<void> push(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    if (!Hive.isBoxOpen(_boxName)) {
+      await Hive.openBox<dynamic>(_boxName);
+    }
+    final current = list().toList();
+    current.removeWhere((e) => e.toLowerCase() == q.toLowerCase());
+    current.insert(0, q);
+    if (current.length > _limit) {
+      current.removeRange(_limit, current.length);
+    }
+    await Hive.box<dynamic>(_boxName).put('items', current);
+  }
+
+  static Future<void> remove(String query) async {
+    if (!Hive.isBoxOpen(_boxName)) return;
+    final current = list().toList()..removeWhere((e) => e == query);
+    await Hive.box<dynamic>(_boxName).put('items', current);
+  }
+
+  static Future<void> clear() async {
+    if (!Hive.isBoxOpen(_boxName)) return;
+    await Hive.box<dynamic>(_boxName).delete('items');
   }
 }

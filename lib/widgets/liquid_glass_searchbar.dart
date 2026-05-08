@@ -12,12 +12,16 @@ class LiquidGlassSearchBar extends StatelessWidget {
   final VoidCallback? onSubmitted;
   final String hint;
 
+  /// Optional trailing widget (e.g. a mic icon).
+  final Widget? trailing;
+
   const LiquidGlassSearchBar({
     super.key,
     required this.controller,
     this.onChanged,
     this.onSubmitted,
     this.hint = 'Search songs, artists, albums...',
+    this.trailing,
   });
 
   @override
@@ -56,7 +60,10 @@ class LiquidGlassSearchBar extends StatelessWidget {
               suffixIcon: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: controller,
                 builder: (_, value, __) => value.text.isEmpty
-                    ? const SizedBox.shrink()
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: trailing ?? const SizedBox.shrink(),
+                      )
                     : IconButton(
                         icon: Icon(Icons.close, color: fg.withOpacity(0.7)),
                         onPressed: () {

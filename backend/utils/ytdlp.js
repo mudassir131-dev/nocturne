@@ -87,18 +87,62 @@ function videoUrl(videoId) {
 }
 
 /**
- * Run `yt-dlp ytsearchN:query --dump-json --flat-playlist` and return
- * a normalized array of search hits.
+ * Run a yt-dlp search and normalize results.
  *
- * `--flat-playlist` keeps it fast (no extraction of per-video metadata).
+ * Issues two parallel searches and merges:
+ *   - `ytsearchN:` against general YouTube
+ *   - `https://music.youtube.com/search?q=...` against YouTube Music
+ *
+ * Music results are tagged with `source: "ytmusic"` and prioritized in the
+ * merged list so the UI shows song-version uploads ahead of album-rip /
+ * music-video uploads.
  */
 async function search(query, { limit = 10 } = {}) {
+  const [yt, ytm] = await Promise.allSettled([
+    _runSearch(`ytsearch${limit}:${query}`, "youtube"),
+    _runSearch(
+      `https://music.youtube.com/search?q=${encodeURIComponent(query)}`,
+      "ytmusic",
+      // Music search returns large playlists — cap them.
+      Math.min(limit, 12),
+    ),
+  ]);
+
+  const results = [];
+  const seen = new Set();
+
+  // Music first (better metadata for songs).
+  if (ytm.status === "fulfilled") {
+    for (const r of ytm.value) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      results.push(r);
+    }
+  }
+  if (yt.status === "fulfilled") {
+    for (const r of yt.value) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      results.push(r);
+    }
+  }
+  if (results.length === 0) {
+    if (yt.status === "rejected") throw yt.reason;
+    if (ytm.status === "rejected") throw ytm.reason;
+  }
+  return results.slice(0, limit * 2);
+}
+
+async function _runSearch(spec, source, playlistEnd = 0) {
   const args = [
-    `ytsearch${limit}:${query}`,
+    spec,
     "--dump-json",
     "--flat-playlist",
     "--no-warnings",
   ];
+  if (playlistEnd > 0) {
+    args.push("--playlist-end", String(playlistEnd));
+  }
   const { stdout } = await execFileAsync(YTDLP_BIN, args, {
     maxBuffer: 1024 * 1024 * 16,
     timeout: 60_000,
@@ -118,12 +162,18 @@ async function search(query, { limit = 10 } = {}) {
     .map((entry) => ({
       id: entry.id,
       title: entry.title || "",
-      artist: entry.uploader || entry.channel || "Unknown",
+      artist:
+        entry.artist ||
+        entry.uploader ||
+        entry.channel ||
+        entry.creator ||
+        "Unknown",
       thumbnail:
         entry.thumbnail ||
         (entry.id ? `https://i.ytimg.com/vi/${entry.id}/hqdefault.jpg` : ""),
       duration:
         typeof entry.duration === "number" ? Math.round(entry.duration) : null,
+      source,
     }))
     .filter((h) => h.id);
 }
@@ -135,10 +185,16 @@ async function search(query, { limit = 10 } = {}) {
  * cleaning up the process on disconnect.
  */
 function streamAudio(videoId) {
+  // Prefer lossless / high-bitrate codecs first, fall back to best
+  // available audio. yt-dlp's format selector evaluates left-to-right
+  // and returns the first match — opus + m4a both stream well in
+  // just_audio without server-side transcoding.
   const args = withCookies([
     ...EXTRACTOR_ARGS_VIDEO,
     "-f",
-    "bestaudio",
+    "bestaudio[ext=opus]/bestaudio[ext=m4a]/bestaudio[acodec^=opus]/bestaudio",
+    "--audio-quality",
+    "0",
     "-o",
     "-",
     "--no-playlist",

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'firebase_options.dart';
 import 'screens/root_screen.dart';
 import 'services/audio_service.dart' as nocturne_audio;
 import 'utils/theme.dart';
@@ -65,12 +67,24 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       await Hive.initFlutter();
       await Hive.openBox<dynamic>('liked_songs');
       await Hive.openBox<dynamic>('recently_played');
+      await Hive.openBox<dynamic>('recent_searches');
     }, timeoutSeconds: 5);
 
     await _runStep('Firebase', () async {
-      // Throws (or no-ops) when Firebase isn't configured yet — that's fine,
-      // we keep going and Firebase-dependent features stay disabled.
-      await Firebase.initializeApp();
+      // Initialize with the generated platform options. The bootstrapper
+      // will swallow any error and continue without Firebase, so even if
+      // the project ID is misconfigured the app still launches.
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      // Enable unbounded offline cache so liked-songs / playlists /
+      // recently-played remain available without a connection.
+      try {
+        FirebaseFirestore.instance.settings = const Settings(
+          persistenceEnabled: true,
+          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        );
+      } catch (_) {/* settings may already be locked in hot reload */}
     }, timeoutSeconds: 5);
 
     await _runStep('AudioService', () async {
@@ -134,8 +148,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
           // Recolour status / nav bars based on the resolved brightness so
           // they remain readable under both light and dark themes.
           final brightness = Theme.of(context).brightness;
-          final iconBrightness =
-              brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+          final iconBrightness = brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark;
           SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: iconBrightness,
@@ -168,69 +183,108 @@ class _BootstrapAppState extends State<_BootstrapApp> {
   }
 }
 
-class _SplashScreen extends StatelessWidget {
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen({super.key});
 
   @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _scale = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fg = theme.colorScheme.onSurface;
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.black,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ShaderMask(
-              shaderCallback: (rect) => const LinearGradient(
-                colors: [AppColors.accent, Color(0xFFFF7043)],
-              ).createShader(rect),
-              child: Text(
-                'Nocturne',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 40,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2.5,
-                  shadows: [
-                    Shadow(
-                      color: AppColors.accent.withOpacity(0.4),
-                      blurRadius: 20,
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.accent.withOpacity(0.45),
+                        blurRadius: 40,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.asset(
+                      'assets/branding/logo.png',
+                      fit: BoxFit.cover,
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Text(
+                  'Nocturne',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                    shadows: [
+                      Shadow(
+                        color: AppColors.accent.withOpacity(0.4),
+                        blurRadius: 20,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  AppBranding.tagline,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.55),
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              AppBranding.tagline,
-              style: TextStyle(
-                color: fg.withOpacity(0.65),
-                fontSize: 13,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 28),
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(AppColors.accent),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              AppBranding.developer,
-              style: TextStyle(
-                color: fg.withOpacity(0.55),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

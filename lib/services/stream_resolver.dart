@@ -41,36 +41,53 @@ class StreamResolver {
   ];
 
   Future<String?> resolve(String videoId) async {
-    // 1) Piped (most reliable when public instances are healthy)
-    for (final base in _pipedInstances) {
-      final url = await _runWithTimeout(
-        () => _resolveViaPiped(base, videoId),
-        seconds: 6,
-        label: 'piped@$base',
-      );
-      if (url != null) return url;
-    }
-    // 2) Invidious
-    for (final base in _invidiousInstances) {
-      final url = await _runWithTimeout(
-        () => _resolveViaInvidious(base, videoId),
-        seconds: 6,
-        label: 'invidious@$base',
-      );
-      if (url != null) return url;
-    }
-    // 3) On-device extraction
-    final url = await _runWithTimeout(
-      () => _resolveViaYoutubeExplode(videoId),
-      seconds: 10,
-      label: 'youtube_explode',
-    );
-    if (url != null) return url;
+    // Race the cheap parallel resolvers (Piped, Invidious, on-device
+    // youtube_explode) against each other and return the first non-null
+    // URL. This keeps perceived load time well under 2s on a healthy
+    // network because we don't pay for the slowest instance's tail.
+    final completer = Completer<String?>();
+    final futures = <Future<void>>[];
 
-    // 4) Last-resort backend fallback (only useful if YTDLP_COOKIES_BASE64 is set)
-    final fallback = '${AppConfig.backendBaseUrl}/stream/$videoId';
-    if (kDebugMode) debugPrint('[StreamResolver] using backend fallback: $fallback');
-    return fallback;
+    void tryEmit(String? url, String label) {
+      if (completer.isCompleted) return;
+      if (url != null) {
+        if (kDebugMode) debugPrint('[StreamResolver] $label WON');
+        completer.complete(url);
+      }
+    }
+
+    for (final base in _pipedInstances) {
+      futures.add(_runWithTimeout(
+        () => _resolveViaPiped(base, videoId),
+        seconds: 5,
+        label: 'piped@$base',
+      ).then((u) => tryEmit(u, 'piped@$base')));
+    }
+    for (final base in _invidiousInstances) {
+      futures.add(_runWithTimeout(
+        () => _resolveViaInvidious(base, videoId),
+        seconds: 5,
+        label: 'invidious@$base',
+      ).then((u) => tryEmit(u, 'invidious@$base')));
+    }
+    futures.add(_runWithTimeout(
+      () => _resolveViaYoutubeExplode(videoId),
+      seconds: 8,
+      label: 'youtube_explode',
+    ).then((u) => tryEmit(u, 'youtube_explode')));
+
+    // When everyone has finished without success, complete with the
+    // backend fallback (only useful if cookies are configured).
+    Future.wait(futures, eagerError: false).then((_) {
+      if (completer.isCompleted) return;
+      final fallback = '${AppConfig.backendBaseUrl}/stream/$videoId';
+      if (kDebugMode) {
+        debugPrint('[StreamResolver] all extractors failed, using $fallback');
+      }
+      completer.complete(fallback);
+    });
+
+    return completer.future;
   }
 
   void dispose() {
@@ -144,14 +161,14 @@ class StreamResolver {
     final manifest = await _yt.videos.streamsClient.getManifest(videoId);
     final audioOnly = manifest.audioOnly.toList();
     if (audioOnly.isNotEmpty) {
-      audioOnly.sort((a, b) =>
-          b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
+      audioOnly.sort(
+          (a, b) => b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
       return audioOnly.first.url.toString();
     }
     final muxed = manifest.muxed.toList();
     if (muxed.isNotEmpty) {
-      muxed.sort((a, b) =>
-          b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
+      muxed.sort(
+          (a, b) => b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
       return muxed.first.url.toString();
     }
     return null;

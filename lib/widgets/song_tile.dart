@@ -87,7 +87,8 @@ class SongTile extends StatelessWidget {
                   tooltip: 'Add to playlist',
                 ),
               IconButton(
-                icon: Icon(Icons.more_vert, color: fg.withOpacity(0.7), size: 22),
+                icon:
+                    Icon(Icons.more_vert, color: fg.withOpacity(0.7), size: 22),
                 onPressed: onMenu,
               ),
             ],
