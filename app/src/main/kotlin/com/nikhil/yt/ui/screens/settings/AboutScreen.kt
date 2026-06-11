@@ -1,5 +1,5 @@
 /*
- * Velune - by Nikhil
+ * Nocturne - by Mudassir
  * Nikhil
  * Licensed Under GPL-3.0
  */
@@ -139,7 +139,7 @@ fun AboutScreen(
                 Spacer(Modifier.height(8.dp))
                 AboutItemCard(
                     iconUrl = "https://github.com/mudassir131-dev.png",
-                    title = "mudassir",
+                    title = "Mudassir",
                     subtitle = "App Developer",
                     onClick = { uriHandler.openUri("https://github.com/mudassir131-dev") }
                 )
@@ -162,13 +162,6 @@ fun AboutScreen(
                     title = "MO AGAMY",
                     subtitle = "Metrolist Dev",
                     onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") }
-                )
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
-                    iconUrl = "https://github.com/nikhilvishwakarma00.png",
-                    title = "Nikhil",
-                    subtitle = "Velune Developer / Inspiration",
-                    onClick = { uriHandler.openUri("https://github.com/nikhilvishwakarma00") }
                 )
                 Spacer(Modifier.height(24.dp))
             }
@@ -337,7 +330,7 @@ fun launchUpiPayment(context: android.content.Context, upiId: String, payeeName:
 fun SupportDeveloperCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val myUpiId = "touseefparay7-1@okicici"
-    val myName = "mudassir"
+    val myName = "Mudassir"
 
     Card(
         modifier = modifier

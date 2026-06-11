@@ -1,5 +1,5 @@
 /*
- * Velune - by Nikhil
+ * Nocturne - by Mudassir
  * Nikhil
  * Licensed Under GPL-3.0
  */
@@ -543,7 +543,7 @@ fun SettingsScreen(
                         PremiumSettingsItem(
                             icon = painterResource(R.drawable.info),
                             title = stringResource(R.string.about),
-                            subtitle = "Velune",
+                            subtitle = "Nocturne",
                             accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             keywords = listOf(
                                 "about",

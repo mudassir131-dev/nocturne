@@ -1,5 +1,5 @@
 /*
- * Velune - by Nikhil
+ * Nocturne - by Mudassir
  * Licensed Under GPL-3.0
  */
 
