@@ -95,7 +95,7 @@ fun AboutScreen(
                 ) {
                     // Title
                     Text(
-                        text = "VELUNE",
+                        text = "NOCTURNE",
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
@@ -138,10 +138,10 @@ fun AboutScreen(
                 SectionTitle("DEVELOPER")
                 Spacer(Modifier.height(8.dp))
                 AboutItemCard(
-                    iconUrl = "https://github.com/nikhilvishwakarma00.png",
-                    title = "Nikhil",
+                    iconUrl = "https://github.com/mudassir131-dev.png",
+                    title = "mudassir",
                     subtitle = "App Developer",
-                    onClick = { uriHandler.openUri("https://github.com/nikhilvishwakarma00") }
+                    onClick = { uriHandler.openUri("https://github.com/mudassir131-dev") }
                 )
                 Spacer(Modifier.height(24.dp))
             }
@@ -174,7 +174,7 @@ fun AboutScreen(
                     iconRes = R.drawable.github,
                     title = "GitHub Repository",
                     subtitle = "View source code",
-                    onClick = { uriHandler.openUri("https://github.com/nikhilvishwakarma00/Velune") }
+                    onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") }
                 )
                 Spacer(Modifier.height(24.dp))
 
@@ -312,7 +312,7 @@ fun AboutItemCard(
     }
 }
 fun launchUpiPayment(context: android.content.Context, upiId: String, payeeName: String) {
-    val note = "Support for Velune"
+    val note = "Support for Nocturne"
     val uriString = "upi://pay?pa=$upiId&pn=${android.net.Uri.encode(payeeName)}&tn=${android.net.Uri.encode(note)}&cu=INR"
     val uri = android.net.Uri.parse(uriString)
     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
@@ -359,7 +359,7 @@ fun SupportDeveloperCard(modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "If you enjoy Velune, consider buying me a chai!",
+                    text = "If you enjoy Nocturne, consider buying me a chai!",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
