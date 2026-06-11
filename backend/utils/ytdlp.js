@@ -9,10 +9,35 @@ const { promisify } = require("util");
 const execFileAsync = promisify(execFile);
 
 /**
- * Path to the `yt-dlp` binary. Override with the YTDLP_BIN env var if it
- * lives somewhere non-standard (e.g. inside a Railway image).
+ * Path to the `yt-dlp` binary. Override with the YTDLP_BIN env var.
+ * Fallback to local bin directory, then to system path.
  */
-const YTDLP_BIN = process.env.YTDLP_BIN || "yt-dlp";
+const localBinFile = path.join(
+  __dirname,
+  "..",
+  "bin",
+  process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp"
+);
+const YTDLP_BIN = process.env.YTDLP_BIN || (fs.existsSync(localBinFile) ? localBinFile : "yt-dlp");
+
+let ffmpegDir = "";
+try {
+  const ffmpegPath = require("ffmpeg-static");
+  if (ffmpegPath && fs.existsSync(ffmpegPath)) {
+    ffmpegDir = path.dirname(ffmpegPath);
+    console.log(`[ytdlp] Using ffmpeg-static path: ${ffmpegDir}`);
+  }
+} catch (e) {
+  console.warn("[ytdlp] ffmpeg-static not found or failed to load. Will fallback to system PATH.");
+}
+
+function getSpawnOptions() {
+  const env = { ...process.env };
+  if (ffmpegDir) {
+    env.PATH = `${ffmpegDir}${path.delimiter}${env.PATH || ""}`;
+  }
+  return { env };
+}
 
 /**
  * Resolved path to a cookies.txt file used by yt-dlp.
@@ -71,7 +96,7 @@ if (COOKIES_PATH) {
  */
 const EXTRACTOR_ARGS_VIDEO = [
   "--extractor-args",
-  "youtube:player_client=tv,web_safari,web",
+  "youtube:player_client=default,-tv,web_safari,web_embedded",
 ];
 
 function withCookies(args) {
@@ -102,6 +127,7 @@ async function search(query, { limit = 10 } = {}) {
   const { stdout } = await execFileAsync(YTDLP_BIN, args, {
     maxBuffer: 1024 * 1024 * 16,
     timeout: 60_000,
+    ...getSpawnOptions(),
   });
   return stdout
     .split("\n")
@@ -146,7 +172,10 @@ function streamAudio(videoId) {
     "--no-warnings",
     videoUrl(videoId),
   ]);
-  return spawn(YTDLP_BIN, args, { stdio: ["ignore", "pipe", "pipe"] });
+  return spawn(YTDLP_BIN, args, {
+    stdio: ["ignore", "pipe", "pipe"],
+    ...getSpawnOptions(),
+  });
 }
 
 /**
@@ -174,6 +203,7 @@ async function download(videoId, { type = "audio", outDir }) {
   const { stdout } = await execFileAsync(YTDLP_BIN, args, {
     maxBuffer: 1024 * 1024 * 16,
     timeout: 5 * 60_000,
+    ...getSpawnOptions(),
   });
   return stdout.split("\n").map((s) => s.trim()).filter(Boolean).pop();
 }

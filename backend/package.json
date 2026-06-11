@@ -6,13 +6,15 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "postinstall": "node -e \"const fs = require('fs'); if (fs.existsSync('./utils/setup.js')) { require('./utils/setup.js'); } else { console.log('No setup.js found, skipping postinstall.'); }\""
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "ffmpeg-static": "^5.2.0"
   }
 }
