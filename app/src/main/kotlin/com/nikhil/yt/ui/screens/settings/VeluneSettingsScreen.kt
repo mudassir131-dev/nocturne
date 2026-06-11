@@ -91,7 +91,7 @@ fun VeluneSettingsScreen(
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_velune_concept),
-                            contentDescription = "Velune Logo",
+                            contentDescription = "Nocturne Logo",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(12.dp)
@@ -100,7 +100,7 @@ fun VeluneSettingsScreen(
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "Velune",
+                            text = "Nocturne",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Normal
                         )

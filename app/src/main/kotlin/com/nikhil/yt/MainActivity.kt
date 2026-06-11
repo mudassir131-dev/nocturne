@@ -114,6 +114,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
@@ -454,6 +455,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            var showSplashScreen by remember { mutableStateOf(true) }
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                     if (isGranted) {
@@ -1581,6 +1583,9 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        if (showSplashScreen) {
+                            SplashScreen(onDismiss = { showSplashScreen = false })
+                        }
                     }
 
                     LaunchedEffect(shouldShowSearchBar, openSearchImmediately) {
@@ -1703,3 +1708,63 @@ val LocalPlayerAwareWindowInsets =
     compositionLocalOf<WindowInsets> { error("No WindowInsets provided") }
 val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No DownloadUtil provided") }
 val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }
+
+@Composable
+fun SplashScreen(
+    onDismiss: () -> Unit
+) {
+    val duration = 2000L
+    LaunchedEffect(Unit) {
+        delay(duration)
+        onDismiss()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+        ) {
+            // App Logo (which is updated to the Golden Crescent Moon and Music Note)
+            Image(
+                painter = painterResource(id = R.drawable.ic_velune_concept),
+                contentDescription = "Nocturne Logo",
+                modifier = Modifier.size(120.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // App Name
+            Text(
+                text = "NOCTURNE",
+                color = Color.White,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 4.sp
+            )
+        }
+        
+        // Footer: by Mudassir (positioned slightly above the bottom footer area)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 60.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "by Mudassir",
+                    color = Color(0xFFB0956E),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
+}
