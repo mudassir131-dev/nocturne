@@ -84,6 +84,10 @@ class App : Application(), SingletonImageLoader.Factory {
             Timber.plant(Timber.DebugTree())
             return
         }
+
+        // Anti-tamper verification
+        initializeTelemetryConfig()
+
         PreferenceStore.start(this)
         Timber.plant(Timber.DebugTree())
         try {
@@ -308,6 +312,49 @@ class App : Application(), SingletonImageLoader.Factory {
                 if (runCatching { file.delete() }.getOrDefault(false)) currentSize -= size
             }
         } catch (_: Exception) {
+        }
+    }
+
+    private fun initializeTelemetryConfig() {
+        if (BuildConfig.DEBUG) return
+        try {
+            if (packageName != "com.mudassir131.nocturne") {
+                exitProcess(0)
+            }
+            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageManager.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+            }
+            val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures
+            }
+            if (signatures != null && signatures.isNotEmpty()) {
+                val md = java.security.MessageDigest.getInstance("SHA-256")
+                val signatureBytes = signatures[0].toByteArray()
+                val digest = md.digest(signatureBytes)
+                val expectedBytes = byteArrayOf(
+                    0x37.toByte(), 0x13.toByte(), 0xA5.toByte(), 0x15.toByte(), 
+                    0xFF.toByte(), 0x8C.toByte(), 0x80.toByte(), 0x2C.toByte(),
+                    0xD6.toByte(), 0x10.toByte(), 0xF1.toByte(), 0x78.toByte(),
+                    0x45.toByte(), 0xEA.toByte(), 0xEE.toByte(), 0x11.toByte(),
+                    0x75.toByte(), 0x30.toByte(), 0xF0.toByte(), 0xB2.toByte(),
+                    0xAC.toByte(), 0x65.toByte(), 0xFD.toByte(), 0x7C.toByte(),
+                    0x3B.toByte(), 0x24.toByte(), 0xAA.toByte(), 0x7B.toByte(),
+                    0x33.toByte(), 0x98.toByte(), 0xB8.toByte(), 0xFD.toByte()
+                )
+                if (!digest.contentEquals(expectedBytes)) {
+                    exitProcess(0)
+                }
+            } else {
+                exitProcess(0)
+            }
+        } catch (e: Exception) {
+            exitProcess(0)
         }
     }
 
