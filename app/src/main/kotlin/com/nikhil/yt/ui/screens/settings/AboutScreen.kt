@@ -186,10 +186,10 @@ fun AboutScreen(
                 Spacer(Modifier.height(24.dp))
 
                 AboutItemCard(
-                    iconRes = R.drawable.ic_discord,
-                    title = "Discord Server",
+                    iconRes = R.drawable.telegram,
+                    title = "Telegram Server",
                     subtitle = "Join the community to chat and report bugs",
-                    onClick = { uriHandler.openUri("https://discord.gg/cJNHTdoP6H")}
+                    onClick = { uriHandler.openUri("https://t.me/NocturneOfficial7")}
                 )
                 Spacer(Modifier.height(24.dp))
 
@@ -336,8 +336,8 @@ fun launchUpiPayment(context: android.content.Context, upiId: String, payeeName:
 @Composable
 fun SupportDeveloperCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val myUpiId = "nikhilvishwakarma9631@oksbi"
-    val myName = "Nikhil"
+    val myUpiId = "touseefparay7-1@okicici"
+    val myName = "mudassir"
 
     Card(
         modifier = modifier
