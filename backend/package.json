@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "Node.js backend for Nocturne — search/stream/download via yt-dlp.",
+  "author": "mudassir131-dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mudassir131-dev/nocturne.git"
+  },
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

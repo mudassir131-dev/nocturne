@@ -402,7 +402,7 @@
     <string name="proxy_url">URL proxy</string>
     <string name="restart_to_take_effect">Khởi động lại để có hiệu lực</string>
     <string name="enable_betterlyrics">Bật BetterLyrics</string>
-    <string name="enable_simpmusic_lyrics">Bật lời bài hát SimpMusic</string>
+    <string name="enable_simpmusic_lyrics">Bật lời bài hát Nocturne</string>
     <string name="player_and_audio">Trình phát và âm thanh</string>
     <string name="audio_quality">Chất lượng âm thanh</string>
     <string name="audio_quality_auto">Tự động</string>

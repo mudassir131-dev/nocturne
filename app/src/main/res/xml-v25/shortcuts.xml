@@ -6,9 +6,9 @@
         android:shortcutId="search"
         android:shortcutShortLabel="@string/search">
         <intent
-            android:action="com.nikhil.yt.action.SEARCH"
-            android:targetClass="com.nikhil.yt.MainActivity"
-            android:targetPackage="com.nikhil.yt" />
+            android:action="com.mudassir131.yt.action.SEARCH"
+            android:targetClass="com.mudassir131.yt.MainActivity"
+            android:targetPackage="com.mudassir131.yt" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -16,8 +16,8 @@
         android:shortcutId="library"
         android:shortcutShortLabel="@string/filter_library">
         <intent
-            android:action="com.nikhil.yt.action.LIBRARY"
-            android:targetClass="com.nikhil.yt.MainActivity"
-            android:targetPackage="com.nikhil.yt" />
+            android:action="com.mudassir131.yt.action.LIBRARY"
+            android:targetClass="com.mudassir131.yt.MainActivity"
+            android:targetPackage="com.mudassir131.yt" />
     </shortcut>
 </shortcuts>

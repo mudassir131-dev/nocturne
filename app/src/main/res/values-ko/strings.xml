@@ -573,7 +573,7 @@
     <string name="use_system_font">시스템 글꼴 사용</string>
     <string name="use_system_font_desc">앱 글꼴 대신 장치 글꼴을 사용합니다.</string>
     <string name="lyrics_line_spacing">가사 줄 간격</string>
-    <string name="enable_simpmusic_lyrics">SimpMusic 가사 활성화</string>
+    <string name="enable_simpmusic_lyrics">Nocturne 가사 활성화</string>
     <string name="permanent_shuffle">영구 셔플 모드</string>
     <string name="permanent_shuffle_desc">새 노래를 시작할 때 셔플을 활성화 상태로 유지합니다.</string>
     <string name="eq_waiting_for_audio_session">오디오 세션 대기 중…</string>
