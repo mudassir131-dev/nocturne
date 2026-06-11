@@ -89,11 +89,12 @@ fun VeluneLoader(
 
             rotate(rotation, pivot = Offset(cx, h / 2f)) {
                 val path = Path().apply {
-                    // Draw N shape
-                    moveTo(pad, h - pad)
-                    lineTo(pad, pad)
-                    lineTo(w - pad, h - pad)
-                    lineTo(w - pad, pad)
+                    // Left arm of V
+                    moveTo(pad, pad)
+                    lineTo(cx, botY * scale + h * (1 - scale) / 2f)
+                    // Right arm of V
+                    moveTo(w - pad, pad)
+                    lineTo(cx, botY * scale + h * (1 - scale) / 2f)
                 }
 
                 drawPath(
