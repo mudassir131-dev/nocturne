@@ -369,8 +369,8 @@
     <string name="custom_value">Valor personalizado</string>
     <string name="new_library_design">Novo design da biblioteca</string>
     <string name="new_library_design_description">Ativar o novo design da biblioteca (pode ser instável)</string>
-    <string name="Nocturne_canvas">Nocturne Canvas</string>
-    <string name="Nocturne_canvas_desc">Animate album artwork while playing (Powered by BetterLyrics)</string>
+    <string name="velune_canvas">Nocturne Canvas</string>
+    <string name="velune_canvas_desc">Animate album artwork while playing (Powered by BetterLyrics)</string>
     <string name="show_button1_description">Alternar a visibilidade do botão 1 no Discord Rich Presence</string>
     <string name="show_button2_description">Alternar a visibilidade do botão 2 no Discord Rich Presence</string>
     <string name="discord_activity_type">Tipo de atividade</string>
