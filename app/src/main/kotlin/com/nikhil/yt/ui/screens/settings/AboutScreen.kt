@@ -163,6 +163,13 @@ fun AboutScreen(
                     subtitle = "Metrolist Dev",
                     onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") }
                 )
+                Spacer(Modifier.height(8.dp))
+                AboutItemCard(
+                    iconUrl = "https://github.com/nikhilvishwakarma00.png",
+                    title = "Nikhil",
+                    subtitle = "Velune Developer / Inspiration",
+                    onClick = { uriHandler.openUri("https://github.com/nikhilvishwakarma00") }
+                )
                 Spacer(Modifier.height(24.dp))
             }
 
