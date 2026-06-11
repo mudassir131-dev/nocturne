@@ -47,4 +47,5 @@ Thumbs.db
 *.keystore
 *.properties
 !gradle.properties
+!**/gradle-wrapper.properties
 !backend/package.json
