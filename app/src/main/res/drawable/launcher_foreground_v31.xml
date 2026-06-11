@@ -1,12 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <path
-        android:fillColor="#fefefe"
-        android:pathData="M 10,15 L 30,15 L 54,70 L 78,15 L 98,15 L 54,95 Z" />
-
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+  <!-- Stylized Crescent Moon (White) -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M50,15 A35,35 0 0 0 15,50 A35,35 0 0 0 50,85 A35,35 0 0 0 78,65 A30,30 0 1 1 50,15 Z" />
+  <!-- Musical Note inside Moon (White) -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M52,38 L52,62 A8,8 0 1 1 44,54 A8,8 0 0 1 52,62 M52,43 L68,48 L68,43 L52,38 Z" />
 </vector>
