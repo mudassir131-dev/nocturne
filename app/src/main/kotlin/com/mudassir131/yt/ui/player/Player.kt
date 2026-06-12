@@ -658,8 +658,8 @@ fun BottomSheetPlayer(
                                 }
                             },
                             context = context,
-                            bottomPadding = dynamicQueuePeekHeight
-
+                            bottomPadding = dynamicQueuePeekHeight,
+                            onShareClick = { showShareOptionsDialog = true }
                         )
                     }
 
@@ -732,8 +732,8 @@ fun BottomSheetPlayer(
                                 }
                             },
                             context = context,
-                            bottomPadding = dynamicQueuePeekHeight
-
+                            bottomPadding = dynamicQueuePeekHeight,
+                            onShareClick = { showShareOptionsDialog = true }
                         )
                     }
 
@@ -839,7 +839,8 @@ private fun MetroPlayerContent(
     onExpandQueue: () -> Unit,
     onMenuClick: () -> Unit,
     context: Context,
-    bottomPadding: androidx.compose.ui.unit.Dp
+    bottomPadding: androidx.compose.ui.unit.Dp,
+    onShareClick: () -> Unit
 ) {
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -927,7 +928,7 @@ private fun MetroPlayerContent(
                 Spacer(modifier = Modifier.width(12.dp))
                 Surface(
                     onClick = {
-                        showShareOptionsDialog = true
+                        onShareClick()
                     },
                     shape = androidx.compose.foundation.shape.CircleShape,
                     color = Color.White,
