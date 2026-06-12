@@ -496,6 +496,227 @@ object ComposeToImage {
         canvas.drawText(appName, textX, textY, appNamePaint)
     }
 
+    suspend fun createShareCard(
+        context: Context,
+        coverArtUrl: String?,
+        songTitle: String,
+        artistName: String,
+    ): Bitmap = withContext(Dispatchers.Default) {
+        val width = 720
+        val height = 960
+        val bitmap = createBitmap(width, height)
+        val canvas = Canvas(bitmap)
+
+        canvas.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+
+        val cardWidth = 640f
+        val cardHeight = 860f
+        val cardLeft = (width - cardWidth) / 2f
+        val cardTop = (height - cardHeight) / 2f
+        val cardRight = cardLeft + cardWidth
+        val cardBottom = cardTop + cardHeight
+
+        val cardRect = RectF(cardLeft, cardTop, cardRight, cardBottom)
+        val cardCornerRadius = 48f
+
+        val cardBgPaint = Paint().apply {
+            color = android.graphics.Color.parseColor("#1C1C1E")
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(cardRect, cardCornerRadius, cardCornerRadius, cardBgPaint)
+
+        var coverArtBitmap: Bitmap? = null
+        if (coverArtUrl != null) {
+            try {
+                val imageLoader = ImageLoader(context)
+                val request = ImageRequest.Builder(context)
+                    .data(coverArtUrl)
+                    .size(512)
+                    .allowHardware(false)
+                    .build()
+                val result = imageLoader.execute(request)
+                coverArtBitmap = result.image?.toBitmap()
+            } catch (_: Exception) {}
+        }
+
+        val artPadding = 48f
+        val artSize = cardWidth - (artPadding * 2f)
+        val artLeft = cardLeft + artPadding
+        val artTop = cardTop + artPadding
+        val artRect = RectF(artLeft, artTop, artLeft + artSize, artTop + artSize)
+        val artCornerRadius = 32f
+
+        val artPaint = Paint().apply { isAntiAlias = true }
+        if (coverArtBitmap != null) {
+            val artPath = Path().apply {
+                addRoundRect(artRect, artCornerRadius, artCornerRadius, Path.Direction.CW)
+            }
+            canvas.withClip(artPath) {
+                canvas.drawBitmap(coverArtBitmap, null, artRect, artPaint)
+            }
+        } else {
+            val placeholderBgPaint = Paint().apply {
+                color = android.graphics.Color.parseColor("#2C2C2E")
+                isAntiAlias = true
+            }
+            canvas.drawRoundRect(artRect, artCornerRadius, artCornerRadius, placeholderBgPaint)
+            
+            val notePaint = Paint().apply {
+                color = android.graphics.Color.GRAY
+                textSize = 120f
+                typeface = Typeface.DEFAULT_BOLD
+                isAntiAlias = true
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("🎵", artRect.centerX(), artRect.centerY() + 40f, notePaint)
+        }
+
+        val titlePaint = TextPaint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 40f
+            typeface = Typeface.DEFAULT_BOLD
+            isAntiAlias = true
+        }
+        
+        val artistPaint = TextPaint().apply {
+            color = android.graphics.Color.parseColor("#8E8E93")
+            textSize = 28f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            isAntiAlias = true
+        }
+
+        val textLeft = artLeft
+        val textWidth = artSize.toInt()
+
+        val titleLayout = StaticLayout.Builder.obtain(songTitle, 0, songTitle.length, titlePaint, textWidth)
+            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+            .setMaxLines(1)
+            .build()
+        val artistLayout = StaticLayout.Builder.obtain(artistName, 0, artistName.length, artistPaint, textWidth)
+            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+            .setMaxLines(1)
+            .build()
+
+        val titleY = artTop + artSize + 36f
+        canvas.withTranslation(textLeft, titleY) {
+            titleLayout.draw(this)
+        }
+        
+        val artistY = titleY + titleLayout.height + 12f
+        canvas.withTranslation(textLeft, artistY) {
+            artistLayout.draw(this)
+        }
+
+        val logoSize = 36f
+        val logoPadding = 12f
+        
+        val brandPaint = Paint().apply {
+            color = android.graphics.Color.parseColor("#8E8E93")
+            textSize = 28f
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            isAntiAlias = true
+        }
+
+        val rawLogo = context.getDrawable(R.drawable.ic_velune_concept)?.toBitmap(logoSize.toInt(), logoSize.toInt())
+        val logoBitmap = rawLogo?.let { source ->
+            val colored = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+            val canvasLogo = Canvas(colored)
+            val paint = Paint().apply {
+                colorFilter = PorterDuffColorFilter(android.graphics.Color.parseColor("#8E8E93"), PorterDuff.Mode.SRC_IN)
+                isAntiAlias = true
+            }
+            canvasLogo.drawBitmap(source, 0f, 0f, paint)
+            colored
+        }
+
+        val brandText = "Nocturne"
+        val brandTextWidth = brandPaint.measureText(brandText)
+        
+        val logoLeft = artLeft
+        val brandBottom = cardBottom - 48f
+        
+        logoBitmap?.let {
+            canvas.drawBitmap(it, logoLeft, brandBottom - logoSize, null)
+        }
+        
+        canvas.drawText(
+            brandText, 
+            logoLeft + logoSize + logoPadding, 
+            brandBottom - (logoSize - brandPaint.textSize) / 2f - 4f, 
+            brandPaint
+        )
+
+        return@withContext bitmap
+    }
+
+    suspend fun createBlurredBackground(
+        context: Context,
+        coverArtUrl: String?,
+    ): Bitmap = withContext(Dispatchers.Default) {
+        val width = 1080
+        val height = 1920
+        val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+
+        var coverArtBitmap: Bitmap? = null
+        if (coverArtUrl != null) {
+            try {
+                val imageLoader = ImageLoader(context)
+                val request = ImageRequest.Builder(context)
+                    .data(coverArtUrl)
+                    .size(512)
+                    .allowHardware(false)
+                    .build()
+                val result = imageLoader.execute(request)
+                coverArtBitmap = result.image?.toBitmap()
+            } catch (_: Exception) {}
+        }
+
+        if (coverArtBitmap != null) {
+            val scaledArt = fitBitmap(coverArtBitmap, width, height, android.graphics.Color.BLACK)
+            val blurred = scaleBlur(scaledArt, 24)
+            canvas.drawBitmap(blurred, 0f, 0f, null)
+            
+            val paint = Paint().apply {
+                shader = LinearGradient(
+                    0f, 0f, 0f, height.toFloat(),
+                    android.graphics.Color.argb(76, 0, 0, 0),
+                    android.graphics.Color.argb(178, 0, 0, 0),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        } else {
+            val paint = Paint().apply {
+                shader = LinearGradient(
+                    0f, 0f, 0f, height.toFloat(),
+                    android.graphics.Color.parseColor("#2C2C2E"),
+                    android.graphics.Color.parseColor("#1C1C1E"),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        }
+
+        return@withContext out
+    }
+
+    fun saveBitmapToCache(context: Context, bitmap: Bitmap, fileName: String): Uri {
+        val safeBitmap = ensureSoftwareBitmap(bitmap)
+        val cachePath = File(context.cacheDir, "shares")
+        cachePath.mkdirs()
+        val imageFile = File(cachePath, "$fileName.png")
+        FileOutputStream(imageFile).use { outputStream ->
+            safeBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        }
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.FileProvider",
+            imageFile
+        )
+    }
+
     fun saveBitmapAsFile(context: Context, bitmap: Bitmap, fileName: String): Uri {
         val safeBitmap = ensureSoftwareBitmap(bitmap)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

@@ -240,6 +240,14 @@ fun SongMenu(
         mutableStateOf(false)
     }
 
+    var showShareOptionsDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var isSharingLoading by remember {
+        mutableStateOf(false)
+    }
+
     var showErrorPlaylistAddDialog by rememberSaveable {
         mutableStateOf(false)
     }
@@ -264,6 +272,60 @@ fun SongMenu(
             }
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         },
+    )
+
+    ShareOptionsDialog(
+        isVisible = showShareOptionsDialog,
+        onDismiss = { showShareOptionsDialog = false },
+        onShareLink = {
+            val intent =
+                Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
+                }
+            context.startActivity(Intent.createChooser(intent, null))
+            onDismiss()
+        },
+        onInstagramStories = {
+            com.mudassir131.yt.utils.StoryShareHelper.shareToInstagram(
+                context = context,
+                songTitle = song.song.title,
+                artistName = song.artists.joinToString { it.name },
+                thumbnailUrl = song.song.thumbnailUrl,
+                fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                coroutineScope = coroutineScope,
+                onLoading = { loading ->
+                    isSharingLoading = loading
+                    if (!loading) {
+                        onDismiss()
+                    }
+                }
+            )
+        },
+        onSnapchat = {
+            com.mudassir131.yt.utils.StoryShareHelper.shareToSnapchat(
+                context = context,
+                songTitle = song.song.title,
+                artistName = song.artists.joinToString { it.name },
+                thumbnailUrl = song.song.thumbnailUrl,
+                fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                coroutineScope = coroutineScope,
+                onLoading = { loading ->
+                    isSharingLoading = loading
+                    if (!loading) {
+                        onDismiss()
+                    }
+                }
+            )
+        }
+    )
+
+    LoadingScreen(
+        isVisible = isSharingLoading,
+        value = 0,
+        title = "Creating Story...",
+        indeterminate = true
     )
 
     if (showErrorPlaylistAddDialog) {
@@ -463,14 +525,7 @@ fun SongMenu(
                 },
                 text = shareText,
                 onClick = {
-                    onDismiss()
-                    val intent =
-                        Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
-                        }
-                    context.startActivity(Intent.createChooser(intent, null))
+                    showShareOptionsDialog = true
                 },
             ),
             NewAction(

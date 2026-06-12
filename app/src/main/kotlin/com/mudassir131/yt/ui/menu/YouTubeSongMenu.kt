@@ -146,6 +146,14 @@ fun YouTubeSongMenu(
         mutableStateOf(false)  
     }  
 
+    var showShareOptionsDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var isSharingLoading by remember {
+        mutableStateOf(false)
+    }
+
     AddToPlaylistDialog(  
         isVisible = showChoosePlaylistDialog,  
         onGetSong = { playlist ->  
@@ -167,6 +175,59 @@ fun YouTubeSongMenu(
             }
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         },
+    )
+
+    ShareOptionsDialog(
+        isVisible = showShareOptionsDialog,
+        onDismiss = { showShareOptionsDialog = false },
+        onShareLink = {
+            val intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, song.shareLink)
+            }
+            context.startActivity(Intent.createChooser(intent, null))
+            onDismiss()
+        },
+        onInstagramStories = {
+            com.mudassir131.yt.utils.StoryShareHelper.shareToInstagram(
+                context = context,
+                songTitle = song.title,
+                artistName = song.artists.joinToString { it.name },
+                thumbnailUrl = song.thumbnail,
+                fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                coroutineScope = coroutineScope,
+                onLoading = { loading ->
+                    isSharingLoading = loading
+                    if (!loading) {
+                        onDismiss()
+                    }
+                }
+            )
+        },
+        onSnapchat = {
+            com.mudassir131.yt.utils.StoryShareHelper.shareToSnapchat(
+                context = context,
+                songTitle = song.title,
+                artistName = song.artists.joinToString { it.name },
+                thumbnailUrl = song.thumbnail,
+                fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                coroutineScope = coroutineScope,
+                onLoading = { loading ->
+                    isSharingLoading = loading
+                    if (!loading) {
+                        onDismiss()
+                    }
+                }
+            )
+        }
+    )
+
+    LoadingScreen(
+        isVisible = isSharingLoading,
+        value = 0,
+        title = "Creating Story...",
+        indeterminate = true
     )
 
     var showSelectArtistDialog by rememberSaveable {  
@@ -339,13 +400,7 @@ fun YouTubeSongMenu(
                         },
                         text = stringResource(R.string.share),
                         onClick = {
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, song.shareLink)
-                            }
-                            context.startActivity(Intent.createChooser(intent, null))
-                            onDismiss()
+                            showShareOptionsDialog = true
                         }
                     )
                 ),
