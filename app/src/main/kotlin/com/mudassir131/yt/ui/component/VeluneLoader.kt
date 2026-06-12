@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -82,30 +84,56 @@ fun VeluneLoader(
         Canvas(modifier = Modifier.size(size)) {
             val w = this.size.width
             val h = this.size.height
-            val strokeWidth = w * 0.12f * scale
-            val pad = w * 0.15f
-            val cx = w / 2f
-            val botY = h - pad
+            val strokeWidth = w * 0.08f
+            val scaleX = w / 100f
+            val scaleY = h / 100f
 
-            rotate(rotation, pivot = Offset(cx, h / 2f)) {
-                val path = Path().apply {
-                    // Left arm of V
-                    moveTo(pad, pad)
-                    lineTo(cx, botY * scale + h * (1 - scale) / 2f)
-                    // Right arm of V
-                    moveTo(w - pad, pad)
-                    lineTo(cx, botY * scale + h * (1 - scale) / 2f)
-                }
+            rotate(rotation, pivot = Offset(w / 2f, h / 2f)) {
+                scale(scale, pivot = Offset(w / 2f, h / 2f)) {
+                    val path = Path().apply {
+                        // Left curve
+                        moveTo(32f * scaleX, 62f * scaleY)
+                        lineTo(32f * scaleX, 44f * scaleY)
+                        arcTo(
+                            rect = Rect(
+                                left = 32f * scaleX,
+                                top = 32f * scaleY,
+                                right = 56f * scaleX,
+                                bottom = 56f * scaleY
+                            ),
+                            startAngleDegrees = 180f,
+                            sweepAngleDegrees = 180f,
+                            forceMoveTo = false
+                        )
+                        lineTo(56f * scaleX, 50f * scaleY)
 
-                drawPath(
-                    path = path,
-                    color = accentColor.copy(alpha = alpha),
-                    style = Stroke(
-                        width = strokeWidth,
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round
+                        // Right curve
+                        moveTo(68f * scaleX, 38f * scaleY)
+                        lineTo(68f * scaleX, 56f * scaleY)
+                        arcTo(
+                            rect = Rect(
+                                left = 44f * scaleX,
+                                top = 44f * scaleY,
+                                right = 68f * scaleX,
+                                bottom = 68f * scaleY
+                            ),
+                            startAngleDegrees = 0f,
+                            sweepAngleDegrees = 180f,
+                            forceMoveTo = false
+                        )
+                        lineTo(44f * scaleX, 50f * scaleY)
+                    }
+
+                    drawPath(
+                        path = path,
+                        color = accentColor.copy(alpha = alpha),
+                        style = Stroke(
+                            width = strokeWidth,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
                     )
-                )
+                }
             }
         }
     }

@@ -30,6 +30,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -101,6 +102,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
@@ -1761,10 +1763,54 @@ val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils p
 fun SplashScreen(
     onDismiss: () -> Unit
 ) {
-    val duration = 2000L
+    val duration = 2200L
     LaunchedEffect(Unit) {
         delay(duration)
         onDismiss()
+    }
+
+    val scale = remember { Animatable(0.3f) }
+    val alpha = remember { Animatable(0f) }
+    val textAlpha = remember { Animatable(0f) }
+    val textOffsetY = remember { Animatable(20f) }
+
+    LaunchedEffect(Unit) {
+        // Premium staggered animations
+        launch {
+            scale.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+        }
+        launch {
+            alpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 800,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            )
+        }
+        launch {
+            delay(300)
+            textAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 1000)
+            )
+        }
+        launch {
+            delay(300)
+            textOffsetY.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+        }
     }
 
     Box(
@@ -1777,14 +1823,20 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
-            // App Logo (which is updated to the Golden Crescent Moon and Music Note)
+            // App Logo
             Image(
                 painter = painterResource(id = R.drawable.ic_velune_concept),
                 contentDescription = "Nocturne Logo",
-                modifier = Modifier.size(120.dp)
+                modifier = Modifier
+                    .size(130.dp)
+                    .graphicsLayer(
+                        scaleX = scale.value,
+                        scaleY = scale.value,
+                        alpha = alpha.value
+                    )
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
             
             // App Name
             Text(
@@ -1792,22 +1844,31 @@ fun SplashScreen(
                 color = Color.White,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 4.sp
+                letterSpacing = 4.sp,
+                modifier = Modifier
+                    .graphicsLayer(
+                        alpha = textAlpha.value,
+                        translationY = textOffsetY.value
+                    )
             )
         }
         
-        // Footer: by Mudassir (positioned slightly above the bottom footer area)
+        // Footer: by Mudassir
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 60.dp)
+                .graphicsLayer(
+                    alpha = textAlpha.value,
+                    translationY = textOffsetY.value
+                )
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "by Mudassir",
-                    color = Color(0xFFB0956E),
+                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 1.sp
@@ -1816,3 +1877,4 @@ fun SplashScreen(
         }
     }
 }
+

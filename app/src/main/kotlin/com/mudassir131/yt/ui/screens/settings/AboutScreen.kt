@@ -235,7 +235,7 @@ fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelSmall,
-        color = Color(0xFFB0956E),
+        color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .fillMaxWidth()

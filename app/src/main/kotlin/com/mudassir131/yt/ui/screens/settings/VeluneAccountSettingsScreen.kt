@@ -232,7 +232,7 @@ private fun AccountSectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelSmall,
-        color = Color(0xFFB0956E),
+        color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Normal,
         letterSpacing = 0.5.sp,
         modifier = Modifier.padding(start = 4.dp, bottom = 4.dp, top = 24.dp)
