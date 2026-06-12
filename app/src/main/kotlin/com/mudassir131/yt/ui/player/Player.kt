@@ -822,6 +822,54 @@ fun BottomSheetPlayer(
                 }
             }
         }
+
+        val currentMeta = enrichedMetadata ?: mediaMetadata
+        if (currentMeta != null) {
+            ShareOptionsDialog(
+                isVisible = showShareOptionsDialog,
+                onDismiss = { showShareOptionsDialog = false },
+                onShareLink = {
+                    val intent = android.content.Intent().apply {
+                        action = android.content.Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(
+                            android.content.Intent.EXTRA_TEXT,
+                            "https://music.youtube.com/watch?v=${currentMeta.id}"
+                        )
+                    }
+                    context.startActivity(android.content.Intent.createChooser(intent, null))
+                },
+                onInstagramStories = {
+                    com.mudassir131.yt.utils.StoryShareHelper.shareToInstagram(
+                        context = context,
+                        songTitle = currentMeta.title,
+                        artistName = currentMeta.artists.joinToString { it.name },
+                        thumbnailUrl = currentMeta.thumbnailUrl,
+                        fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                        coroutineScope = coroutineScope,
+                        onLoading = { isSharingLoading = it }
+                    )
+                },
+                onSnapchat = {
+                    com.mudassir131.yt.utils.StoryShareHelper.shareToSnapchat(
+                        context = context,
+                        songTitle = currentMeta.title,
+                        artistName = currentMeta.artists.joinToString { it.name },
+                        thumbnailUrl = currentMeta.thumbnailUrl,
+                        fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                        coroutineScope = coroutineScope,
+                        onLoading = { isSharingLoading = it }
+                    )
+                }
+            )
+
+            LoadingScreen(
+                isVisible = isSharingLoading,
+                value = 0,
+                title = "Creating Story...",
+                indeterminate = true
+            )
+        }
     }
 }
 
@@ -1093,54 +1141,6 @@ private fun MetroPlayerContent(
 
             Spacer(modifier = Modifier.height(72.dp))
         }
-    }
-
-    val currentMeta = mediaMetadata
-    if (currentMeta != null) {
-        ShareOptionsDialog(
-            isVisible = showShareOptionsDialog,
-            onDismiss = { showShareOptionsDialog = false },
-            onShareLink = {
-                val intent = android.content.Intent().apply {
-                    action = android.content.Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(
-                        android.content.Intent.EXTRA_TEXT,
-                        "https://music.youtube.com/watch?v=${currentMeta.id}"
-                    )
-                }
-                context.startActivity(android.content.Intent.createChooser(intent, null))
-            },
-            onInstagramStories = {
-                com.mudassir131.yt.utils.StoryShareHelper.shareToInstagram(
-                    context = context,
-                    songTitle = currentMeta.title,
-                    artistName = currentMeta.artists.joinToString { it.name },
-                    thumbnailUrl = currentMeta.thumbnailUrl,
-                    fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
-                    coroutineScope = coroutineScope,
-                    onLoading = { isSharingLoading = it }
-                )
-            },
-            onSnapchat = {
-                com.mudassir131.yt.utils.StoryShareHelper.shareToSnapchat(
-                    context = context,
-                    songTitle = currentMeta.title,
-                    artistName = currentMeta.artists.joinToString { it.name },
-                    thumbnailUrl = currentMeta.thumbnailUrl,
-                    fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
-                    coroutineScope = coroutineScope,
-                    onLoading = { isSharingLoading = it }
-                )
-            }
-        )
-
-        LoadingScreen(
-            isVisible = isSharingLoading,
-            value = 0,
-            title = "Creating Story...",
-            indeterminate = true
-        )
     }
 }
 
