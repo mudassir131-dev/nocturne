@@ -55,9 +55,10 @@ object StoryShareHelper {
 
                 withContext(Dispatchers.Main) {
                     val intent = Intent("com.instagram.share.ADD_TO_STORY").apply {
-                        setDataAndType(backgroundUri, "image/*")
+                        setDataAndType(backgroundUri, "image/png")
                         putExtra("interactive_asset_uri", stickerUri)
                         putExtra("content_url", fallbackUrl)
+                        putExtra("source_application", context.packageName)
                         setPackage(INSTAGRAM_PACKAGE)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
@@ -108,11 +109,12 @@ object StoryShareHelper {
                 val backgroundUri = ComposeToImage.saveBitmapToCache(context, backgroundBitmap, "snapchat_share_background")
 
                 withContext(Dispatchers.Main) {
-                    val intent = Intent("com.snapchat.add.TO_STORY").apply {
-                        setDataAndType(backgroundUri, "image/*")
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        setPackage(SNAPCHAT_PACKAGE)
+                        setDataAndType(Uri.parse("snapchat://creativekit/preview"), "image/png")
+                        putExtra(Intent.EXTRA_STREAM, backgroundUri)
                         putExtra("sticker", stickerUri)
                         putExtra("attachmentUrl", fallbackUrl)
-                        setPackage(SNAPCHAT_PACKAGE)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
 
