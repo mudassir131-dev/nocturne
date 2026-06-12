@@ -249,7 +249,8 @@ fun PlayerTopActions(
     state: BottomSheetState,
     bottomSheetPageState: BottomSheetPageState,
     context: Context,
-    currentSongLiked: Boolean
+    currentSongLiked: Boolean,
+    onShareClick: () -> Unit
 ) {
     when (playerDesignStyle) {
         PlayerDesignStyle.V2 -> {
@@ -273,15 +274,7 @@ fun PlayerTopActions(
                         .clip(shareShape)
                         .background(textButtonColor)
                         .clickable {
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    "https://music.youtube.com/watch?v=${mediaMetadata.id}"
-                                )
-                            }
-                            context.startActivity(Intent.createChooser(intent, null))
+                            onShareClick()
                         }
                 ) {
                     Image(
@@ -330,15 +323,7 @@ fun PlayerTopActions(
                         .size(36.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    "https://music.youtube.com/watch?v=${mediaMetadata.id}"
-                                )
-                            }
-                            context.startActivity(Intent.createChooser(intent, null))
+                            onShareClick()
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -378,15 +363,7 @@ fun PlayerTopActions(
             ) {
                 Surface(
                     onClick = {
-                        val intent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = "text/plain"
-                            putExtra(
-                                Intent.EXTRA_TEXT,
-                                "https://music.youtube.com/watch?v=${mediaMetadata.id}"
-                            )
-                        }
-                        context.startActivity(Intent.createChooser(intent, null))
+                        onShareClick()
                     },
                     shape = RoundedCornerShape(14.dp),
                     color = textBackgroundColor.copy(alpha = 0.12f),
@@ -473,16 +450,7 @@ fun PlayerTopActions(
                     .clip(RoundedCornerShape(24.dp))
                     .background(textButtonColor)
                     .clickable {
-                        val intent =
-                            Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    "https://music.youtube.com/watch?v=${mediaMetadata.id}"
-                                )
-                            }
-                        context.startActivity(Intent.createChooser(intent, null))
+                        onShareClick()
                     },
             ) {
                 Image(
@@ -1323,7 +1291,8 @@ fun PlayerControlsContent(
     clipboardManager: ClipboardManager,
     context: Context,
     onSliderValueChange: (Long) -> Unit,
-    onSliderValueChangeFinished: () -> Unit
+    onSliderValueChangeFinished: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val currentSongLiked = currentSong?.song?.liked == true
@@ -1366,7 +1335,8 @@ fun PlayerControlsContent(
             state = state,
             bottomSheetPageState = bottomSheetPageState,
             context = context,
-            currentSongLiked = currentSongLiked
+            currentSongLiked = currentSongLiked,
+            onShareClick = onShareClick
         )
     }
 

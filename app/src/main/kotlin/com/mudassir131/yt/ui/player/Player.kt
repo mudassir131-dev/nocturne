@@ -8,6 +8,8 @@
 
 package com.mudassir131.yt.ui.player
 
+import com.mudassir131.yt.ui.menu.ShareOptionsDialog
+import com.mudassir131.yt.ui.menu.LoadingScreen
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.Configuration
@@ -54,6 +56,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -211,6 +214,16 @@ fun BottomSheetPlayer(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
+
+    val coroutineScope = rememberCoroutineScope()
+
+    var showShareOptionsDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var isSharingLoading by remember {
+        mutableStateOf(false)
+    }
     val currentSongLiked = currentSong?.song?.liked == true
     val queueWindows by playerConnection.queueWindows.collectAsState()
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
@@ -598,6 +611,7 @@ fun BottomSheetPlayer(
                 context = context,
                 onSliderValueChange = onSliderValueChange,
                 onSliderValueChangeFinished = onSliderValueChangeFinished,
+                onShareClick = { showShareOptionsDialog = true }
             )
         }
 
@@ -913,13 +927,7 @@ private fun MetroPlayerContent(
                 Spacer(modifier = Modifier.width(12.dp))
                 Surface(
                     onClick = {
-                        val intent = android.content.Intent().apply {
-                            action = android.content.Intent.ACTION_SEND; type =
-                            "text/plain"; putExtra(
-                            android.content.Intent.EXTRA_TEXT,
-                            "https://music.youtube.com/watch?v=${mediaMetadata.id}"
-                        )
-                        }; context.startActivity(android.content.Intent.createChooser(intent, null))
+                        showShareOptionsDialog = true
                     },
                     shape = androidx.compose.foundation.shape.CircleShape,
                     color = Color.White,
@@ -1084,6 +1092,54 @@ private fun MetroPlayerContent(
 
             Spacer(modifier = Modifier.height(72.dp))
         }
+    }
+
+    val currentMeta = mediaMetadata
+    if (currentMeta != null) {
+        ShareOptionsDialog(
+            isVisible = showShareOptionsDialog,
+            onDismiss = { showShareOptionsDialog = false },
+            onShareLink = {
+                val intent = android.content.Intent().apply {
+                    action = android.content.Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(
+                        android.content.Intent.EXTRA_TEXT,
+                        "https://music.youtube.com/watch?v=${currentMeta.id}"
+                    )
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, null))
+            },
+            onInstagramStories = {
+                com.mudassir131.yt.utils.StoryShareHelper.shareToInstagram(
+                    context = context,
+                    songTitle = currentMeta.title,
+                    artistName = currentMeta.artists.joinToString { it.name },
+                    thumbnailUrl = currentMeta.thumbnailUrl,
+                    fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                    coroutineScope = coroutineScope,
+                    onLoading = { isSharingLoading = it }
+                )
+            },
+            onSnapchat = {
+                com.mudassir131.yt.utils.StoryShareHelper.shareToSnapchat(
+                    context = context,
+                    songTitle = currentMeta.title,
+                    artistName = currentMeta.artists.joinToString { it.name },
+                    thumbnailUrl = currentMeta.thumbnailUrl,
+                    fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                    coroutineScope = coroutineScope,
+                    onLoading = { isSharingLoading = it }
+                )
+            }
+        )
+
+        LoadingScreen(
+            isVisible = isSharingLoading,
+            value = 0,
+            title = "Creating Story...",
+            indeterminate = true
+        )
     }
 }
 
