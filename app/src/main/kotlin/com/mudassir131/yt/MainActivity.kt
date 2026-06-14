@@ -1623,6 +1623,40 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        if ((uri.scheme.equals("velune", ignoreCase = true) || uri.scheme.equals("nocturne", ignoreCase = true)) && authority == "play") {
+            val videoId = uri.getQueryParameter("id")
+            val playlistId = uri.getQueryParameter("list")
+            videoId?.let { vid ->
+                coroutineScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        YouTube.queue(listOf(vid), playlistId)
+                    }
+
+                    result.onSuccess { queued ->
+                        val mediaItem =
+                            queued.firstOrNull { it.id == vid }?.toMediaItem()
+                                ?: queued.firstOrNull()?.toMediaItem()
+                                ?: MediaItem
+                                    .Builder()
+                                    .setMediaId(vid)
+                                    .setUri(vid)
+                                    .setCustomCacheKey(vid)
+                                    .build()
+                        pendingDeepLinkSong =
+                            PendingDeepLinkSong(
+                                mediaItem = mediaItem,
+                            )
+                        startMusicServiceSafely()
+                        playPendingDeepLinkSongIfReady()
+                    }.onFailure {
+                        reportException(it)
+                    }
+                }
+            }
+            return
+        }
+
+
         when (val path = uri.pathSegments.firstOrNull()) {
             "playlist" -> uri.getQueryParameter("list")?.let { playlistId ->
                 if (playlistId.startsWith("OLAK5uy_")) {

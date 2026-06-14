@@ -845,7 +845,7 @@ fun BottomSheetPlayer(
                         songTitle = currentMeta.title,
                         artistName = currentMeta.artists.joinToString { it.name },
                         thumbnailUrl = currentMeta.thumbnailUrl,
-                        fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                        fallbackUrl = "https://music.youtube.com/watch?v=${currentMeta.id}",
                         coroutineScope = coroutineScope,
                         onLoading = { isSharingLoading = it }
                     )
@@ -856,7 +856,7 @@ fun BottomSheetPlayer(
                         songTitle = currentMeta.title,
                         artistName = currentMeta.artists.joinToString { it.name },
                         thumbnailUrl = currentMeta.thumbnailUrl,
-                        fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                        fallbackUrl = "https://music.youtube.com/watch?v=${currentMeta.id}",
                         coroutineScope = coroutineScope,
                         onLoading = { isSharingLoading = it }
                     )

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listen on Nocturne</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0b0d;
+            --card-bg: rgba(28, 28, 30, 0.7);
+            --primary-color: #ff8c00;
+            --primary-gradient: linear-gradient(135deg, #ff8c00 0%, #e52d27 100%);
+            --text-color: #ffffff;
+            --text-secondary: #a0a0a5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient background glow */
+        .ambient-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 140, 0, 0.15) 0%, rgba(229, 45, 39, 0.05) 50%, transparent 100%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            pointer-events: none;
+            filter: blur(80px);
+        }
+
+        /* Glassmorphic card container */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            width: 90%;
+            max-width: 440px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .cover-art-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 28px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cover-art {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cover-fallback {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 72px;
+        }
+
+        .song-title {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-artist {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-bottom: 32px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* Popup Content (Initially hidden) */
+        .popup-content {
+            display: none;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .popup-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin-bottom: 12px;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .footer {
+            margin-top: 24px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="card">
+        <div class="cover-art-container">
+            <img id="coverArt" class="cover-art" src="" alt="Album Art" style="display: none;">
+            <div id="coverFallback" class="cover-fallback">🎵</div>
+        </div>
+        <h1 id="songTitle" class="song-title">Song Title</h1>
+        <p id="songArtist" class="song-artist">Artist Name</p>
+
+        <div id="checkingSection">
+            <div class="spinner"></div>
+            <p class="status-text">Opening Nocturne...</p>
+        </div>
+
+        <div id="popupSection" class="popup-content">
+            <h2 class="popup-title">Nocturne Not Opening?</h2>
+            <p class="popup-desc">If the app isn't installed, download the universal app directly. Or listen on YouTube Music instead.</p>
+            <a href="https://github.com/mudassir131-dev/nocturne/releases/latest" class="btn btn-primary">Download Nocturne</a>
+            <a id="ytmLink" href="#" class="btn btn-secondary">Open in YouTube Music</a>
+        </div>
+
+        <div class="footer">Nocturne Player</div>
+    </div>
+
+    <script>
+        function getQueryParams() {
+            const params = {};
+            const search = window.location.search.substring(1);
+            if (search) {
+                const pairs = search.split("&");
+                for (let i = 0; i < pairs.length; i++) {
+                    const pair = pairs[i].split("=");
+                    params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
+                }
+            }
+            return params;
+        }
+
+        const query = getQueryParams();
+        const videoId = query.id || "";
+        const title = query.title || "Unknown Song";
+        const artist = query.artist || "Unknown Artist";
+
+        document.getElementById("songTitle").textContent = title;
+        document.getElementById("songArtist").textContent = artist;
+
+        if (videoId) {
+            const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
+            const coverArt = document.getElementById("coverArt");
+            const coverFallback = document.getElementById("coverFallback");
+            coverArt.src = thumbnailUrl;
+            coverArt.onload = function() {
+                coverArt.style.display = "block";
+                coverFallback.style.display = "none";
+            };
+            document.getElementById("ytmLink").href = `https://music.youtube.com/watch?v=${videoId}`;
+        }
+
+        // Deep link redirection URLs
+        const deepLinks = [
+            `nocturne://play?id=${videoId}`,
+            `velune://play?id=${videoId}`
+        ];
+
+        // Try redirecting immediately to the app
+        if (videoId) {
+            deepLinks.forEach(link => {
+                const iframe = document.createElement("iframe");
+                iframe.style.display = "none";
+                iframe.src = link;
+                document.body.appendChild(iframe);
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 100);
+            });
+            window.location.href = deepLinks[0];
+        }
+
+        // Show popup after delay if redirect failed (browser remained on this page)
+        setTimeout(() => {
+            document.getElementById("checkingSection").style.display = "none";
+            document.getElementById("popupSection").style.display = "block";
+        }, 2200);
+    </script>
+</body>
+</html>

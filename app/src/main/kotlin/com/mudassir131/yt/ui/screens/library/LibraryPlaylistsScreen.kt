@@ -372,13 +372,29 @@ fun LibraryPlaylistsScreen(
         }
     }
 
+    var showChoiceDialog by rememberSaveable { mutableStateOf(false) }
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
+    var showImportPlaylistDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showChoiceDialog) {
+        com.mudassir131.yt.ui.component.PlaylistActionChoiceDialog(
+            onDismiss = { showChoiceDialog = false },
+            onCreateClick = { showCreatePlaylistDialog = true },
+            onImportClick = { showImportPlaylistDialog = true }
+        )
+    }
 
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
             initialTextFieldValue = initialTextFieldValue,
             allowSyncing = allowSyncing
+        )
+    }
+
+    if (showImportPlaylistDialog) {
+        com.mudassir131.yt.ui.component.PlaylistImportDialog(
+            onDismiss = { showImportPlaylistDialog = false }
         )
     }
 
@@ -730,7 +746,7 @@ fun LibraryPlaylistsScreen(
                     lazyListState = lazyListState,
                     icon = R.drawable.add,
                     onClick = {
-                        showCreatePlaylistDialog = true
+                        showChoiceDialog = true
                     },
                 )
             }
@@ -872,7 +888,7 @@ fun LibraryPlaylistsScreen(
                     lazyListState = lazyGridState,
                     icon = R.drawable.add,
                     onClick = {
-                        showCreatePlaylistDialog = true
+                        showChoiceDialog = true
                     },
                 )
             }

@@ -51,11 +51,18 @@ object StoryShareHelper {
                 val stickerBitmap = ComposeToImage.createShareCard(context, thumbnailUrl, songTitle, artistName)
                 val stickerUri = ComposeToImage.saveBitmapToCache(context, stickerBitmap, "instagram_share_sticker")
 
+                val videoId = extractVideoId(fallbackUrl)
+                val shareUrl = if (videoId != null) {
+                    "https://mudassir131-dev.github.io/nocturne/share.html?id=$videoId&title=${java.net.URLEncoder.encode(songTitle, "UTF-8")}&artist=${java.net.URLEncoder.encode(artistName, "UTF-8")}"
+                } else {
+                    fallbackUrl
+                }
+
                 withContext(Dispatchers.Main) {
                     val intent = Intent("com.instagram.share.ADD_TO_STORY").apply {
                         type = "image/png"
                         putExtra("interactive_asset_uri", stickerUri)
-                        putExtra("content_url", fallbackUrl)
+                        putExtra("content_url", shareUrl)
                         putExtra("source_application", context.packageName)
                         setPackage(INSTAGRAM_PACKAGE)
                         
@@ -109,13 +116,21 @@ object StoryShareHelper {
                 val stickerUri = ComposeToImage.saveBitmapToCache(context, stickerBitmap, "snapchat_share_sticker")
                 val backgroundUri = ComposeToImage.saveBitmapToCache(context, backgroundBitmap, "snapchat_share_background")
 
+                val videoId = extractVideoId(fallbackUrl)
+                val shareUrl = if (videoId != null) {
+                    "https://mudassir131-dev.github.io/nocturne/share.html?id=$videoId&title=${java.net.URLEncoder.encode(songTitle, "UTF-8")}&artist=${java.net.URLEncoder.encode(artistName, "UTF-8")}"
+                } else {
+                    fallbackUrl
+                }
+
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         setPackage(SNAPCHAT_PACKAGE)
                         setDataAndType(Uri.parse("snapchat://creativekit/preview"), "image/png")
                         putExtra(Intent.EXTRA_STREAM, backgroundUri)
                         putExtra("sticker", stickerUri)
-                        putExtra("attachmentUrl", fallbackUrl)
+                        putExtra("attachmentUrl", shareUrl)
+                        putExtra("attachment_url", shareUrl)
                         
                         // Explicitly set ClipData so the system grants read URI permission to both URIs
                         val clip = ClipData.newRawUri("sticker", stickerUri).apply {
@@ -155,5 +170,12 @@ object StoryShareHelper {
             putExtra(Intent.EXTRA_TEXT, shareText)
         }
         context.startActivity(Intent.createChooser(intent, null))
+    }
+
+    private fun extractVideoId(url: String): String? {
+        if (url.contains("v=")) {
+            return url.substringAfter("v=").substringBefore("&")
+        }
+        return null
     }
 }

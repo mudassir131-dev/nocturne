@@ -502,22 +502,22 @@ object ComposeToImage {
         songTitle: String,
         artistName: String,
     ): Bitmap = withContext(Dispatchers.Default) {
-        val width = 720
-        val height = 960
+        val width = 1440
+        val height = 1920
         val bitmap = createBitmap(width, height)
         val canvas = Canvas(bitmap)
 
         canvas.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
 
-        val cardWidth = 640f
-        val cardHeight = 860f
+        val cardWidth = 1280f
+        val cardHeight = 1720f
         val cardLeft = (width - cardWidth) / 2f
         val cardTop = (height - cardHeight) / 2f
         val cardRight = cardLeft + cardWidth
         val cardBottom = cardTop + cardHeight
 
         val cardRect = RectF(cardLeft, cardTop, cardRight, cardBottom)
-        val cardCornerRadius = 48f
+        val cardCornerRadius = 96f
 
         val cardBgPaint = Paint().apply {
             color = android.graphics.Color.parseColor("#1C1C1E")
@@ -532,7 +532,7 @@ object ComposeToImage {
                 val imageLoader = ImageLoader(context)
                 val request = ImageRequest.Builder(context)
                     .data(coverArtUrl)
-                    .size(512)
+                    .size(1088)
                     .allowHardware(false)
                     .build()
                 val result = imageLoader.execute(request)
@@ -540,12 +540,12 @@ object ComposeToImage {
             } catch (_: Exception) {}
         }
 
-        val artPadding = 48f
+        val artPadding = 96f
         val artSize = cardWidth - (artPadding * 2f)
         val artLeft = cardLeft + artPadding
         val artTop = cardTop + artPadding
         val artRect = RectF(artLeft, artTop, artLeft + artSize, artTop + artSize)
-        val artCornerRadius = 32f
+        val artCornerRadius = 64f
 
         val artPaint = Paint().apply { isAntiAlias = true }
         if (coverArtBitmap != null) {
@@ -564,24 +564,24 @@ object ComposeToImage {
             
             val notePaint = Paint().apply {
                 color = android.graphics.Color.GRAY
-                textSize = 120f
+                textSize = 240f
                 typeface = Typeface.DEFAULT_BOLD
                 isAntiAlias = true
                 textAlign = Paint.Align.CENTER
             }
-            canvas.drawText("🎵", artRect.centerX(), artRect.centerY() + 40f, notePaint)
+            canvas.drawText("🎵", artRect.centerX(), artRect.centerY() + 80f, notePaint)
         }
 
         val titlePaint = TextPaint().apply {
             color = android.graphics.Color.WHITE
-            textSize = 40f
+            textSize = 80f
             typeface = Typeface.DEFAULT_BOLD
             isAntiAlias = true
         }
         
         val artistPaint = TextPaint().apply {
             color = android.graphics.Color.parseColor("#8E8E93")
-            textSize = 28f
+            textSize = 56f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             isAntiAlias = true
         }
@@ -598,22 +598,22 @@ object ComposeToImage {
             .setMaxLines(1)
             .build()
 
-        val titleY = artTop + artSize + 36f
+        val titleY = artTop + artSize + 72f
         canvas.withTranslation(textLeft, titleY) {
             titleLayout.draw(this)
         }
         
-        val artistY = titleY + titleLayout.height + 12f
+        val artistY = titleY + titleLayout.height + 24f
         canvas.withTranslation(textLeft, artistY) {
             artistLayout.draw(this)
         }
 
-        val logoSize = 36f
-        val logoPadding = 12f
+        val logoSize = 72f
+        val logoPadding = 24f
         
         val brandPaint = Paint().apply {
             color = android.graphics.Color.parseColor("#8E8E93")
-            textSize = 28f
+            textSize = 56f
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             isAntiAlias = true
         }
@@ -634,7 +634,7 @@ object ComposeToImage {
         val brandTextWidth = brandPaint.measureText(brandText)
         
         val logoLeft = artLeft
-        val brandBottom = cardBottom - 48f
+        val brandBottom = cardBottom - 96f
         
         logoBitmap?.let {
             canvas.drawBitmap(it, logoLeft, brandBottom - logoSize, null)
@@ -643,7 +643,7 @@ object ComposeToImage {
         canvas.drawText(
             brandText, 
             logoLeft + logoSize + logoPadding, 
-            brandBottom - (logoSize - brandPaint.textSize) / 2f - 4f, 
+            brandBottom - (logoSize - brandPaint.textSize) / 2f - 8f, 
             brandPaint
         )
 

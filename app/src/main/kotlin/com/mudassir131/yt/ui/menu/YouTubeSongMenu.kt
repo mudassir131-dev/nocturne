@@ -195,7 +195,7 @@ fun YouTubeSongMenu(
                 songTitle = song.title,
                 artistName = song.artists.joinToString { it.name },
                 thumbnailUrl = song.thumbnail,
-                fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                fallbackUrl = "https://music.youtube.com/watch?v=${song.id}",
                 coroutineScope = coroutineScope,
                 onLoading = { loading ->
                     isSharingLoading = loading
@@ -211,7 +211,7 @@ fun YouTubeSongMenu(
                 songTitle = song.title,
                 artistName = song.artists.joinToString { it.name },
                 thumbnailUrl = song.thumbnail,
-                fallbackUrl = "https://github.com/mudassir131-dev/nocturne",
+                fallbackUrl = "https://music.youtube.com/watch?v=${song.id}",
                 coroutineScope = coroutineScope,
                 onLoading = { loading ->
                     isSharingLoading = loading

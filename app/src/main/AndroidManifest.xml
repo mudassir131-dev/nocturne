@@ -75,6 +75,19 @@
                     android:scheme="velune" />
             </intent-filter>
 
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="play"
+                    android:scheme="velune" />
+                <data
+                    android:host="play"
+                    android:scheme="nocturne" />
+            </intent-filter>
+
+
             <!-- Youtube filter -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
