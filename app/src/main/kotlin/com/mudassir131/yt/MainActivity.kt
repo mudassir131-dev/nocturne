@@ -57,11 +57,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -226,6 +229,12 @@ import com.mudassir131.yt.utils.rememberPreference
 import com.mudassir131.yt.utils.reportException
 import com.mudassir131.yt.utils.setAppLocale
 import com.mudassir131.yt.viewmodels.HomeViewModel
+import com.mudassir131.yt.utils.Updater
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Locale
@@ -463,6 +472,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var showSplashScreen by remember { mutableStateOf(true) }
+            var latestVersionName by remember { mutableStateOf("") }
+            val releaseNotesState = remember { mutableStateOf<String?>(null) }
+
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                     if (isGranted) {
@@ -480,13 +492,10 @@ class MainActivity : ComponentActivity() {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
 
-                // Update checker disabled - IzzyOnDroid handles updates
-                // if (System.currentTimeMillis() - Updater.lastCheckTime > 1.days.inWholeMilliseconds) {
-                //     Updater.getLatestVersionName().onSuccess {
-                //         latestVersionName = it
-                //     }
-                // }
-                // com.mudassir131.yt.utils.UpdateNotificationManager.checkForUpdates(this@MainActivity)
+                Updater.getLatestVersionName().onSuccess {
+                    latestVersionName = it
+                }
+                com.mudassir131.yt.utils.UpdateNotificationManager.checkForUpdates(this@MainActivity)
             }
 
             // Use remembered instances so the same state object is used everywhere
@@ -497,22 +506,198 @@ class MainActivity : ComponentActivity() {
             val menuState = remember { com.mudassir131.yt.ui.component.MenuState() }
             LocalUriHandler.current
 
+            val updateSheetContent: @Composable ColumnScope.() -> Unit = {
+                val uriHandler = LocalUriHandler.current
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.update),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
 
-            // Update popup disabled - IzzyOnDroid handles updates
-            // LaunchedEffect(latestVersionName) {
-            //     val cleanLatest = latestVersionName
-            //         .removePrefix("Velune ")
-            //         .removePrefix("v")
-            //         .trim()
-            //     if (cleanLatest.isNotEmpty() && cleanLatest != BuildConfig.VERSION_NAME) {
-            //         Updater.getLatestReleaseNotes().onSuccess {
-            //             releaseNotesState.value = it
-            //         }.onFailure {
-            //             releaseNotesState.value = null
-            //         }
-            //         bottomSheetPageState.show(updateSheetContent)
-            //     }
-            // }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "New Update Available!",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Version $latestVersionName",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "What's New:",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "• ",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Column {
+                                    Text(
+                                        text = "Content Filtration",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Filter content and manage restrictions under Content settings.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "• ",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Column {
+                                    Text(
+                                        text = "Song Card Share on Instagram & Snapchat",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Share beautiful high-res song cards directly to Instagram & Snapchat stories.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "• ",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Column {
+                                    Text(
+                                        text = "Playlist Import",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Easily import Spotify playlists in the background.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TextButton(
+                            onClick = { bottomSheetPageState.dismiss() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Later",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val downloadUrl = Updater.getLatestDownloadUrl()
+                                uriHandler.openUri(downloadUrl)
+                                bottomSheetPageState.dismiss()
+                            },
+                            modifier = Modifier.weight(1.5f),
+                            shape = RoundedCornerShape(100.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.download),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Download Now",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            LaunchedEffect(latestVersionName) {
+                val cleanLatest = latestVersionName
+                    .removePrefix("Velune ")
+                    .removePrefix("v")
+                    .trim()
+                if (cleanLatest.isNotEmpty() && cleanLatest != BuildConfig.VERSION_NAME) {
+                    Updater.getLatestReleaseNotes().onSuccess {
+                        releaseNotesState.value = it
+                    }.onFailure {
+                        releaseNotesState.value = null
+                    }
+                    bottomSheetPageState.show(updateSheetContent)
+                }
+            }
 
 
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)

@@ -88,7 +88,17 @@ object UpdateNotificationManager {
             try {
                 val dataStore = context.dataStore
 
-                val isEnabled = dataStore.data.map { it[EnableUpdateNotificationKey] ?: false }.first()
+                // Always query the latest version first to see if they are running an older version
+                val latestResult = Updater.getLatestVersionName()
+                val latestVersion = latestResult.getOrNull()
+
+                if (latestVersion != null && latestVersion != BuildConfig.VERSION_NAME) {
+                    // Persistent update notification bypasses user settings & intervals
+                    showUpdateNotification(context, latestVersion)
+                    return@launch
+                }
+
+                val isEnabled = dataStore.data.map { it[EnableUpdateNotificationKey] ?: true }.first()
                 if (!isEnabled) {
                     cancelPeriodicUpdateCheck(context)
                     return@launch
@@ -110,12 +120,6 @@ object UpdateNotificationManager {
                 if (now - lastCheck < CHECK_INTERVAL_MS) return@launch
 
                 dataStore.edit { it[LastUpdateCheckKey] = now }
-
-                Updater.getLatestVersionName().onSuccess { latestVersion ->
-                    if (latestVersion != BuildConfig.VERSION_NAME) {
-                        notifyIfNewVersion(context, latestVersion)
-                    }
-                }
             } catch (e: Exception) {
                 // Silently fail
             }
@@ -124,12 +128,8 @@ object UpdateNotificationManager {
 
     suspend fun notifyIfNewVersion(context: Context, latestVersion: String) {
         try {
-            val dataStore = context.dataStore
-            val lastNotified = dataStore.data.map { it[LastNotifiedVersionKey] ?: "" }.first()
-
-            if (latestVersion != lastNotified && latestVersion != BuildConfig.VERSION_NAME) {
+            if (latestVersion != BuildConfig.VERSION_NAME) {
                 showUpdateNotification(context, latestVersion)
-                dataStore.edit { it[LastNotifiedVersionKey] = latestVersion }
             }
         } catch (e: Exception) {
             // Silently fail
@@ -160,14 +160,14 @@ object UpdateNotificationManager {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_velune_concept)
-            .setContentTitle(context.getString(R.string.update_notification_title))
-            .setContentText(context.getString(R.string.update_notification_text, newVersion))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentTitle("Update Available: $newVersion")
+            .setContentText("Features: Content Filtration, Song Card Share, Playlist Import")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openAppPendingIntent)
             .setAutoCancel(true)
             .addAction(
                 R.drawable.download,
-                context.getString(R.string.download),
+                "Download Now",
                 downloadPendingIntent
             )
             .build()
