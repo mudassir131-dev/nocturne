@@ -5,6 +5,7 @@
 
 package com.mudassir131.yt.utils
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -57,6 +58,10 @@ object StoryShareHelper {
                         putExtra("content_url", fallbackUrl)
                         putExtra("source_application", context.packageName)
                         setPackage(INSTAGRAM_PACKAGE)
+                        
+                        // Explicitly set ClipData so the system grants read URI permission
+                        clipData = ClipData.newRawUri("sticker", stickerUri)
+                        
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
 
@@ -105,13 +110,19 @@ object StoryShareHelper {
                 val backgroundUri = ComposeToImage.saveBitmapToCache(context, backgroundBitmap, "snapchat_share_background")
 
                 withContext(Dispatchers.Main) {
-                    val intent = Intent("com.snapchat.add.TO_STORY").apply {
-                        type = "image/png"
-                        putExtra("interactive_asset_uri", stickerUri)
-                        putExtra(Intent.EXTRA_STREAM, backgroundUri)
-                        putExtra("attachmentUrl", fallbackUrl)
-                        putExtra("source_application", context.packageName)
+                    val intent = Intent(Intent.ACTION_SEND).apply {
                         setPackage(SNAPCHAT_PACKAGE)
+                        setDataAndType(Uri.parse("snapchat://creativekit/preview"), "image/png")
+                        putExtra(Intent.EXTRA_STREAM, backgroundUri)
+                        putExtra("sticker", stickerUri)
+                        putExtra("attachmentUrl", fallbackUrl)
+                        
+                        // Explicitly set ClipData so the system grants read URI permission to both URIs
+                        val clip = ClipData.newRawUri("sticker", stickerUri).apply {
+                            addItem(ClipData.Item(backgroundUri))
+                        }
+                        clipData = clip
+                        
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
 
