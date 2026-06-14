@@ -8,6 +8,7 @@ package com.mudassir131.yt.utils
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -127,10 +128,9 @@ object StoryShareHelper {
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         setPackage(SNAPCHAT_PACKAGE)
-                        type = "image/png"
+                        setDataAndType(Uri.parse("snapchat://creativekit/preview"), "image/png")
                         putExtra(Intent.EXTRA_STREAM, compositeUri)
-                        // Include the link as caption text
-                        putExtra(Intent.EXTRA_TEXT, "$songTitle — $artistName\n$shareUrl")
+                        putExtra("attachmentUrl", shareUrl)
 
                         clipData = ClipData.newRawUri("share", compositeUri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

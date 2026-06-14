@@ -101,8 +101,6 @@ import com.mudassir131.yt.constants.VeluneCanvasKey
 import com.mudassir131.yt.constants.ThumbnailCornerRadiusKey
 import com.mudassir131.yt.constants.CropThumbnailToSquareKey
 import com.mudassir131.yt.constants.DisableBlurKey
-import com.mudassir131.yt.constants.ContentFilterMode
-import com.mudassir131.yt.constants.ContentFilterModeKey
 
 import com.mudassir131.yt.constants.UseLyricsV2Key
 import com.mudassir131.yt.ui.component.DefaultDialog
@@ -126,10 +124,6 @@ fun AppearanceSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    val (contentFilterMode, onContentFilterModeChange) = rememberEnumPreference(
-        ContentFilterModeKey,
-        defaultValue = ContentFilterMode.GLOBAL
-    )
     val (dynamicTheme, onDynamicThemeChange) = rememberPreference(
         DynamicThemeKey,
         defaultValue = true
@@ -395,20 +389,6 @@ fun AppearanceSettings(
             icon = { Icon(painterResource(R.drawable.text_fields), null) },
             checked = useSystemFont,
             onCheckedChange = onUseSystemFontChange,
-        )
-
-        EnumListPreference(
-            title = { Text("Content Filter Mode") },
-            icon = { Icon(painterResource(R.drawable.filter_alt), null) },
-            selectedValue = contentFilterMode,
-            onValueSelected = onContentFilterModeChange,
-            valueText = {
-                when (it) {
-                    ContentFilterMode.GLOBAL -> "Global (All Songs)"
-                    ContentFilterMode.QURANIC -> "Quranic (Quran Only)"
-                    ContentFilterMode.NASHEED -> "Nasheed (Nasheeds Only)"
-                }
-            },
         )
 
         PreferenceGroupTitle(

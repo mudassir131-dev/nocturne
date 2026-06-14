@@ -529,9 +529,10 @@ object ComposeToImage {
         var coverArtBitmap: Bitmap? = null
         if (coverArtUrl != null) {
             try {
+                val highResUrl = toHighResThumbnail(coverArtUrl)
                 val imageLoader = ImageLoader(context)
                 val request = ImageRequest.Builder(context)
-                    .data(coverArtUrl)
+                    .data(highResUrl)
                     .size(1088)
                     .allowHardware(false)
                     .build()
@@ -795,5 +796,28 @@ object ComposeToImage {
         canvas.drawBitmap(scaledCard, dx, dy, null)
 
         return out
+    }
+
+    private fun toHighResThumbnail(url: String): String {
+        if (url.contains("googleusercontent.com") || url.contains("ggpht.com")) {
+            val regex = "([=-])(w\\d+-h\\d+|s\\d+)(-[a-zA-Z0-9]+)*$".toRegex()
+            return if (regex.containsMatchIn(url)) {
+                url.replace(regex, "$1w1080-h1080-c")
+            } else {
+                if (url.contains("=")) {
+                    url.substringBeforeLast("=") + "=w1080-h1080-c"
+                } else {
+                    "$url=w1080-h1080-c"
+                }
+            }
+        }
+        if (url.contains("img.youtube.com") || url.contains("i.ytimg.com")) {
+            return url.replace("/default.jpg", "/maxresdefault.jpg")
+                .replace("/hqdefault.jpg", "/maxresdefault.jpg")
+                .replace("/mqdefault.jpg", "/maxresdefault.jpg")
+                .replace("/sddefault.jpg", "/maxresdefault.jpg")
+                .replace("/0.jpg", "/maxresdefault.jpg")
+        }
+        return url
     }
 }

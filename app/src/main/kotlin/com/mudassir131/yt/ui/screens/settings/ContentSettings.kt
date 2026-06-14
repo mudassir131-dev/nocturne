@@ -86,6 +86,10 @@ fun ContentSettings(
     val (queueLyricsPreloadCount, onQueueLyricsPreloadCountChange) = rememberPreference(QueueLyricsPreloadCountKey, defaultValue = 1)
     val (lengthTop, onLengthTopChange) = rememberPreference(key = TopSize, defaultValue = "50")
     val (quickPicks, onQuickPicksChange) = rememberEnumPreference(key = QuickPicksKey, defaultValue = QuickPicks.QUICK_PICKS)
+    val (contentFilterMode, onContentFilterModeChange) = rememberEnumPreference(
+        ContentFilterModeKey,
+        defaultValue = ContentFilterMode.GLOBAL
+    )
 
     Column(
         Modifier
@@ -148,6 +152,20 @@ fun ContentSettings(
             icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
             checked = hideVideo,
             onCheckedChange = onHideVideoChange,
+        )
+
+        EnumListPreference(
+            title = { Text("Content Filter Mode") },
+            icon = { Icon(painterResource(R.drawable.filter_alt), null) },
+            selectedValue = contentFilterMode,
+            onValueSelected = onContentFilterModeChange,
+            valueText = {
+                when (it) {
+                    ContentFilterMode.GLOBAL -> "Global (All Songs)"
+                    ContentFilterMode.QURANIC -> "Quranic (Quran Only)"
+                    ContentFilterMode.NASHEED -> "Nasheed (Nasheeds Only)"
+                }
+            },
         )
 
         PreferenceGroupTitle(title = stringResource(R.string.app_language))
