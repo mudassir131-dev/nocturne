@@ -8,7 +8,6 @@ package com.mudassir131.yt.utils
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -111,10 +110,12 @@ object StoryShareHelper {
             onLoading(true)
             try {
                 val stickerBitmap = ComposeToImage.createShareCard(context, thumbnailUrl, songTitle, artistName)
-                val backgroundBitmap = ComposeToImage.createSolidBackground(0xFF000000.toInt())
+                // Composite the card onto a solid black background as a single image.
+                // Snapchat's Creative Kit sticker+background extras require a registered
+                // Client ID via the Snap Kit SDK. Without it, we must send one combined image.
+                val compositeBitmap = ComposeToImage.compositeCardOnBackground(stickerBitmap, 0xFF000000.toInt())
 
-                val stickerUri = ComposeToImage.saveBitmapToCache(context, stickerBitmap, "snapchat_share_sticker")
-                val backgroundUri = ComposeToImage.saveBitmapToCache(context, backgroundBitmap, "snapchat_share_background")
+                val compositeUri = ComposeToImage.saveBitmapToCache(context, compositeBitmap, "snapchat_share_composite")
 
                 val videoId = extractVideoId(fallbackUrl)
                 val shareUrl = if (videoId != null) {
@@ -126,23 +127,16 @@ object StoryShareHelper {
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         setPackage(SNAPCHAT_PACKAGE)
-                        setDataAndType(Uri.parse("snapchat://creativekit/preview"), "image/png")
-                        putExtra(Intent.EXTRA_STREAM, backgroundUri)
-                        putExtra("sticker", stickerUri)
-                        putExtra("attachmentUrl", shareUrl)
-                        putExtra("attachment_url", shareUrl)
-                        
-                        // Explicitly set ClipData so the system grants read URI permission to both URIs
-                        val clip = ClipData.newRawUri("sticker", stickerUri).apply {
-                            addItem(ClipData.Item(backgroundUri))
-                        }
-                        clipData = clip
-                        
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, compositeUri)
+                        // Include the link as caption text
+                        putExtra(Intent.EXTRA_TEXT, "$songTitle — $artistName\n$shareUrl")
+
+                        clipData = ClipData.newRawUri("share", compositeUri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
 
-                    context.grantUriPermission(SNAPCHAT_PACKAGE, stickerUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    context.grantUriPermission(SNAPCHAT_PACKAGE, backgroundUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    context.grantUriPermission(SNAPCHAT_PACKAGE, compositeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
                     try {
                         context.startActivity(intent)

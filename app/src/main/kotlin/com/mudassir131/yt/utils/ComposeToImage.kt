@@ -757,4 +757,43 @@ object ComposeToImage {
         canvas.drawColor(color)
         return out
     }
+
+    /**
+     * Composites the card sticker bitmap centered on a solid-color background
+     * as a single final image. This avoids needing Snap Creative Kit SDK
+     * registration for separate sticker + background layer support.
+     */
+    fun compositeCardOnBackground(card: Bitmap, backgroundColor: Int): Bitmap {
+        val width = 1080
+        val height = 1920
+        val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        canvas.drawColor(backgroundColor)
+
+        val safeCard = ensureSoftwareBitmap(card)
+
+        // Scale the card to fit nicely within the background (85% width max)
+        val maxCardWidth = (width * 0.85f)
+        val scale = if (safeCard.width > maxCardWidth) {
+            maxCardWidth / safeCard.width
+        } else {
+            // If the card is already smaller, scale it up to fill nicely
+            minOf(maxCardWidth / safeCard.width, (height * 0.75f) / safeCard.height)
+        }
+
+        val scaledW = (safeCard.width * scale).toInt().coerceAtLeast(1)
+        val scaledH = (safeCard.height * scale).toInt().coerceAtLeast(1)
+        val scaledCard = if (scaledW != safeCard.width || scaledH != safeCard.height) {
+            ensureSoftwareBitmap(Bitmap.createScaledBitmap(safeCard, scaledW, scaledH, true))
+        } else {
+            safeCard
+        }
+
+        // Center the card on the background
+        val dx = (width - scaledCard.width) / 2f
+        val dy = (height - scaledCard.height) / 2f
+        canvas.drawBitmap(scaledCard, dx, dy, null)
+
+        return out
+    }
 }
