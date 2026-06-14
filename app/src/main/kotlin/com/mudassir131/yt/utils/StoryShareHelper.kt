@@ -48,14 +48,11 @@ object StoryShareHelper {
             onLoading(true)
             try {
                 val stickerBitmap = ComposeToImage.createShareCard(context, thumbnailUrl, songTitle, artistName)
-                val backgroundBitmap = ComposeToImage.createBlurredBackground(context, thumbnailUrl)
-
                 val stickerUri = ComposeToImage.saveBitmapToCache(context, stickerBitmap, "instagram_share_sticker")
-                val backgroundUri = ComposeToImage.saveBitmapToCache(context, backgroundBitmap, "instagram_share_background")
 
                 withContext(Dispatchers.Main) {
                     val intent = Intent("com.instagram.share.ADD_TO_STORY").apply {
-                        setDataAndType(backgroundUri, "image/png")
+                        type = "image/png"
                         putExtra("interactive_asset_uri", stickerUri)
                         putExtra("content_url", fallbackUrl)
                         putExtra("source_application", context.packageName)
@@ -64,7 +61,6 @@ object StoryShareHelper {
                     }
 
                     context.grantUriPermission(INSTAGRAM_PACKAGE, stickerUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    context.grantUriPermission(INSTAGRAM_PACKAGE, backgroundUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
                     try {
                         context.startActivity(intent)
@@ -103,18 +99,19 @@ object StoryShareHelper {
             onLoading(true)
             try {
                 val stickerBitmap = ComposeToImage.createShareCard(context, thumbnailUrl, songTitle, artistName)
-                val backgroundBitmap = ComposeToImage.createBlurredBackground(context, thumbnailUrl)
+                val backgroundBitmap = ComposeToImage.createSolidBackground(0xFF000000.toInt())
 
                 val stickerUri = ComposeToImage.saveBitmapToCache(context, stickerBitmap, "snapchat_share_sticker")
                 val backgroundUri = ComposeToImage.saveBitmapToCache(context, backgroundBitmap, "snapchat_share_background")
 
                 withContext(Dispatchers.Main) {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        setPackage(SNAPCHAT_PACKAGE)
-                        setDataAndType(Uri.parse("snapchat://creativekit/preview"), "image/png")
+                    val intent = Intent("com.snapchat.add.TO_STORY").apply {
+                        type = "image/png"
+                        putExtra("interactive_asset_uri", stickerUri)
                         putExtra(Intent.EXTRA_STREAM, backgroundUri)
-                        putExtra("sticker", stickerUri)
                         putExtra("attachmentUrl", fallbackUrl)
+                        putExtra("source_application", context.packageName)
+                        setPackage(SNAPCHAT_PACKAGE)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
 

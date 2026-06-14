@@ -8,6 +8,7 @@
 
 package com.mudassir131.yt.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mudassir131.yt.db.MusicDatabase
@@ -16,7 +17,13 @@ import com.mudassir131.yt.db.entities.Artist
 import com.mudassir131.yt.db.entities.LocalItem
 import com.mudassir131.yt.db.entities.Playlist
 import com.mudassir131.yt.db.entities.Song
+import com.mudassir131.yt.constants.ContentFilterMode
+import com.mudassir131.yt.constants.ContentFilterModeKey
+import com.mudassir131.yt.utils.filterLocalItemsByContentMode
+import com.mudassir131.yt.utils.dataStore
+import com.mudassir131.yt.extensions.toEnum
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +32,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.distinctUntilChanged
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -32,15 +40,20 @@ import javax.inject.Inject
 class LocalSearchViewModel
 @Inject
 constructor(
+    @ApplicationContext val context: Context,
     database: MusicDatabase,
 ) : ViewModel() {
     val query = MutableStateFlow("")
     val filter = MutableStateFlow(LocalFilter.ALL)
 
+    val contentFilterMode = context.dataStore.data.map {
+        it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+    }.distinctUntilChanged()
+
     val result =
-        combine(query, filter) { query, filter ->
-            query to filter
-        }.flatMapLatest { (query, filter) ->
+        combine(query, filter, contentFilterMode) { query, filter, mode ->
+            Triple(query, filter, mode)
+        }.flatMapLatest { (query, filter, mode) ->
             if (query.isEmpty()) {
                 flowOf(LocalSearchResult("", filter, emptyMap()))
             } else {
@@ -60,11 +73,12 @@ constructor(
                     LocalFilter.ARTIST -> database.searchArtists(query)
                     LocalFilter.PLAYLIST -> database.searchPlaylists(query)
                 }.map { list ->
+                    val filteredList = list.filterLocalItemsByContentMode(mode)
                     LocalSearchResult(
                         query = query,
                         filter = filter,
                         map =
-                        list.groupBy {
+                        filteredList.groupBy {
                             when (it) {
                                 is Song -> LocalFilter.SONG
                                 is Album -> LocalFilter.ALBUM

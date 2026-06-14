@@ -748,4 +748,13 @@ object ComposeToImage {
             )
         }
     }
+
+    fun createSolidBackground(color: Int): Bitmap {
+        val width = 1080
+        val height = 1920
+        val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        canvas.drawColor(color)
+        return out
+    }
 }

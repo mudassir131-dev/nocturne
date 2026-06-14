@@ -580,3 +580,12 @@ enum class UpdateChannel {
     STABLE,
     NIGHTLY,
 }
+
+val ContentFilterModeKey = stringPreferencesKey("contentFilterMode")
+
+enum class ContentFilterMode {
+    GLOBAL,
+    QURANIC,
+    NASHEED,
+}
+

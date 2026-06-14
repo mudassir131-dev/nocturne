@@ -44,6 +44,10 @@ import com.mudassir131.yt.constants.SongSortDescendingKey
 import com.mudassir131.yt.constants.SongSortType
 import com.mudassir131.yt.constants.SongSortTypeKey
 import com.mudassir131.yt.constants.TopSize
+import com.mudassir131.yt.constants.ContentFilterMode
+import com.mudassir131.yt.constants.ContentFilterModeKey
+import com.mudassir131.yt.utils.filterSongsByContentMode
+import com.mudassir131.yt.utils.filterLocalItemsByContentMode
 import com.mudassir131.yt.db.MusicDatabase
 import com.mudassir131.yt.db.entities.Song
 import com.mudassir131.yt.extensions.filterExplicit
@@ -89,21 +93,25 @@ constructor(
     val allSongs =
         context.dataStore.data
             .map {
-                Triple(
-                    Triple(
-                        it[SongFilterKey].toEnum(SongFilter.LIKED),
-                        it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
-                        (it[SongSortDescendingKey] ?: true),
-                    ),
-                    it[HideExplicitKey] ?: false,
-                    it[HideVideoKey] ?: false,
+                val filterSort = Triple(
+                    it[SongFilterKey].toEnum(SongFilter.LIKED),
+                    it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
+                    (it[SongSortDescendingKey] ?: true)
                 )
+                val hideExplicit = it[HideExplicitKey] ?: false
+                val hideVideo = it[HideVideoKey] ?: false
+                val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+                Pair(Pair(filterSort, hideExplicit), Pair(hideVideo, mode))
             }.distinctUntilChanged()
-            .flatMapLatest { (filterSort, hideExplicit, hideVideo) ->
+            .flatMapLatest { (firstPart, secondPart) ->
+                val (filterSort, hideExplicit) = firstPart
+                val (hideVideo, mode) = secondPart
                 val (filter, sortType, descending) = filterSort
                 when (filter) {
-                    SongFilter.LIBRARY -> database.songs(sortType, descending, hideVideo).map { it.filterExplicit(hideExplicit) }
-                    SongFilter.LIKED -> database.likedSongs(sortType, descending, hideVideo).map { it.filterExplicit(hideExplicit) }
+                    SongFilter.LIBRARY -> database.songs(sortType, descending, hideVideo)
+                        .map { it.filterExplicit(hideExplicit).filterSongsByContentMode(mode) }
+                    SongFilter.LIKED -> database.likedSongs(sortType, descending, hideVideo)
+                        .map { it.filterExplicit(hideExplicit).filterSongsByContentMode(mode) }
                     SongFilter.DOWNLOADED ->
                         downloadUtil.downloads.flatMapLatest { downloads ->
                             database
@@ -140,7 +148,7 @@ constructor(
                                         }
 
                                         SongSortType.PLAY_TIME -> songs.sortedBy { song: Song -> song.song.totalPlayTime }
-                                    }.reversed(descending).filterExplicit(hideExplicit)
+                                    }.reversed(descending).filterExplicit(hideExplicit).filterSongsByContentMode(mode)
                                 }
                         }
                 }
@@ -187,17 +195,18 @@ constructor(
     val allArtists =
         context.dataStore.data
             .map {
-                Triple(
-                    it[ArtistFilterKey].toEnum(ArtistFilter.LIKED),
-                    it[ArtistSortTypeKey].toEnum(ArtistSortType.CREATE_DATE),
-                    it[ArtistSortDescendingKey] ?: true,
-                )
+                val filter = it[ArtistFilterKey].toEnum(ArtistFilter.LIKED)
+                val sortType = it[ArtistSortTypeKey].toEnum(ArtistSortType.CREATE_DATE)
+                val descending = it[ArtistSortDescendingKey] ?: true
+                val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+                Pair(Triple(filter, sortType, descending), mode)
             }.distinctUntilChanged()
-            .flatMapLatest { (filter, sortType, descending) ->
+            .flatMapLatest { (triple, mode) ->
+                val (filter, sortType, descending) = triple
                 when (filter) {
                     ArtistFilter.LIBRARY -> database.artists(sortType, descending)
                     ArtistFilter.LIKED -> database.artistsBookmarked(sortType, descending)
-                }
+                }.map { it.filterLocalItemsByContentMode(mode) }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun refresh(filter: ArtistFilter) {
@@ -256,17 +265,16 @@ constructor(
     val allAlbums =
         context.dataStore.data
             .map {
-                Pair(
-                    Triple(
-                        it[AlbumFilterKey].toEnum(AlbumFilter.LIKED),
-                        it[AlbumSortTypeKey].toEnum(AlbumSortType.CREATE_DATE),
-                        it[AlbumSortDescendingKey] ?: true,
-                    ),
-                    it[HideExplicitKey] ?: false
-                )
+                val filter = it[AlbumFilterKey].toEnum(AlbumFilter.LIKED)
+                val sortType = it[AlbumSortTypeKey].toEnum(AlbumSortType.CREATE_DATE)
+                val descending = it[AlbumSortDescendingKey] ?: true
+                val hideExplicit = it[HideExplicitKey] ?: false
+                val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+                Pair(Triple(filter, sortType, descending), Pair(hideExplicit, mode))
             }.distinctUntilChanged()
-            .flatMapLatest { (filterSort, hideExplicit) ->
-                val (filter, sortType, descending) = filterSort
+            .flatMapLatest { (triple, pair) ->
+                val (filter, sortType, descending) = triple
+                val (hideExplicit, mode) = pair
                 when (filter) {
                     AlbumFilter.DOWNLOADED ->
                         downloadUtil.downloads.flatMapLatest { downloads ->
@@ -279,7 +287,7 @@ constructor(
                                         .toSet()
                                 }.flatMapLatest { downloadedAlbumIds ->
                                     database.albumsByIds(downloadedAlbumIds, sortType, descending)
-                                        .map { albums -> albums.filterExplicitAlbums(hideExplicit) }
+                                        .map { albums -> albums.filterExplicitAlbums(hideExplicit).filterLocalItemsByContentMode(mode) }
                                 }
                         }
                     
@@ -300,12 +308,12 @@ constructor(
                                                     val totalSongsInAlbum = album.album.songCount
                                                     val downloadedSongsCount = downloadedCountByAlbum[album.album.id] ?: 0
                                                     totalSongsInAlbum > 0 && downloadedSongsCount >= totalSongsInAlbum
-                                                }.filterExplicitAlbums(hideExplicit)
+                                                }.filterExplicitAlbums(hideExplicit).filterLocalItemsByContentMode(mode)
                                             }
                                     }
                             }
-                    AlbumFilter.LIBRARY -> database.albums(sortType, descending).map { it.filterExplicitAlbums(hideExplicit) }
-                    AlbumFilter.LIKED -> database.albumsLiked(sortType, descending).map { it.filterExplicitAlbums(hideExplicit) }
+                    AlbumFilter.LIBRARY -> database.albums(sortType, descending).map { it.filterExplicitAlbums(hideExplicit).filterLocalItemsByContentMode(mode) }
+                    AlbumFilter.LIKED -> database.albumsLiked(sortType, descending).map { it.filterExplicitAlbums(hideExplicit).filterLocalItemsByContentMode(mode) }
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
@@ -366,11 +374,14 @@ constructor(
     val allPlaylists =
         context.dataStore.data
             .map {
-                it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CUSTOM) to (it[PlaylistSortDescendingKey]
-                    ?: true)
+                val sortType = it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CUSTOM)
+                val descending = it[PlaylistSortDescendingKey] ?: true
+                val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+                Pair(Pair(sortType, descending), mode)
             }.distinctUntilChanged()
-            .flatMapLatest { (sortType, descending) ->
-                database.playlists(sortType, descending)
+            .flatMapLatest { (sortDesc, mode) ->
+                val (sortType, descending) = sortDesc
+                database.playlists(sortType, descending).map { it.filterLocalItemsByContentMode(mode) }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _isRefreshing = MutableStateFlow(false)
@@ -408,15 +419,16 @@ constructor(
     val songs =
         context.dataStore.data
             .map {
-                Pair(
-                    it[ArtistSongSortTypeKey].toEnum(ArtistSongSortType.CREATE_DATE) to (it[ArtistSongSortDescendingKey]
-                        ?: true),
-                    it[HideExplicitKey] ?: false
-                )
+                val sortType = it[ArtistSongSortTypeKey].toEnum(ArtistSongSortType.CREATE_DATE)
+                val descending = it[ArtistSongSortDescendingKey] ?: true
+                val hideExplicit = it[HideExplicitKey] ?: false
+                val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+                Pair(Triple(sortType, descending, hideExplicit), mode)
             }.distinctUntilChanged()
-            .flatMapLatest { (sortDesc, hideExplicit) ->
-                val (sortType, descending) = sortDesc
-                database.artistSongs(artistId, sortType, descending).map { it.filterExplicit(hideExplicit) }
+            .flatMapLatest { (triple, mode) ->
+                val (sortType, descending, hideExplicit) = triple
+                database.artistSongs(artistId, sortType, descending)
+                    .map { it.filterExplicit(hideExplicit).filterSongsByContentMode(mode) }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 }
 
@@ -441,25 +453,36 @@ constructor(
         context.dataStore.data
             .map { it[TopSize] ?: "50" }
             .distinctUntilChanged()
-    var artists =
-        database
-            .artistsBookmarked(
-                ArtistSortType.CREATE_DATE,
-                true,
-            ).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    var albums = context.dataStore.data
-        .map { it[HideExplicitKey] ?: false }
+    var artists = context.dataStore.data
+        .map { it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL) }
         .distinctUntilChanged()
-        .flatMapLatest { hideExplicit ->
-            database.albumsLiked(AlbumSortType.CREATE_DATE, true).map { it.filterExplicitAlbums(hideExplicit) }
+        .flatMapLatest { mode ->
+            database.artistsBookmarked(ArtistSortType.CREATE_DATE, true)
+                .map { it.filterLocalItemsByContentMode(mode) }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    var albums = context.dataStore.data
+        .map {
+            val hideExplicit = it[HideExplicitKey] ?: false
+            val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+            hideExplicit to mode
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (hideExplicit, mode) ->
+            database.albumsLiked(AlbumSortType.CREATE_DATE, true)
+                .map { it.filterExplicitAlbums(hideExplicit).filterLocalItemsByContentMode(mode) }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     var playlists =
         context.dataStore.data
             .map {
-                it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CUSTOM) to (it[PlaylistSortDescendingKey] ?: true)
+                val sortType = it[PlaylistSortTypeKey].toEnum(PlaylistSortType.CUSTOM)
+                val descending = it[PlaylistSortDescendingKey] ?: true
+                val mode = it[ContentFilterModeKey].toEnum(ContentFilterMode.GLOBAL)
+                Triple(sortType, descending, mode)
             }.distinctUntilChanged()
-            .flatMapLatest { (sortType, descending) -> database.playlists(sortType, descending) }
-            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+            .flatMapLatest { (sortType, descending, mode) ->
+                database.playlists(sortType, descending)
+                    .map { it.filterLocalItemsByContentMode(mode) }
+            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         viewModelScope.launch(Dispatchers.IO) {

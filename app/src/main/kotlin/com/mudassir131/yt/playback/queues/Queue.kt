@@ -64,3 +64,22 @@ fun List<MediaItem>.filterVideo(enabled: Boolean = true) =
     } else {
         this
     }
+
+fun List<MediaItem>.filterByContentMode(mode: com.mudassir131.yt.constants.ContentFilterMode): List<MediaItem> =
+    if (mode == com.mudassir131.yt.constants.ContentFilterMode.GLOBAL) {
+        this
+    } else {
+        filter { mediaItem ->
+            val title = mediaItem.mediaMetadata.title?.toString().orEmpty()
+            val artistName = mediaItem.mediaMetadata.artist?.toString().orEmpty()
+            com.mudassir131.yt.utils.ContentFilter.matches(title, artistName, mode)
+        }
+    }
+
+fun Queue.Status.filterByContentMode(mode: com.mudassir131.yt.constants.ContentFilterMode): Queue.Status =
+    if (mode == com.mudassir131.yt.constants.ContentFilterMode.GLOBAL) {
+        this
+    } else {
+        copy(items = items.filterByContentMode(mode))
+    }
+

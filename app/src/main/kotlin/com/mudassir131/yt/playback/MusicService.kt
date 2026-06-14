@@ -171,6 +171,10 @@ import com.mudassir131.yt.playback.queues.Queue
 import com.mudassir131.yt.playback.queues.YouTubeQueue
 import com.mudassir131.yt.playback.queues.filterExplicit
 import com.mudassir131.yt.playback.queues.filterVideo
+import com.mudassir131.yt.playback.queues.filterByContentMode
+import com.mudassir131.yt.constants.ContentFilterModeKey
+import com.mudassir131.yt.constants.ContentFilterMode
+import com.mudassir131.yt.extensions.toEnum
 import com.mudassir131.yt.ui.screens.settings.DiscordPresenceManager
 import com.mudassir131.yt.ui.screens.settings.ListenBrainzManager
 import com.mudassir131.yt.utils.CoilBitmapLoader
@@ -1394,6 +1398,7 @@ class MusicService :
                         queue.getInitialStatus()
                             .filterExplicit(dataStore.get(HideExplicitKey, false))
                             .filterVideo(dataStore.get(HideVideoKey, false))
+                            .filterByContentMode(dataStore.get(ContentFilterModeKey, ContentFilterMode.GLOBAL.name).toEnum(ContentFilterMode.GLOBAL))
                     }
 
                 val targetItem =
@@ -1462,7 +1467,10 @@ class MusicService :
         scope.launch(SilentHandler) {
             val initialStatus =
                 withContext(Dispatchers.IO) {
-                    queue.getInitialStatus().filterExplicit(dataStore.get(HideExplicitKey, false)).filterVideo(dataStore.get(HideVideoKey, false))
+                    queue.getInitialStatus()
+                        .filterExplicit(dataStore.get(HideExplicitKey, false))
+                        .filterVideo(dataStore.get(HideVideoKey, false))
+                        .filterByContentMode(dataStore.get(ContentFilterModeKey, ContentFilterMode.GLOBAL.name).toEnum(ContentFilterMode.GLOBAL))
                 }
             if (initialStatus.title != null) {
                 queueTitle = initialStatus.title
@@ -1566,7 +1574,10 @@ class MusicService :
                 endpoint = WatchEndpoint(videoId = currentMediaId)
             )
             val initialStatus = withContext(Dispatchers.IO) {
-                radioQueue.getInitialStatus().filterExplicit(dataStore.get(HideExplicitKey, false)).filterVideo(dataStore.get(HideVideoKey, false))
+                radioQueue.getInitialStatus()
+                    .filterExplicit(dataStore.get(HideExplicitKey, false))
+                    .filterVideo(dataStore.get(HideVideoKey, false))
+                    .filterByContentMode(dataStore.get(ContentFilterModeKey, ContentFilterMode.GLOBAL.name).toEnum(ContentFilterMode.GLOBAL))
             }
 
             if (initialStatus.title != null) {
@@ -1680,6 +1691,7 @@ class MusicService :
 
         val hideExplicit = dataStore.get(HideExplicitKey, false)
         val hideVideo = dataStore.get(HideVideoKey, false)
+        val contentFilterMode = dataStore.get(ContentFilterModeKey, ContentFilterMode.GLOBAL.name).toEnum(ContentFilterMode.GLOBAL)
 
         automixJob = scope.launch {
             try {
@@ -1705,6 +1717,7 @@ class MusicService :
                                 .filter { it.mediaId !in queueIds }
                                 .filterExplicit(hideExplicit)
                                 .filterVideo(hideVideo)
+                                .filterByContentMode(contentFilterMode)
 
                         val relatedCandidates =
                             result.relatedEndpoint
@@ -1722,6 +1735,7 @@ class MusicService :
                                 .filter { it.mediaId !in queueIds }
                                 .filterExplicit(hideExplicit)
                                 .filterVideo(hideVideo)
+                                .filterByContentMode(contentFilterMode)
 
                         val poolBase =
                             (fromNext + related)
@@ -1745,6 +1759,7 @@ class MusicService :
                                         .filter { it.mediaId !in queueIds }
                                         .filterExplicit(hideExplicit)
                                         .filterVideo(hideVideo)
+                                        .filterByContentMode(contentFilterMode)
 
                                 (poolBase + extra)
                                     .asSequence()
@@ -3440,7 +3455,10 @@ class MusicService :
     ) {
         scope.launch(SilentHandler) {
             val mediaItems =
-                currentQueue.nextPage().filterExplicit(dataStore.get(HideExplicitKey, false)).filterVideo(dataStore.get(HideVideoKey, false))
+                currentQueue.nextPage()
+                    .filterExplicit(dataStore.get(HideExplicitKey, false))
+                    .filterVideo(dataStore.get(HideVideoKey, false))
+                    .filterByContentMode(dataStore.get(ContentFilterModeKey, ContentFilterMode.GLOBAL.name).toEnum(ContentFilterMode.GLOBAL))
             if (player.playbackState != STATE_IDLE) {
                 player.addMediaItems(mediaItems.drop(1))
             } else {
@@ -3558,11 +3576,13 @@ class MusicService :
                         if (suppressAutoPlayback || player.playbackState == STATE_IDLE || player.mediaItemCount == 0) return@onSuccess
                         val hideExplicit = dataStore.get(HideExplicitKey, false)
                         val hideVideo = dataStore.get(HideVideoKey, false)
+                        val contentFilterMode = dataStore.get(ContentFilterModeKey, ContentFilterMode.GLOBAL.name).toEnum(ContentFilterMode.GLOBAL)
                         val radioItems = nextResult.items
                             .map { it.toMediaItem() }
                             .filter { it.mediaId != lastMediaMetadata.id }
                             .filterExplicit(hideExplicit)
                             .filterVideo(hideVideo)
+                            .filterByContentMode(contentFilterMode)
 
                         if (radioItems.isNotEmpty()) {
                             autoAddedMediaIds.clear()
@@ -3580,6 +3600,7 @@ class MusicService :
                                     .filter { it.mediaId != lastMediaMetadata.id }
                                     .filterExplicit(hideExplicit)
                                     .filterVideo(hideVideo)
+                                    .filterByContentMode(contentFilterMode)
                             }
                         }
                     }
