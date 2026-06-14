@@ -237,7 +237,7 @@ object PlaylistImporter {
             } else {
                 return@runCatching Result.failure<String>(IllegalArgumentException("Unsupported Playlist URL")).getOrThrow()
             }
-        }.getOrThrow()
+        }
     }
 
     private fun extractQueryParameter(url: String, key: String): String? {
