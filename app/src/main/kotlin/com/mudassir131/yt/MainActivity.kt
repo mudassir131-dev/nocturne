@@ -1818,6 +1818,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    }
 
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
         val uri = intent.data ?: intent.extras?.getString(Intent.EXTRA_TEXT)?.toUri() ?: return
