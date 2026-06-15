@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -268,11 +268,11 @@ fun Modifier.glassmorphic(
         actualBlurRadius = (actualBlurRadius.value * 0.5f).dp // FPS < 55 -> Reduce blur by 50%
     }
 
-    // Apply quality multipliers
     actualBlurRadius = when (quality) {
         GlassQualityMode.LOW -> (actualBlurRadius.value * 0.5f).dp
         GlassQualityMode.MEDIUM -> actualBlurRadius
         GlassQualityMode.HIGH -> (actualBlurRadius.value * 1.3f).dp
+        else -> actualBlurRadius
     }
 
     var baseTransparency = transparencyPref

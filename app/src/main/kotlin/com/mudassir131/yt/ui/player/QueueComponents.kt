@@ -14,7 +14,6 @@ import com.mudassir131.yt.constants.GlassEffectsMode
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.ui.theme.glassmorphicButton
-import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee

@@ -119,6 +119,7 @@ import com.mudassir131.yt.ui.component.PreferenceEntry
 import com.mudassir131.yt.ui.component.PreferenceGroupTitle
 import com.mudassir131.yt.ui.component.SwitchPreference
 import com.mudassir131.yt.ui.component.ThumbnailCornerRadiusSelectorButton
+import com.mudassir131.yt.ui.component.NumberPickerPreference
 import com.mudassir131.yt.ui.player.StyledPlaybackSlider
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.utils.rememberEnumPreference
@@ -664,7 +665,7 @@ fun AppearanceSettings(
                 },
             )
 
-            SliderPreference(
+            NumberPickerPreference(
                 title = { Text(stringResource(R.string.glass_blur_intensity)) },
                 icon = { Icon(painterResource(R.drawable.sliders), null) },
                 value = glassBlurIntensity.toInt(),
@@ -674,7 +675,7 @@ fun AppearanceSettings(
                 valueText = { "${it}dp" }
             )
 
-            SliderPreference(
+            NumberPickerPreference(
                 title = { Text(stringResource(R.string.glass_transparency)) },
                 icon = { Icon(painterResource(R.drawable.sliders), null) },
                 value = (glassTransparency * 100).roundToInt(),
