@@ -104,7 +104,8 @@ fun BottomSheet(
                     if (backgroundColor == Color.Unspecified) Modifier else {
                         Modifier.glassmorphic(
                             shape = sheetShape,
-                            fallbackColor = backgroundColor
+                            fallbackColor = backgroundColor,
+                            alpha = state.progress.coerceIn(0f, 1f)
                         )
                     }
                 } else {

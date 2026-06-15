@@ -113,6 +113,9 @@ import com.mudassir131.yt.ui.component.LocalBottomSheetPageState
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.rememberBottomSheetState
 import com.mudassir131.yt.ui.menu.PlayerMenu
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.ui.screens.settings.DarkMode
 import com.mudassir131.yt.ui.theme.PlayerColorExtractor
 import com.mudassir131.yt.ui.utils.ShowMediaInfo
@@ -144,6 +147,12 @@ fun BottomSheetPlayer(
         key = PlayerDesignStyleKey,
         defaultValue = PlayerDesignStyle.V3
     )
+
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
     val (useNewMiniPlayerDesign) = rememberPreference(
         UseNewMiniPlayerDesignKey,
@@ -808,10 +817,20 @@ fun BottomSheetPlayer(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            MaterialTheme.colorScheme.surface.copy(
-                                alpha = lyricsSheetState.progress.coerceIn(0f, 1f)
-                            )
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphic(
+                                    shape = RoundedCornerShape(0.dp),
+                                    tintColor = MaterialTheme.colorScheme.surface,
+                                    alpha = lyricsSheetState.progress.coerceIn(0f, 1f)
+                                )
+                            } else {
+                                Modifier.background(
+                                    MaterialTheme.colorScheme.surface.copy(
+                                        alpha = lyricsSheetState.progress.coerceIn(0f, 1f)
+                                    )
+                                )
+                            }
                         )
                 ) {
                     LyricsScreen(

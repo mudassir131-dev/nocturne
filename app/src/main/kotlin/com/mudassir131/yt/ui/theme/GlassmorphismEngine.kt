@@ -205,8 +205,13 @@ fun Modifier.glassmorphic(
     borderColor: Color = Color.White.copy(alpha = 0.08f),
     borderWidth: Dp = 1.dp,
     fallbackColor: Color? = null,
-    forceEnabledMode: GlassEffectsMode? = null
+    forceEnabledMode: GlassEffectsMode? = null,
+    alpha: Float = 1f
 ): Modifier = composed {
+    if (alpha <= 0.001f) {
+        return@composed this
+    }
+
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
         defaultValue = GlassEffectsMode.ADAPTIVE
@@ -275,6 +280,9 @@ fun Modifier.glassmorphic(
         else -> actualBlurRadius
     }
 
+    // Scale blur radius by alpha
+    actualBlurRadius = (actualBlurRadius.value * alpha).dp
+
     var baseTransparency = transparencyPref
     var baseBorderAlpha = borderColor.alpha
 
@@ -290,6 +298,10 @@ fun Modifier.glassmorphic(
     } else {
         baseTransparency
     }
+
+    // Scale border and tint by alpha
+    baseBorderAlpha = baseBorderAlpha * alpha
+    val finalTransparency = actualTransparency * alpha
 
     val finalBorderColor = borderColor.copy(alpha = baseBorderAlpha)
 
@@ -312,13 +324,13 @@ fun Modifier.glassmorphic(
                 red = filtered.red * 0.25f,
                 green = filtered.green * 0.25f,
                 blue = filtered.blue * 0.25f,
-                alpha = actualTransparency
+                alpha = finalTransparency
             )
         } else {
-            Color.Black.copy(alpha = actualTransparency)
+            Color.Black.copy(alpha = finalTransparency)
         }
     } else {
-        baseTintColor.copy(alpha = actualTransparency)
+        baseTintColor.copy(alpha = finalTransparency)
     }
 
     val supportsBackdrop = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !shouldDisableBlur
@@ -326,7 +338,7 @@ fun Modifier.glassmorphic(
 
     val backdrop = rememberCanvasBackdrop {
         drawRect(
-            color = if (pureBlack) Color.Black.copy(alpha = 0.15f) else if (isDark) Color.Black.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.15f),
+            color = if (pureBlack) Color.Black.copy(alpha = 0.15f * alpha) else if (isDark) Color.Black.copy(alpha = 0.25f * alpha) else Color.White.copy(alpha = 0.15f * alpha),
             size = size
         )
     }
@@ -340,7 +352,9 @@ fun Modifier.glassmorphic(
                     shape = { shape },
                     effects = {
                         vibrancy()
-                        blur(with(density) { actualBlurRadius.toPx() })
+                        if (actualBlurRadius.value > 0f) {
+                            blur(with(density) { actualBlurRadius.toPx() })
+                        }
                         if (supportsLens) {
                             lens(20f, 40f) // Reflections/lens disabled under Low Battery or Low FPS
                         }
@@ -348,7 +362,7 @@ fun Modifier.glassmorphic(
                     onDrawSurface = {
                         drawRect(finalTintColor)
                         if (!pureBlack) {
-                            drawRect(Color.White.copy(alpha = 0.03f)) // Avoid gray haze on pure black by dropping white overlay
+                            drawRect(Color.White.copy(alpha = 0.03f * alpha)) // Avoid gray haze on pure black by dropping white overlay
                         }
                     }
                 )

@@ -529,10 +529,15 @@ fun Queue(
                     if (isGlassActive) {
                         Modifier.glassmorphic(
                             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                            fallbackColor = backgroundColor
+                            fallbackColor = backgroundColor,
+                            alpha = state.progress.coerceIn(0f, 1f)
                         )
                     } else {
-                        Modifier.background(backgroundColor)
+                        Modifier.background(
+                            backgroundColor.copy(
+                                alpha = backgroundColor.alpha * state.progress.coerceIn(0f, 1f)
+                            )
+                        )
                     }
                 ),
         ) {
