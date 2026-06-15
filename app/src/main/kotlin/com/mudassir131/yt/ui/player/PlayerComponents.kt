@@ -1958,8 +1958,8 @@ fun PlayerBackground(
                     if (colors.isNotEmpty()) {
                         val infiniteTransition = rememberInfiniteTransition(label = "GlowAnimation")
 
-                        val progress by if (shouldReduceAnimations) {
-                            remember { mutableStateOf(0f) }
+                        val progress = if (shouldReduceAnimations) {
+                            0f
                         } else {
                             infiniteTransition.animateFloat(
                                 initialValue = 0f,
@@ -1969,7 +1969,7 @@ fun PlayerBackground(
                                     repeatMode = RepeatMode.Restart
                                 ),
                                 label = "glowProgress"
-                            )
+                            ).value
                         }
 
                         fun rotatedColorAt(index: Int): Color {
