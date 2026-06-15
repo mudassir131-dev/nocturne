@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
@@ -392,7 +394,33 @@ fun Modifier.glassmorphic(
                     onDrawSurface = {
                         drawRect(finalTintColor)
                         if (!pureBlack) {
-                            drawRect(Color.White.copy(alpha = 0.03f * alpha)) // Avoid gray haze on pure black by dropping white overlay
+                            drawRect(Color.White.copy(alpha = 0.03f * alpha))
+                        }
+                        // Specular light reflection overlay (iOS liquid glass inspired)
+                        if (quality == GlassQualityMode.HIGH && !isBatteryLow && alpha > 0.3f) {
+                            val specularAlpha = if (isDark) 0.06f else 0.10f
+                            drawRect(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = specularAlpha * alpha),
+                                        Color.White.copy(alpha = specularAlpha * 0.4f * alpha),
+                                        Color.Transparent
+                                    ),
+                                    start = Offset.Zero,
+                                    end = Offset(size.width * 0.7f, size.height * 0.7f)
+                                )
+                            )
+                            // Subtle inner highlight at top edge
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.08f * alpha),
+                                        Color.Transparent
+                                    ),
+                                    startY = 0f,
+                                    endY = size.height * 0.15f
+                                )
+                            )
                         }
                     }
                 )
@@ -418,16 +446,30 @@ fun Modifier.glassmorphicButton(
     if (isGlassActive) {
         val sharedState = LocalGlassmorphismState.current
         val (pureBlackPref) = rememberPreference(key = PureBlackKey, defaultValue = true)
+        val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.ON)
+        val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+        val useDarkTheme = remember(darkMode, isSystemInDarkTheme) {
+            if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
+        }
         val pureBlack = sharedState?.pureBlack ?: pureBlackPref
+        val isLightMode = !useDarkTheme
         
-        val tintColor = if (pureBlack) Color.Black.copy(alpha = 0.25f) else baseColor.copy(alpha = 0.2f)
-        val borderAlpha = if (pureBlack) 0.15f else 0.10f
+        val tintColor = when {
+            pureBlack -> Color.Black.copy(alpha = 0.25f)
+            isLightMode -> Color.White.copy(alpha = 0.25f)  // Frosted white pill buttons in light mode
+            else -> baseColor.copy(alpha = 0.2f)
+        }
+        val borderColor = when {
+            isLightMode -> Color.Black.copy(alpha = 0.08f)
+            pureBlack -> Color.White.copy(alpha = 0.15f)
+            else -> Color.White.copy(alpha = 0.10f)
+        }
         
         this.glassmorphic(
             shape = shape,
             tintColor = tintColor,
             fallbackColor = baseColor.copy(alpha = 0.5f),
-            borderColor = Color.White.copy(alpha = borderAlpha),
+            borderColor = borderColor,
             borderWidth = 0.5.dp
         )
     } else {

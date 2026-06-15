@@ -37,7 +37,7 @@ object PlaylistImporter {
                 val playlistName = playlistPage.playlist.title ?: "Imported YouTube Playlist"
                 
                 val newPlaylistId = UUID.randomUUID().toString()
-                database.transaction {
+                database.withTransaction {
                     insert(
                         PlaylistEntity(
                             id = newPlaylistId,
@@ -46,11 +46,9 @@ object PlaylistImporter {
                             isEditable = true
                         )
                     )
-                }
 
-                playlistPage.songs.forEachIndexed { index, songItem ->
-                    val metadata = songItem.toMediaMetadata()
-                    database.transaction {
+                    playlistPage.songs.forEachIndexed { index, songItem ->
+                        val metadata = songItem.toMediaMetadata()
                         insert(metadata)
                         insert(
                             PlaylistSongMap(

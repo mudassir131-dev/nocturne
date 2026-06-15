@@ -343,25 +343,25 @@ fun BottomSheetPlayer(
     val TextBackgroundColor =
         when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
-            PlayerBackgroundStyle.BLUR -> Color.White
-            PlayerBackgroundStyle.GRADIENT -> Color.White
-            PlayerBackgroundStyle.COLORING -> Color.White
-            PlayerBackgroundStyle.BLUR_GRADIENT -> Color.White
-            PlayerBackgroundStyle.GLOW -> Color.White
-            PlayerBackgroundStyle.GLOW_ANIMATED -> Color.White
-            PlayerBackgroundStyle.CUSTOM -> Color.White
+            PlayerBackgroundStyle.BLUR -> if (useDarkTheme) Color.White else Color.Black
+            PlayerBackgroundStyle.GRADIENT -> if (useDarkTheme) Color.White else Color.Black
+            PlayerBackgroundStyle.COLORING -> if (useDarkTheme) Color.White else Color.Black
+            PlayerBackgroundStyle.BLUR_GRADIENT -> if (useDarkTheme) Color.White else Color.Black
+            PlayerBackgroundStyle.GLOW -> if (useDarkTheme) Color.White else Color.Black
+            PlayerBackgroundStyle.GLOW_ANIMATED -> if (useDarkTheme) Color.White else Color.Black
+            PlayerBackgroundStyle.CUSTOM -> if (useDarkTheme) Color.White else Color.Black
         }
 
     val icBackgroundColor =
         when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surface
-            PlayerBackgroundStyle.BLUR -> Color.Black
-            PlayerBackgroundStyle.GRADIENT -> Color.Black
-            PlayerBackgroundStyle.COLORING -> Color.Black
-            PlayerBackgroundStyle.BLUR_GRADIENT -> Color.Black
-            PlayerBackgroundStyle.GLOW -> Color.Black
-            PlayerBackgroundStyle.GLOW_ANIMATED -> Color.Black
-            PlayerBackgroundStyle.CUSTOM -> Color.Black
+            PlayerBackgroundStyle.BLUR -> if (useDarkTheme) Color.Black else Color.White
+            PlayerBackgroundStyle.GRADIENT -> if (useDarkTheme) Color.Black else Color.White
+            PlayerBackgroundStyle.COLORING -> if (useDarkTheme) Color.Black else Color.White
+            PlayerBackgroundStyle.BLUR_GRADIENT -> if (useDarkTheme) Color.Black else Color.White
+            PlayerBackgroundStyle.GLOW -> if (useDarkTheme) Color.Black else Color.White
+            PlayerBackgroundStyle.GLOW_ANIMATED -> if (useDarkTheme) Color.Black else Color.White
+            PlayerBackgroundStyle.CUSTOM -> if (useDarkTheme) Color.Black else Color.White
         }
 
     val (textButtonColor, iconButtonColor) = when (playerButtonsStyle) {
