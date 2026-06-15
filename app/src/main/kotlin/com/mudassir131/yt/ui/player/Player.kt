@@ -641,7 +641,7 @@ fun BottomSheetPlayer(
 
         when (LocalConfiguration.current.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                if (playerDesignStyle == PlayerDesignStyle.V5) {
+                if (playerDesignStyle == PlayerDesignStyle.V5 || playerDesignStyle == PlayerDesignStyle.V5_GLASS) {
                     enrichedMetadata?.let { metadata ->
                         MetroPlayerContent(
                             mediaMetadata = metadata,
@@ -715,7 +715,7 @@ fun BottomSheetPlayer(
             }
 
             else -> {
-                if (playerDesignStyle == PlayerDesignStyle.V5) {
+                if (playerDesignStyle == PlayerDesignStyle.V5 || playerDesignStyle == PlayerDesignStyle.V5_GLASS) {
                     enrichedMetadata?.let { metadata ->
                         MetroPlayerContent(
                             mediaMetadata = metadata,

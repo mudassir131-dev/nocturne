@@ -246,11 +246,11 @@ fun Queue(
 
     BottomSheet(
         state = state,
-        backgroundColor = Color.Unspecified,
+        backgroundColor = backgroundColor,
         modifier = modifier,
         collapsedContent = {
             when (playerDesignStyle) {
-                PlayerDesignStyle.V2, PlayerDesignStyle.V5 -> {
+                PlayerDesignStyle.V2, PlayerDesignStyle.V2_GLASS, PlayerDesignStyle.V5, PlayerDesignStyle.V5_GLASS -> {
                     QueueCollapsedContentV2(
                         showCodecOnPlayer = showCodecOnPlayer,
                         currentFormat = currentFormat,
@@ -291,7 +291,7 @@ fun Queue(
                     )
                 }
 
-                PlayerDesignStyle.V3 -> {
+                PlayerDesignStyle.V3, PlayerDesignStyle.V3_GLASS -> {
                     QueueCollapsedContentV3(
                         showCodecOnPlayer = showCodecOnPlayer,
                         currentFormat = currentFormat,
@@ -327,7 +327,7 @@ fun Queue(
                     )
                 }
 
-                PlayerDesignStyle.V4 -> {
+                PlayerDesignStyle.V4, PlayerDesignStyle.V4_GLASS -> {
                     QueueCollapsedContentV4(
                         showCodecOnPlayer = showCodecOnPlayer,
                         currentFormat = currentFormat,
@@ -349,7 +349,7 @@ fun Queue(
                     )
                 }
                 
-                PlayerDesignStyle.V1 -> {
+                PlayerDesignStyle.V1, PlayerDesignStyle.V1_GLASS -> {
                     QueueCollapsedContentV1(
                         showCodecOnPlayer = showCodecOnPlayer,
                         currentFormat = currentFormat,
@@ -367,7 +367,6 @@ fun Queue(
                         onShowLyrics = onShowLyrics
                     )
                 }
-                else -> {}
             }
 
             if (showSleepTimerDialog) {
@@ -527,11 +526,7 @@ fun Queue(
                 .fillMaxSize()
                 .then(
                     if (isGlassActive) {
-                        Modifier.glassmorphic(
-                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                            fallbackColor = backgroundColor,
-                            alpha = state.progress.coerceIn(0f, 1f)
-                        )
+                        Modifier
                     } else {
                         Modifier.background(
                             backgroundColor.copy(

@@ -1113,11 +1113,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    var shouldShowTopBar by rememberSaveable { mutableStateOf(false) }
-
-                    LaunchedEffect(navBackStackEntry) {
-                        shouldShowTopBar =
-                            !active && navBackStackEntry?.destination?.route in topLevelScreens && navBackStackEntry?.destination?.route != "settings"
+                    val shouldShowTopBar = remember(active, navBackStackEntry) {
+                        !active && navBackStackEntry?.destination?.route in topLevelScreens && navBackStackEntry?.destination?.route != "settings"
                     }
 
                     val coroutineScope = rememberCoroutineScope()
@@ -1336,9 +1333,10 @@ class MainActivity : ComponentActivity() {
                                                 title = {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                                         // app icon
-                                                        Image(
+                                                        Icon(
                                                             painter = painterResource(id = R.drawable.ic_velune_concept),
                                                             contentDescription = "Velune Logo",
+                                                            tint = MaterialTheme.colorScheme.onSurface,
                                                             modifier = Modifier
                                                                 .size(35.dp)
                                                                 .padding(end = 6.dp)
@@ -1374,14 +1372,10 @@ class MainActivity : ComponentActivity() {
                                                     containerColor = if (isTransparentTopBarScreen) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
                                                     scrolledContainerColor = if (isTransparentTopBarScreen) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
                                                     titleContentColor = MaterialTheme.colorScheme.onSurface,
-                                                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            )
                                         }
                                     }
                                     AnimatedVisibility(
-                                        visible = active || navBackStackEntry?.destination?.route?.startsWith("search/") == true,
+                                        visible = !active && navBackStackEntry?.destination?.route?.startsWith("search/") == true,
                                         enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                                         exit = fadeOut(animationSpec = tween(durationMillis = 200))
                                     ) {
@@ -1389,7 +1383,7 @@ class MainActivity : ComponentActivity() {
                                             query = query,
                                             onQueryChange = onQueryChange,
                                             onSearch = onSearch,
-                                            active = active,
+                                            active = false,
                                             onActiveChange = onActiveChange,
                                             placeholder = {
                                                 Text(
@@ -1404,146 +1398,31 @@ class MainActivity : ComponentActivity() {
                                             leadingIcon = {
                                                 IconButton(
                                                     onClick = {
-                                                        when {
-                                                            active -> onActiveChange(false)
-                                                            !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } -> {
-                                                                navController.navigateUp()
-                                                            }
-
-                                                            else -> onActiveChange(true)
+                                                        if (!navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                                                            navController.navigateUp()
                                                         }
                                                     },
                                                     onLongClick = {
-                                                        when {
-                                                            active -> {}
-                                                            !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } -> {
-                                                                navController.backToMain()
-                                                            }
-                                                            else -> {}
+                                                        if (!navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                                                            navController.backToMain()
                                                         }
                                                     },
                                                 ) {
                                                     Icon(
-                                                        painterResource(
-                                                            if (active ||
-                                                                !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }
-                                                            ) {
-                                                                R.drawable.arrow_back
-                                                            } else {
-                                                                R.drawable.search
-                                                            },
-                                                        ),
-                                                        contentDescription = if (active || !navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) "Back" else "Search",
+                                                        painterResource(R.drawable.arrow_back),
+                                                        contentDescription = "Back",
                                                     )
                                                 }
                                             },
-                                            trailingIcon = {
-                                                Row {
-                                                    if (active) {
-                                                        if (query.text.isNotEmpty()) {
-                                                            IconButton(
-                                                                onClick = {
-                                                                    onQueryChange(
-                                                                        TextFieldValue(
-                                                                            ""
-                                                                        )
-                                                                    )
-                                                                },
-                                                            ) {
-                                                                Icon(
-                                                                    painter = painterResource(R.drawable.close),
-                                                                    contentDescription = "Clear search",
-                                                                )
-                                                            }
-                                                        }
-                                                        IconButton(
-                                                            onClick = {
-                                                                searchSource =
-                                                                    if (searchSource == SearchSource.ONLINE) SearchSource.LOCAL else SearchSource.ONLINE
-                                                            },
-                                                        ) {
-                                                            Icon(
-                                                                painter = painterResource(
-                                                                    when (searchSource) {
-                                                                        SearchSource.LOCAL -> R.drawable.library_music
-                                                                        SearchSource.ONLINE -> R.drawable.language
-                                                                    },
-                                                                ),
-                                                                contentDescription = "Toggle search source",
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            modifier =
-                                                Modifier
-                                                    .focusRequester(searchBarFocusRequester)
-                                                    .let { with(this@BoxWithConstraints) { it.align(Alignment.TopCenter) } },
+                                            trailingIcon = {},
+                                            modifier = Modifier
+                                                .focusRequester(searchBarFocusRequester)
+                                                .let { with(this@BoxWithConstraints) { it.align(Alignment.TopCenter) } },
                                             focusRequester = searchBarFocusRequester,
-                                            colors = if (pureBlack && active) {
-                                                SearchBarDefaults.colors(
-                                                    containerColor = Color.Black,
-                                                    dividerColor = Color.DarkGray,
-                                                    inputFieldColors = TextFieldDefaults.colors(
-                                                        focusedTextColor = Color.White,
-                                                        unfocusedTextColor = Color.Gray,
-                                                        focusedContainerColor = Color.Transparent,
-                                                        unfocusedContainerColor = Color.Transparent,
-                                                        cursorColor = Color.White,
-                                                        focusedIndicatorColor = Color.Transparent,
-                                                        unfocusedIndicatorColor = Color.Transparent,
-                                                    )
-                                                )
-                                            } else {
-                                                SearchBarDefaults.colors(
-                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                                                )
-                                            }
-                                        ) {
-                                            Crossfade(
-                                                targetState = searchSource,
-                                                label = "",
-                                                modifier =
-                                                    Modifier
-                                                        .fillMaxSize()
-                                                        .padding(bottom = if(!playerBottomSheetState.isDismissed) MiniPlayerHeight else 0.dp)
-                                                        .navigationBarsPadding(),
-                                            ) { searchSource ->
-                                                when (searchSource) {
-                                                    SearchSource.LOCAL ->
-                                                        LocalSearchScreen(
-                                                            query = query.text,
-                                                            navController = navController,
-                                                            onDismiss = { onActiveChange(false) },
-                                                            pureBlack = pureBlack,
-                                                        )
-
-                                                    SearchSource.ONLINE ->
-                                                        OnlineSearchScreen(
-                                                            query = query.text,
-                                                            onQueryChange = onQueryChange,
-                                                            navController = navController,
-                                                            onSearch = {
-                                                                navController.navigate(
-                                                                    "search/${
-                                                                        URLEncoder.encode(
-                                                                            it,
-                                                                            "UTF-8"
-                                                                        )
-                                                                    }"
-                                                                )
-                                                                if (!pauseSearchHistory) {
-                                                                    database.query {
-                                                                        insert(SearchHistory(query = it))
-                                                                    }
-                                                                }
-                                                            },
-                                                            onDismiss = { onActiveChange(false) },
-                                                            pureBlack = pureBlack
-                                                        )
-                                                }
-                                            }
-                                        }
+                                            colors = SearchBarDefaults.colors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                            )
+                                        ) {}
                                     }
                                 },
                                 bottomBar = {
@@ -1759,6 +1638,135 @@ class MainActivity : ComponentActivity() {
                                         navController,
                                         topAppBarScrollBehavior,
                                     )
+                                }
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = active,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 300)),
+                            exit = fadeOut(animationSpec = tween(durationMillis = 200))
+                        ) {
+                            TopSearch(
+                                query = query,
+                                onQueryChange = onQueryChange,
+                                onSearch = onSearch,
+                                active = true,
+                                onActiveChange = onActiveChange,
+                                placeholder = {
+                                    Text(
+                                        text = stringResource(
+                                            when (searchSource) {
+                                                SearchSource.LOCAL -> R.string.search_library
+                                                SearchSource.ONLINE -> R.string.search_yt_music
+                                            }
+                                        ),
+                                    )
+                                },
+                                leadingIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            onActiveChange(false)
+                                        },
+                                    ) {
+                                        Icon(
+                                            painterResource(R.drawable.arrow_back),
+                                            contentDescription = "Back",
+                                        )
+                                    }
+                                },
+                                trailingIcon = {
+                                    Row {
+                                        if (query.text.isNotEmpty()) {
+                                            IconButton(
+                                                onClick = {
+                                                    onQueryChange(TextFieldValue(""))
+                                                },
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.close),
+                                                    contentDescription = "Clear search",
+                                                )
+                                            }
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                searchSource =
+                                                    if (searchSource == SearchSource.ONLINE) SearchSource.LOCAL else SearchSource.ONLINE
+                                            },
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(
+                                                    when (searchSource) {
+                                                        SearchSource.LOCAL -> R.drawable.library_music
+                                                        SearchSource.ONLINE -> R.drawable.language
+                                                    },
+                                                ),
+                                                contentDescription = "Toggle search source",
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .focusRequester(searchBarFocusRequester)
+                                    .let { with(this@BoxWithConstraints) { it.align(Alignment.TopCenter) } },
+                                focusRequester = searchBarFocusRequester,
+                                colors = if (pureBlack) {
+                                    SearchBarDefaults.colors(
+                                        containerColor = Color.Black,
+                                        dividerColor = Color.DarkGray,
+                                        inputFieldColors = TextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.Gray,
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            cursorColor = Color.White,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent,
+                                        )
+                                    )
+                                } else {
+                                    SearchBarDefaults.colors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                    )
+                                }
+                            ) {
+                                Crossfade(
+                                    targetState = searchSource,
+                                    label = "",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(bottom = if(!playerBottomSheetState.isDismissed) MiniPlayerHeight else 0.dp)
+                                        .navigationBarsPadding(),
+                                ) { searchSource ->
+                                    when (searchSource) {
+                                        SearchSource.LOCAL ->
+                                            LocalSearchScreen(
+                                                query = query.text,
+                                                navController = navController,
+                                                onDismiss = { onActiveChange(false) },
+                                                pureBlack = pureBlack,
+                                            )
+
+                                        SearchSource.ONLINE ->
+                                            OnlineSearchScreen(
+                                                query = query.text,
+                                                onQueryChange = onQueryChange,
+                                                navController = navController,
+                                                onSearch = {
+                                                    navController.navigate(
+                                                        "search/${URLEncoder.encode(it, "UTF-8")}"
+                                                    )
+                                                    if (!pauseSearchHistory) {
+                                                        database.query {
+                                                            insert(SearchHistory(query = it))
+                                                        }
+                                                    }
+                                                },
+                                                onDismiss = { onActiveChange(false) },
+                                                pureBlack = pureBlack
+                                            )
+                                    }
                                 }
                             }
                         }

@@ -31,6 +31,7 @@ import com.mudassir131.yt.constants.*
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
 import kotlinx.coroutines.isActive
+import com.mudassir131.yt.ui.screens.settings.DarkMode
 
 @Stable
 class GlassmorphismState(
@@ -61,7 +62,13 @@ fun ProvideGlassmorphismState(content: @Composable () -> Unit) {
     val isLowEndDevice = rememberLowEndDeviceState()
     val ramGb = rememberRamGb()
     val fps = rememberFpsState()
-    val (pureBlack) = rememberPreference(key = PureBlackKey, defaultValue = true)
+    val (pureBlackEnabled) = rememberPreference(key = PureBlackKey, defaultValue = true)
+    val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.ON)
+    val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val useDarkTheme = remember(darkMode, isSystemInDarkTheme) {
+        if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
+    }
+    val pureBlack = pureBlackEnabled && useDarkTheme
     
     val state = remember(isBatterySaver, batteryLevel, isLowEndDevice, ramGb, fps, pureBlack) {
         GlassmorphismState(
@@ -236,7 +243,13 @@ fun Modifier.glassmorphic(
     val ramGb = sharedState?.ramGb ?: rememberRamGb()
     val fps = sharedState?.fps ?: rememberFpsState()
     val (pureBlackPref) = rememberPreference(key = PureBlackKey, defaultValue = true)
-    val pureBlack = sharedState?.pureBlack ?: pureBlackPref
+    val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.ON)
+    val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val useDarkTheme = remember(darkMode, isSystemInDarkTheme) {
+        if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
+    }
+    val pureBlackFallback = pureBlackPref && useDarkTheme
+    val pureBlack = sharedState?.pureBlack ?: pureBlackFallback
     
     val isDark = pureBlack || MaterialTheme.colorScheme.background.luminance() < 0.5f
 
@@ -284,6 +297,9 @@ fun Modifier.glassmorphic(
     actualBlurRadius = (actualBlurRadius.value * alpha).dp
 
     var baseTransparency = transparencyPref
+    if (!isDark) {
+        baseTransparency = (transparencyPref + 0.45f).coerceAtMost(0.85f)
+    }
     var baseBorderAlpha = borderColor.alpha
 
     // AMOLED Protection
@@ -303,10 +319,24 @@ fun Modifier.glassmorphic(
     baseBorderAlpha = baseBorderAlpha * alpha
     val finalTransparency = actualTransparency * alpha
 
-    val finalBorderColor = borderColor.copy(alpha = baseBorderAlpha)
+    val finalBorderColor = if (borderColor.red == 1f && borderColor.green == 1f && borderColor.blue == 1f && !isDark) {
+        Color.Black.copy(alpha = baseBorderAlpha * 0.7f)
+    } else {
+        borderColor.copy(alpha = baseBorderAlpha)
+    }
 
-    val baseTintColor = if (dynamicTintPref && tintColor != null) {
-        filterGreenYellowHues(tintColor)
+    val adjustedTintColor = if (!isDark && tintColor != null) {
+        tintColor.copy(
+            red = (tintColor.red + 4f) / 5f,
+            green = (tintColor.green + 4f) / 5f,
+            blue = (tintColor.blue + 4f) / 5f
+        )
+    } else {
+        tintColor
+    }
+
+    val baseTintColor = if (dynamicTintPref && adjustedTintColor != null) {
+        filterGreenYellowHues(adjustedTintColor)
     } else {
         if (isDark) {
             if (pureBlack) Color.Black else Color(0xFF121212)
@@ -317,9 +347,9 @@ fun Modifier.glassmorphic(
 
     // Avoid gray haze on pure black background
     val finalTintColor = if (pureBlack) {
-        if (dynamicTintPref && tintColor != null) {
+        if (dynamicTintPref && adjustedTintColor != null) {
             // Apply desaturated and darkened tint mixed down with black to prevent gray overlays
-            val filtered = filterGreenYellowHues(tintColor)
+            val filtered = filterGreenYellowHues(adjustedTintColor)
             Color(
                 red = filtered.red * 0.25f,
                 green = filtered.green * 0.25f,
