@@ -382,10 +382,15 @@ enum class PlayerButtonsStyle {
 
 enum class PlayerDesignStyle {
     V1,
+    V1_GLASS,
     V2,
+    V2_GLASS,
     V3,
+    V3_GLASS,
     V4,
+    V4_GLASS,
     V5,
+    V5_GLASS,
 }
 
 enum class PlayerBackgroundStyle {
@@ -588,4 +593,26 @@ enum class ContentFilterMode {
     QURANIC,
     NASHEED,
 }
+
+val GlassEffectsKey = stringPreferencesKey("glass_effects_mode")
+
+enum class GlassEffectsMode {
+    DISABLED,
+    ADAPTIVE,
+    PREMIUM,
+}
+
+val GlassQualityModeKey = stringPreferencesKey("glass_quality_mode")
+
+enum class GlassQualityMode {
+    AUTO,
+    LOW,
+    MEDIUM,
+    HIGH,
+}
+
+val GlassBlurIntensityKey = floatPreferencesKey("glass_blur_intensity")
+val GlassTransparencyKey = floatPreferencesKey("glass_transparency")
+val GlassDynamicTintKey = booleanPreferencesKey("glass_dynamic_tint")
+val GlassPerformanceModeKey = booleanPreferencesKey("glass_performance_mode")
 

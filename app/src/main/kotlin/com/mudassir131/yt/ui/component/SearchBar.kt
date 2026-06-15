@@ -84,6 +84,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.constants.AppBarHeight
 import kotlin.math.max
 
@@ -110,6 +114,12 @@ fun TopSearch(
     focusRequester: FocusRequester = remember { FocusRequester() },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
     val animationProgress: Float by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
         animationSpec = tween(durationMillis = AnimationDurationMillis),
@@ -182,21 +192,29 @@ fun TopSearch(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(topInset + AppBarHeight)
-                .background(color = MaterialTheme.colorScheme.surface)
+                .background(color = if (isGlassActive) Color.Transparent else MaterialTheme.colorScheme.surface)
         )
 
         Surface(
             shape = animatedShape,
-            color = colors.containerColor,
-            contentColor = contentColorFor(colors.containerColor),
-            tonalElevation = tonalElevation,
+            color = if (isGlassActive) Color.Transparent else colors.containerColor,
+            contentColor = contentColorFor(if (isGlassActive) MaterialTheme.colorScheme.surface else colors.containerColor),
+            tonalElevation = if (isGlassActive) 0.dp else tonalElevation,
             modifier = Modifier
                 .padding(
                     top = animatedSurfaceTopPadding,
                     start = startPadding,
                     end = endPadding,
                 )
-                .size(width = width, height = height),
+                .size(width = width, height = height)
+                .then(
+                    if (isGlassActive) {
+                        Modifier.glassmorphic(
+                            shape = animatedShape,
+                            fallbackColor = colors.containerColor
+                        )
+                    } else Modifier
+                ),
         ) {
             Column {
                 SearchBarInputField(

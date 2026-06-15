@@ -84,6 +84,12 @@ import com.mudassir131.yt.db.entities.ArtistEntity
 import com.mudassir131.yt.extensions.togglePlayPause
 import com.mudassir131.yt.models.MediaMetadata
 import com.mudassir131.yt.utils.rememberPreference
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.constants.PlayerDesignStyleKey
+import com.mudassir131.yt.constants.PlayerDesignStyle
+import com.mudassir131.yt.ui.theme.glassmorphic
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -129,6 +135,15 @@ private fun NewMiniPlayer(
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnail by rememberPreference(com.mudassir131.yt.constants.SwipeThumbnailKey, true)
 
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val playerDesignStyle by rememberEnumPreference(
+        key = PlayerDesignStyleKey,
+        defaultValue = PlayerDesignStyle.V3
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
 
     SwipeableMiniPlayerBox(
         modifier = modifier,
@@ -140,19 +155,33 @@ private fun NewMiniPlayer(
         pureBlack = pureBlack,
         useLegacyBackground = false
     ) { offsetX ->
+        val cardShape = RoundedCornerShape(24.dp)
+        val tintColor = MaterialTheme.colorScheme.primary
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
                 .offset { IntOffset(offsetX.roundToInt(), 0) }
-                .clip(RoundedCornerShape(32.dp))
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                )
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(32.dp)
+                .then(
+                    if (isGlassActive) {
+                        Modifier
+                            .padding(horizontal = 8.dp)
+                            .glassmorphic(
+                                shape = cardShape,
+                                tintColor = tintColor,
+                                fallbackColor = MaterialTheme.colorScheme.surfaceContainer,
+                                borderColor = Color.White.copy(alpha = 0.08f)
+                            )
+                    } else {
+                        Modifier
+                            .clip(RoundedCornerShape(32.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(32.dp)
+                            )
+                    }
                 )
         ) {
             FloatingMiniPlayerContent(
@@ -199,16 +228,36 @@ private fun LegacyMiniPlayer(
     }
     val autoSwipeThreshold = calculateAutoSwipeThreshold(swipeSensitivity)
 
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val playerDesignStyle by rememberEnumPreference(
+        key = PlayerDesignStyleKey,
+        defaultValue = PlayerDesignStyle.V3
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
+
+    val baseColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-            .background(
-                if (pureBlack)
-                    Color.Black
-                else
-                    MaterialTheme.colorScheme.surfaceContainer
+            .then(
+                if (isGlassActive) {
+                    Modifier
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .glassmorphic(
+                            shape = RoundedCornerShape(20.dp),
+                            tintColor = MaterialTheme.colorScheme.primary,
+                            fallbackColor = baseColor,
+                            borderColor = Color.White.copy(alpha = 0.08f)
+                        )
+                } else {
+                    Modifier.background(baseColor)
+                }
             )
             .let { baseModifier ->
                 if (swipeThumbnail) {

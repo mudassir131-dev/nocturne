@@ -9,6 +9,12 @@
 package com.mudassir131.yt.ui.player
 
 import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
+import com.mudassir131.yt.ui.theme.glassmorphicButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -464,6 +470,12 @@ fun QueueCollapsedContentV2(
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
             val codec =
@@ -529,27 +541,28 @@ fun QueueCollapsedContentV2(
             val iconSize = 24.dp
             val borderColor = textBackgroundColor.copy(alpha = 0.35f)
 
+            val queueShape = RoundedCornerShape(
+                topStart = 50.dp,
+                bottomStart = 50.dp,
+                topEnd = 10.dp,
+                bottomEnd = 10.dp
+            )
+
             // Queue button
             Box(
                 modifier = Modifier
                     .size(buttonSize)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 50.dp,
-                            bottomStart = 50.dp,
-                            topEnd = 10.dp,
-                            bottomEnd = 10.dp
-                        )
-                    )
-                    .border(
-                        1.dp,
-                        borderColor,
-                        RoundedCornerShape(
-                            topStart = 50.dp,
-                            bottomStart = 50.dp,
-                            topEnd = 10.dp,
-                            bottomEnd = 10.dp
-                        )
+                    .clip(queueShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = queueShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else {
+                            Modifier.border(1.dp, borderColor, queueShape)
+                        }
                     )
                     .clickable { onExpandQueue() },
                 contentAlignment = Alignment.Center
@@ -562,12 +575,24 @@ fun QueueCollapsedContentV2(
                 )
             }
 
+            val sleepShape = RoundedCornerShape(10.dp)
+
             // Sleep timer button
             Box(
                 modifier = Modifier
                     .size(buttonSize)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+                    .clip(sleepShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = sleepShape,
+                                baseColor = textBackgroundColor.copy(alpha = if (sleepTimerEnabled) 0.15f else 0.08f)
+                            )
+                        } else {
+                            Modifier.border(1.dp, borderColor, sleepShape)
+                        }
+                    )
                     .clickable { onSleepTimerClick() },
                 contentAlignment = Alignment.Center
             ) {
@@ -598,12 +623,24 @@ fun QueueCollapsedContentV2(
                 }
             }
 
+            val lyricsShape = RoundedCornerShape(10.dp)
+
             // Lyrics button
             Box(
                 modifier = Modifier
                     .size(buttonSize)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+                    .clip(lyricsShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = lyricsShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else {
+                            Modifier.border(1.dp, borderColor, lyricsShape)
+                        }
+                    )
                     .clickable { onShowLyrics() },
                 contentAlignment = Alignment.Center
             ) {
@@ -615,27 +652,28 @@ fun QueueCollapsedContentV2(
                 )
             }
 
+            val repeatShape = RoundedCornerShape(
+                topStart = 10.dp,
+                bottomStart = 10.dp,
+                topEnd = 50.dp,
+                bottomEnd = 50.dp
+            )
+
             // Repeat mode button
             Box(
                 modifier = Modifier
                     .size(buttonSize)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 10.dp,
-                            bottomStart = 10.dp,
-                            topEnd = 50.dp,
-                            bottomEnd = 50.dp
-                        )
-                    )
-                    .border(
-                        1.dp,
-                        borderColor,
-                        RoundedCornerShape(
-                            topStart = 10.dp,
-                            bottomStart = 10.dp,
-                            topEnd = 50.dp,
-                            bottomEnd = 50.dp
-                        )
+                    .clip(repeatShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = repeatShape,
+                                baseColor = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.15f else 0.08f)
+                            )
+                        } else {
+                            Modifier.border(1.dp, borderColor, repeatShape)
+                        }
                     )
                     .clickable { onRepeatModeClick() },
                 contentAlignment = Alignment.Center
@@ -694,6 +732,12 @@ fun QueueCollapsedContentV3(
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
             val codec = currentFormat.mimeType.substringAfter("/").uppercase()
@@ -719,10 +763,21 @@ fun QueueCollapsedContentV3(
                     ),
                 ),
         ) {
+            val itemShape = RoundedCornerShape(8.dp)
+
             // Queue button
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(itemShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = itemShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else Modifier
+                    )
                     .clickable { onExpandQueue() }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
@@ -749,7 +804,16 @@ fun QueueCollapsedContentV3(
             // Sleep timer button
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(itemShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = itemShape,
+                                baseColor = textBackgroundColor.copy(alpha = if (sleepTimerEnabled) 0.15f else 0.08f)
+                            )
+                        } else Modifier
+                    )
                     .clickable { onSleepTimerClick() }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
@@ -779,7 +843,16 @@ fun QueueCollapsedContentV3(
             // Lyrics button
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(itemShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = itemShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else Modifier
+                    )
                     .clickable { onShowLyrics() }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
@@ -807,7 +880,16 @@ fun QueueCollapsedContentV3(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(itemShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = itemShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else Modifier
+                    )
                     .clickable { onMenuClick() },
                 contentAlignment = Alignment.Center
             ) {
@@ -837,6 +919,12 @@ fun QueueCollapsedContentV1(
     onShowLyrics: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
             val codec = currentFormat.mimeType.substringAfter("/").uppercase()
@@ -866,7 +954,17 @@ fun QueueCollapsedContentV1(
         ) {
             TextButton(
                 onClick = onExpandQueue,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = RoundedCornerShape(50),
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else Modifier
+                    )
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -893,7 +991,17 @@ fun QueueCollapsedContentV1(
 
             TextButton(
                 onClick = onSleepTimerClick,
-                modifier = Modifier.weight(1.2f)
+                modifier = Modifier
+                    .weight(1.2f)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = RoundedCornerShape(50),
+                                baseColor = textBackgroundColor.copy(alpha = if (sleepTimerEnabled) 0.15f else 0.08f)
+                            )
+                        } else Modifier
+                    )
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -936,7 +1044,17 @@ fun QueueCollapsedContentV1(
 
             TextButton(
                 onClick = onShowLyrics,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = RoundedCornerShape(50),
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else Modifier
+                    )
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -982,6 +1100,12 @@ fun QueueCollapsedContentV4(
     onShowLyrics: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
             val codec = currentFormat.mimeType.substringAfter("/").uppercase()
@@ -1012,14 +1136,25 @@ fun QueueCollapsedContentV4(
         ) {
             val buttonSize = 48.dp
             val iconSize = 22.dp
+            val pillShape = RoundedCornerShape(16.dp)
 
             // Queue button (pill)
             Box(
                 modifier = Modifier
                     .height(buttonSize)
                     .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(textBackgroundColor.copy(alpha = 0.1f))
+                    .clip(pillShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = pillShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else {
+                            Modifier.background(textBackgroundColor.copy(alpha = 0.1f))
+                        }
+                    )
                     .clickable { onExpandQueue() },
                 contentAlignment = Alignment.Center
             ) {
@@ -1051,9 +1186,19 @@ fun QueueCollapsedContentV4(
                 modifier = Modifier
                     .size(buttonSize)
                     .clip(CircleShape)
-                    .background(
-                        if (sleepTimerEnabled) textBackgroundColor.copy(alpha = 0.2f)
-                        else textBackgroundColor.copy(alpha = 0.1f)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = CircleShape,
+                                baseColor = textBackgroundColor.copy(alpha = if (sleepTimerEnabled) 0.15f else 0.08f)
+                            )
+                        } else {
+                            Modifier.background(
+                                if (sleepTimerEnabled) textBackgroundColor.copy(alpha = 0.2f)
+                                else textBackgroundColor.copy(alpha = 0.1f)
+                            )
+                        }
                     )
                     .clickable { onSleepTimerClick() },
                 contentAlignment = Alignment.Center
@@ -1092,8 +1237,18 @@ fun QueueCollapsedContentV4(
                 modifier = Modifier
                     .height(buttonSize)
                     .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(textBackgroundColor.copy(alpha = 0.1f))
+                    .clip(pillShape)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphicButton(
+                                isGlassActive = true,
+                                shape = pillShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                            )
+                        } else {
+                            Modifier.background(textBackgroundColor.copy(alpha = 0.1f))
+                        }
+                    )
                     .clickable { onShowLyrics() },
                 contentAlignment = Alignment.Center
             ) {

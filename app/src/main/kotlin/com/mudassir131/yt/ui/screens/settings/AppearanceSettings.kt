@@ -103,6 +103,14 @@ import com.mudassir131.yt.constants.CropThumbnailToSquareKey
 import com.mudassir131.yt.constants.DisableBlurKey
 
 import com.mudassir131.yt.constants.UseLyricsV2Key
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.constants.GlassBlurIntensityKey
+import com.mudassir131.yt.constants.GlassTransparencyKey
+import com.mudassir131.yt.constants.GlassDynamicTintKey
+import com.mudassir131.yt.constants.GlassPerformanceModeKey
+import com.mudassir131.yt.constants.GlassQualityModeKey
+import com.mudassir131.yt.constants.GlassQualityMode
 import com.mudassir131.yt.ui.component.DefaultDialog
 import com.mudassir131.yt.ui.component.EnumListPreference
 import com.mudassir131.yt.ui.component.IconButton
@@ -193,6 +201,31 @@ fun AppearanceSettings(
     val (lyricsTextSize, onLyricsTextSizeChange) = rememberPreference(LyricsTextSizeKey, defaultValue = 26f)
     val (lyricsLineSpacing, onLyricsLineSpacingChange) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
     val (useLyricsV2, onUseLyricsV2Change) = rememberPreference(UseLyricsV2Key, defaultValue = false)
+
+    val (glassEffects, onGlassEffectsChange) = rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val (glassQuality, onGlassQualityChange) = rememberEnumPreference(
+        key = GlassQualityModeKey,
+        defaultValue = GlassQualityMode.AUTO
+    )
+    val (glassBlurIntensity, onGlassBlurIntensityChange) = rememberPreference(
+        key = GlassBlurIntensityKey,
+        defaultValue = 20f
+    )
+    val (glassTransparency, onGlassTransparencyChange) = rememberPreference(
+        key = GlassTransparencyKey,
+        defaultValue = 0.3f
+    )
+    val (glassDynamicTint, onGlassDynamicTintChange) = rememberPreference(
+        key = GlassDynamicTintKey,
+        defaultValue = true
+    )
+    val (glassPerformanceMode, onGlassPerformanceModeChange) = rememberPreference(
+        key = GlassPerformanceModeKey,
+        defaultValue = true
+    )
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
@@ -403,10 +436,15 @@ fun AppearanceSettings(
             valueText = {
                 when (it) {
                     PlayerDesignStyle.V1 -> stringResource(R.string.player_design_v1)
+                    PlayerDesignStyle.V1_GLASS -> stringResource(R.string.player_design_v1_glass)
                     PlayerDesignStyle.V2 -> stringResource(R.string.player_design_v2)
+                    PlayerDesignStyle.V2_GLASS -> stringResource(R.string.player_design_v2_glass)
                     PlayerDesignStyle.V3 -> stringResource(R.string.player_design_v3)
+                    PlayerDesignStyle.V3_GLASS -> stringResource(R.string.player_design_v3_glass)
                     PlayerDesignStyle.V4 -> stringResource(R.string.player_design_v4)
+                    PlayerDesignStyle.V4_GLASS -> stringResource(R.string.player_design_v4_glass)
                     PlayerDesignStyle.V5 -> stringResource(R.string.player_design_v5)
+                    PlayerDesignStyle.V5_GLASS -> stringResource(R.string.player_design_v5_glass)
                 }
             },
         )
@@ -589,6 +627,75 @@ fun AppearanceSettings(
                 description = stringResource(R.string.sensitivity_percentage, (swipeSensitivity * 100).roundToInt()),
                 icon = { Icon(painterResource(R.drawable.tune), null) },
                 onClick = { showSensitivityDialog = true }
+            )
+        }
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.glass_effects),
+        )
+
+        EnumListPreference(
+            title = { Text(stringResource(R.string.glass_effects)) },
+            icon = { Icon(painterResource(R.drawable.style), null) },
+            selectedValue = glassEffects,
+            onValueSelected = onGlassEffectsChange,
+            valueText = {
+                when (it) {
+                    GlassEffectsMode.DISABLED -> stringResource(R.string.glass_effects_disabled)
+                    GlassEffectsMode.ADAPTIVE -> stringResource(R.string.glass_effects_adaptive)
+                    GlassEffectsMode.PREMIUM -> stringResource(R.string.glass_effects_premium)
+                }
+            },
+        )
+
+        if (glassEffects != GlassEffectsMode.DISABLED) {
+            EnumListPreference(
+                title = { Text(stringResource(R.string.glass_quality_mode)) },
+                icon = { Icon(painterResource(R.drawable.tune), null) },
+                selectedValue = glassQuality,
+                onValueSelected = onGlassQualityChange,
+                valueText = {
+                    when (it) {
+                        GlassQualityMode.AUTO -> stringResource(R.string.glass_quality_auto)
+                        GlassQualityMode.LOW -> stringResource(R.string.glass_quality_low)
+                        GlassQualityMode.MEDIUM -> stringResource(R.string.glass_quality_medium)
+                        GlassQualityMode.HIGH -> stringResource(R.string.glass_quality_high)
+                    }
+                },
+            )
+
+            SliderPreference(
+                title = { Text(stringResource(R.string.glass_blur_intensity)) },
+                icon = { Icon(painterResource(R.drawable.sliders), null) },
+                value = glassBlurIntensity.toInt(),
+                onValueChange = { onGlassBlurIntensityChange(it.toFloat()) },
+                minValue = 5,
+                maxValue = 50,
+                valueText = { "${it}dp" }
+            )
+
+            SliderPreference(
+                title = { Text(stringResource(R.string.glass_transparency)) },
+                icon = { Icon(painterResource(R.drawable.sliders), null) },
+                value = (glassTransparency * 100).roundToInt(),
+                onValueChange = { onGlassTransparencyChange(it / 100f) },
+                minValue = 0,
+                maxValue = 100,
+                valueText = { "${it}%" }
+            )
+
+            SwitchPreference(
+                title = { Text(stringResource(R.string.glass_dynamic_tint)) },
+                icon = { Icon(painterResource(R.drawable.palette), null) },
+                checked = glassDynamicTint,
+                onCheckedChange = onGlassDynamicTintChange
+            )
+
+            SwitchPreference(
+                title = { Text(stringResource(R.string.glass_performance_mode)) },
+                icon = { Icon(painterResource(R.drawable.speed), null) },
+                checked = glassPerformanceMode,
+                onCheckedChange = onGlassPerformanceModeChange
             )
         }
 

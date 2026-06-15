@@ -218,6 +218,9 @@ import com.mudassir131.yt.ui.theme.VeluneTheme
 import com.mudassir131.yt.ui.theme.ColorSaver
 import com.mudassir131.yt.ui.theme.DefaultThemeColor
 import com.mudassir131.yt.ui.theme.extractThemeColor
+import com.mudassir131.yt.ui.theme.glassmorphic
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
 import com.mudassir131.yt.ui.utils.appBarScrollBehavior
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.ui.utils.resetHeightOffset
@@ -788,14 +791,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            VeluneTheme(
-                darkTheme = useDarkTheme,
-                pureBlack = pureBlack,
-                themeColor = themeColor,
-                seedPalette = if (!enableDynamicTheme) customThemeSeedPalette else null,
-                useSystemFont = useSystemFont,
-            ) {
-                BoxWithConstraints(
+            com.mudassir131.yt.ui.theme.ProvideGlassmorphismState {
+                VeluneTheme(
+                    darkTheme = useDarkTheme,
+                    pureBlack = pureBlack,
+                    themeColor = themeColor,
+                    seedPalette = if (!enableDynamicTheme) customThemeSeedPalette else null,
+                    useSystemFont = useSystemFont,
+                ) {
+                    BoxWithConstraints(
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -1586,6 +1590,12 @@ class MainActivity : ComponentActivity() {
                                             if (pureBlack) Color.Black
                                             else MaterialTheme.colorScheme.surfaceContainer
 
+                                            val glassEffectsMode by rememberEnumPreference(
+                                                key = GlassEffectsKey,
+                                                defaultValue = GlassEffectsMode.ADAPTIVE
+                                            )
+                                            val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
                                             FluidSlidingNavigationBar(
                                                 modifier = Modifier
                                                     .align(Alignment.BottomCenter)
@@ -1594,12 +1604,25 @@ class MainActivity : ComponentActivity() {
                                                         end = 12.dp,
                                                         bottom = bottomInset + floatingBarsBottomPadding,
                                                     )
-                                                    .border(
-                                                        width = 1.dp,
-                                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                                                        shape = RoundedCornerShape(24.dp)
+                                                    .then(
+                                                        if (isGlassActive) {
+                                                            val baseColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+                                                            Modifier.glassmorphic(
+                                                                shape = RoundedCornerShape(24.dp),
+                                                                tintColor = baseColor.copy(alpha = 0.3f),
+                                                                fallbackColor = baseColor,
+                                                                borderColor = Color.White.copy(alpha = 0.08f)
+                                                            )
+                                                        } else {
+                                                            Modifier
+                                                                .border(
+                                                                    width = 1.dp,
+                                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+                                                                    shape = RoundedCornerShape(24.dp)
+                                                                )
+                                                                .clip(RoundedCornerShape(24.dp))
+                                                        }
                                                     )
-                                                    .clip(RoundedCornerShape(24.dp))
                                                     .fillMaxWidth()
                                                     .height(navVisibleHeight),
                                                 items = navigationItems,

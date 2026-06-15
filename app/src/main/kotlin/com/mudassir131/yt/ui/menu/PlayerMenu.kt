@@ -9,6 +9,7 @@
 package com.mudassir131.yt.ui.menu
 
 import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.PlayerSliderTrack
 import android.content.Intent
 import android.content.res.Configuration
 import android.media.audiofx.AudioEffect
@@ -781,6 +782,16 @@ private fun VolumeSliderL(
                     painter = painterResource(insetIcon),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            track = { sliderState ->
+                PlayerSliderTrack(
+                    sliderState = sliderState,
+                    colors = SliderDefaults.colors(
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    trackHeight = 8.dp
                 )
             },
             colors = SliderDefaults.colors(),

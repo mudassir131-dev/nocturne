@@ -144,6 +144,10 @@ import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.math.roundToInt
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.compose.ui.text.font.FontFamily
 
@@ -170,6 +174,11 @@ fun Queue(
     val bottomSheetPageState = LocalBottomSheetPageState.current
 
     val playerConnection = LocalPlayerConnection.current ?: return
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
 
@@ -516,7 +525,16 @@ fun Queue(
             modifier =
             Modifier
                 .fillMaxSize()
-                .background(backgroundColor),
+                .then(
+                    if (isGlassActive) {
+                        Modifier.glassmorphic(
+                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                            fallbackColor = backgroundColor
+                        )
+                    } else {
+                        Modifier.background(backgroundColor)
+                    }
+                ),
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 CurrentSongHeader(
@@ -712,7 +730,9 @@ fun Queue(
                                     modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .background(backgroundColor)
+                                        .then(
+                                            if (isGlassActive) Modifier else Modifier.background(backgroundColor)
+                                        )
                                         .combinedClickable(
                                             onClick = {
                                                 if (selection) {

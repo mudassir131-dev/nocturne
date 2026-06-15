@@ -55,6 +55,10 @@ import androidx.compose.ui.unit.dp
 import com.mudassir131.yt.constants.BottomSheetAnimationSpec
 import com.mudassir131.yt.constants.BottomSheetSoftAnimationSpec
 import com.mudassir131.yt.utils.rememberPreference
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
@@ -72,6 +76,16 @@ fun BottomSheet(
     collapsedContent: @Composable BoxScope.() -> Unit,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+    val sheetShape = RoundedCornerShape(
+        topStart = if (!state.isExpanded) 16.dp else 0.dp,
+        topEnd = if (!state.isExpanded) 16.dp else 0.dp,
+    )
+
     Box(
         modifier =
         modifier
@@ -84,15 +98,22 @@ fun BottomSheet(
                 IntOffset(x = 0, y = y)
             }
             .bottomSheetDraggable(state, onDismiss)
-            .clip(
-                RoundedCornerShape(
-                    topStart = if (!state.isExpanded) 16.dp else 0.dp,
-                    topEnd = if (!state.isExpanded) 16.dp else 0.dp,
-                ),
-            ).background(
-                backgroundColor.copy(
-                    alpha = backgroundColor.alpha * state.progress.coerceIn(0f, 1f)
-                )
+            .clip(sheetShape)
+            .then(
+                if (isGlassActive) {
+                    if (backgroundColor == Color.Unspecified) Modifier else {
+                        Modifier.glassmorphic(
+                            shape = sheetShape,
+                            fallbackColor = backgroundColor
+                        )
+                    }
+                } else {
+                    Modifier.background(
+                        backgroundColor.copy(
+                            alpha = backgroundColor.alpha * state.progress.coerceIn(0f, 1f)
+                        )
+                    )
+                }
             ),
     ) {
         if (!state.isCollapsed && !state.isDismissed) {

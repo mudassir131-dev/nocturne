@@ -32,6 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
 import androidx.compose.ui.unit.dp
 
 val LocalMenuState = compositionLocalOf { MenuState() }
@@ -64,6 +68,11 @@ fun BottomSheetMenu(
     background: Color = MaterialTheme.colorScheme.surface,
 ) {
     val focusManager = LocalFocusManager.current
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
     if (state.isVisible) {
         ModalBottomSheet(
@@ -71,8 +80,9 @@ fun BottomSheetMenu(
                 focusManager.clearFocus()
                 state.isVisible = false
             },
-            containerColor = background,
+            containerColor = if (isGlassActive) Color.Transparent else background,
             contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = if (isGlassActive) 0.dp else BottomSheetDefaults.Elevation,
             dragHandle = {
                 Box(
                     modifier = Modifier
@@ -87,6 +97,14 @@ fun BottomSheetMenu(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphic(
+                                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                                fallbackColor = background
+                            )
+                        } else Modifier
+                    )
                     .padding(horizontal = 20.dp)
             ) {
                 state.content(this)

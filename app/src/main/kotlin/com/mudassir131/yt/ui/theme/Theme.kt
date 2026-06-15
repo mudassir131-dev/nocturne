@@ -107,7 +107,16 @@ fun VeluneTheme(
 
 @Composable
 private fun animateColorScheme(targetColorScheme: ColorScheme): ColorScheme {
-    val animationSpec = spring<Color>(stiffness = Spring.StiffnessLow)
+    val glassState = LocalGlassmorphismState.current
+    val isBatteryLow = glassState?.isBatteryLow == true
+    val isFpsLow = glassState?.isFpsLow == true
+    val disableTransitions = isBatteryLow || isFpsLow
+    
+    val animationSpec = if (disableTransitions) {
+        androidx.compose.animation.core.snap()
+    } else {
+        spring<Color>(stiffness = Spring.StiffnessLow)
+    }
     return ColorScheme(
         primary = animateColorAsState(targetColorScheme.primary, animationSpec, label = "primary").value,
         onPrimary = animateColorAsState(targetColorScheme.onPrimary, animationSpec, label = "onPrimary").value,

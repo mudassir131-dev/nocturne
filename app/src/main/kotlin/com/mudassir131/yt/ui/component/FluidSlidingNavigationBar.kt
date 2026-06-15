@@ -23,6 +23,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mudassir131.yt.ui.screens.Screens
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
 
 @Composable
 fun FluidSlidingNavigationBar(
@@ -34,15 +37,27 @@ fun FluidSlidingNavigationBar(
 ) {
     val selectedIndex = items.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
 
-
     val barColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
     BoxWithConstraints(
         modifier = modifier
-            .clip(RoundedCornerShape(28.dp))
+            .then(
+                if (isGlassActive) {
+                    Modifier
+                } else {
+                    Modifier
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(barColor)
+                }
+            )
             .fillMaxWidth()
             .height(80.dp)
-            .background(barColor)
     ) {
         val tabWidth = maxWidth / items.size
 

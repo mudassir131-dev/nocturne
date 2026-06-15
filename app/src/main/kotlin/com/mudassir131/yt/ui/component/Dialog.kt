@@ -89,6 +89,10 @@ import com.mudassir131.yt.R
 
 import kotlinx.coroutines.delay
 import androidx.compose.ui.platform.LocalContext
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
 
 @Composable
 fun DefaultDialog(
@@ -113,11 +117,23 @@ fun DefaultDialog(
                 .navigationBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
+            val glassEffectsMode by rememberEnumPreference(
+                key = GlassEffectsKey,
+                defaultValue = GlassEffectsMode.ADAPTIVE
+            )
+            val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
             Surface(
-                modifier = Modifier.heightIn(max = maxHeight),
+                modifier = Modifier
+                    .heightIn(max = maxHeight)
+                    .then(
+                        if (isGlassActive) {
+                            Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
+                        } else Modifier
+                    ),
                 shape = AlertDialogDefaults.shape,
-                color = AlertDialogDefaults.containerColor,
-                tonalElevation = AlertDialogDefaults.TonalElevation,
+                color = if (isGlassActive) Color.Transparent else AlertDialogDefaults.containerColor,
+                tonalElevation = if (isGlassActive) 0.dp else AlertDialogDefaults.TonalElevation,
             ) {
                 Column(
                     modifier = modifier.padding(24.dp),
@@ -200,11 +216,23 @@ fun ActionPromptDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
+        val glassEffectsMode by rememberEnumPreference(
+            key = GlassEffectsKey,
+            defaultValue = GlassEffectsMode.ADAPTIVE
+        )
+        val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
         Surface(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .padding(24.dp)
+                .then(
+                    if (isGlassActive) {
+                        Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
+                    } else Modifier
+                ),
             shape = AlertDialogDefaults.shape,
-            color = AlertDialogDefaults.containerColor,
-            tonalElevation = AlertDialogDefaults.TonalElevation,
+            color = if (isGlassActive) Color.Transparent else AlertDialogDefaults.containerColor,
+            tonalElevation = if (isGlassActive) 0.dp else AlertDialogDefaults.TonalElevation,
         ) {
             Column(
                 modifier = Modifier.padding(24.dp)
@@ -271,11 +299,23 @@ fun ListDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
+        val glassEffectsMode by rememberEnumPreference(
+            key = GlassEffectsKey,
+            defaultValue = GlassEffectsMode.ADAPTIVE
+        )
+        val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
         Surface(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .padding(24.dp)
+                .then(
+                    if (isGlassActive) {
+                        Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
+                    } else Modifier
+                ),
             shape = AlertDialogDefaults.shape,
-            color = AlertDialogDefaults.containerColor,
-            tonalElevation = AlertDialogDefaults.TonalElevation,
+            color = if (isGlassActive) Color.Transparent else AlertDialogDefaults.containerColor,
+            tonalElevation = if (isGlassActive) 0.dp else AlertDialogDefaults.TonalElevation,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

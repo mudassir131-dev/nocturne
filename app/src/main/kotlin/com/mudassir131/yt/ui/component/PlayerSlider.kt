@@ -26,6 +26,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerSliderTrack(
@@ -34,30 +43,64 @@ fun PlayerSliderTrack(
     colors: SliderColors = SliderDefaults.colors(),
     trackHeight: Dp = 10.dp
 ) {
-    val inactiveTrackColor = colors.inactiveTrackColor
-    val activeTrackColor = colors.activeTrackColor
-    val inactiveTickColor = colors.inactiveTickColor
-    val activeTickColor = colors.activeTickColor
-    val valueRange = sliderState.valueRange
-    Canvas(
-        modifier
-            .fillMaxWidth()
-            .height(trackHeight)
-    ) {
-        drawTrack(
-            stepsToTickFractions(sliderState.steps),
-            0f,
-            calcFraction(
-                valueRange.start,
-                valueRange.endInclusive,
-                sliderState.value.coerceIn(valueRange.start, valueRange.endInclusive)
-            ),
-            inactiveTrackColor,
-            activeTrackColor,
-            inactiveTickColor,
-            activeTickColor,
-            trackHeight
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+
+    if (isGlassActive) {
+        val activeColor = colors.activeTrackColor
+        val valueRange = sliderState.valueRange
+        val fraction = calcFraction(
+            valueRange.start,
+            valueRange.endInclusive,
+            sliderState.value.coerceIn(valueRange.start, valueRange.endInclusive)
         )
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(trackHeight)
+                .glassmorphic(
+                    shape = RoundedCornerShape(50),
+                    borderColor = Color.White.copy(alpha = 0.15f),
+                    borderWidth = 0.5.dp,
+                    fallbackColor = Color.White.copy(alpha = 0.08f)
+                )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
+                    .background(activeColor, RoundedCornerShape(50))
+            )
+        }
+    } else {
+        val inactiveTrackColor = colors.inactiveTrackColor
+        val activeTrackColor = colors.activeTrackColor
+        val inactiveTickColor = colors.inactiveTickColor
+        val activeTickColor = colors.activeTickColor
+        val valueRange = sliderState.valueRange
+        Canvas(
+            modifier
+                .fillMaxWidth()
+                .height(trackHeight)
+        ) {
+            drawTrack(
+                stepsToTickFractions(sliderState.steps),
+                0f,
+                calcFraction(
+                    valueRange.start,
+                    valueRange.endInclusive,
+                    sliderState.value.coerceIn(valueRange.start, valueRange.endInclusive)
+                ),
+                inactiveTrackColor,
+                activeTrackColor,
+                inactiveTickColor,
+                activeTickColor,
+                trackHeight
+            )
+        }
     }
 }
 

@@ -58,6 +58,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.mudassir131.yt.R
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.ui.utils.top
 import kotlinx.coroutines.launch
 
@@ -90,6 +94,11 @@ fun BottomSheetPage(
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
     AnimatedVisibility(
         visible = state.isVisible,
@@ -131,7 +140,13 @@ fun BottomSheetPage(
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
                 .padding(top = 100.dp) // Give enough space from top
                 .clip(ShapeDefaults.Large.top())
-                .background(background)
+                .then(
+                    if (isGlassActive) {
+                        Modifier.glassmorphic(ShapeDefaults.Large.top(), background)
+                    } else {
+                        Modifier.background(background)
+                    }
+                )
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
                         onDragEnd = {

@@ -93,6 +93,11 @@ import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.PlayerBackgroundStyle
 import com.mudassir131.yt.constants.PlayerButtonsStyle
 import com.mudassir131.yt.constants.PlayerDesignStyle
+import com.mudassir131.yt.constants.GlassEffectsKey
+import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.ui.theme.glassmorphic
+import com.mudassir131.yt.ui.theme.glassmorphicButton
 import com.mudassir131.yt.constants.PlayerHorizontalPadding
 import com.mudassir131.yt.constants.SliderStyle
 import com.mudassir131.yt.extensions.togglePlayPause
@@ -252,7 +257,20 @@ fun PlayerTopActions(
     currentSongLiked: Boolean,
     onShareClick: () -> Unit
 ) {
-    when (playerDesignStyle) {
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
+    val baseStyle = when (playerDesignStyle) {
+        PlayerDesignStyle.V1, PlayerDesignStyle.V1_GLASS -> PlayerDesignStyle.V1
+        PlayerDesignStyle.V2, PlayerDesignStyle.V2_GLASS -> PlayerDesignStyle.V2
+        PlayerDesignStyle.V3, PlayerDesignStyle.V3_GLASS -> PlayerDesignStyle.V3
+        PlayerDesignStyle.V4, PlayerDesignStyle.V4_GLASS -> PlayerDesignStyle.V4
+        PlayerDesignStyle.V5, PlayerDesignStyle.V5_GLASS -> PlayerDesignStyle.V5
+    }
+
+    when (baseStyle) {
         PlayerDesignStyle.V2 -> {
             val shareShape = RoundedCornerShape(
                 topStart = 50.dp, bottomStart = 50.dp,
@@ -271,8 +289,7 @@ fun PlayerTopActions(
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(shareShape)
-                        .background(textButtonColor)
+                        .glassmorphicButton(isGlassActive, shareShape, textButtonColor)
                         .clickable {
                             onShareClick()
                         }
@@ -290,8 +307,7 @@ fun PlayerTopActions(
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(favShape)
-                        .background(textButtonColor)
+                        .glassmorphicButton(isGlassActive, favShape, textButtonColor)
                         .clickable {
                             playerConnection.toggleLike()
                         }
@@ -314,6 +330,7 @@ fun PlayerTopActions(
 
 
         PlayerDesignStyle.V3, PlayerDesignStyle.V5 -> {
+            val buttonShape = RoundedCornerShape(12.dp)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -321,7 +338,7 @@ fun PlayerTopActions(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .glassmorphicButton(isGlassActive, buttonShape, if (isGlassActive) textBackgroundColor.copy(alpha = 0.08f) else Color.Transparent)
                         .clickable {
                             onShareClick()
                         },
@@ -337,7 +354,7 @@ fun PlayerTopActions(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .glassmorphicButton(isGlassActive, buttonShape, if (isGlassActive) textBackgroundColor.copy(alpha = 0.08f) else Color.Transparent)
                         .clickable { playerConnection.toggleLike() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -357,6 +374,7 @@ fun PlayerTopActions(
         }
 
         PlayerDesignStyle.V4 -> {
+            val buttonShape = RoundedCornerShape(14.dp)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -365,11 +383,21 @@ fun PlayerTopActions(
                     onClick = {
                         onShareClick()
                     },
-                    shape = RoundedCornerShape(14.dp),
-                    color = textBackgroundColor.copy(alpha = 0.12f),
+                    shape = buttonShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
                     modifier = Modifier
                         .height(44.dp)
                         .width(44.dp)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphic(
+                                    shape = buttonShape,
+                                    tintColor = textBackgroundColor.copy(alpha = 0.12f),
+                                    fallbackColor = textBackgroundColor.copy(alpha = 0.12f),
+                                    borderColor = Color.White.copy(alpha = 0.08f)
+                                )
+                            } else Modifier
+                        )
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Icon(
@@ -383,13 +411,27 @@ fun PlayerTopActions(
 
                 Surface(
                     onClick = { playerConnection.toggleLike() },
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (currentSongLiked)
+                    shape = buttonShape,
+                    color = if (isGlassActive) {
+                        Color.Transparent
+                    } else if (currentSongLiked) {
                         MaterialTheme.colorScheme.error.copy(alpha = 0.25f)
-                    else textBackgroundColor.copy(alpha = 0.12f),
+                    } else {
+                        textBackgroundColor.copy(alpha = 0.12f)
+                    },
                     modifier = Modifier
                         .height(44.dp)
                         .width(44.dp)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphic(
+                                    shape = buttonShape,
+                                    tintColor = if (currentSongLiked) MaterialTheme.colorScheme.error.copy(alpha = 0.25f) else textBackgroundColor.copy(alpha = 0.12f),
+                                    fallbackColor = textBackgroundColor.copy(alpha = 0.12f),
+                                    borderColor = Color.White.copy(alpha = 0.08f)
+                                )
+                            } else Modifier
+                        )
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Icon(
@@ -424,11 +466,21 @@ fun PlayerTopActions(
                             )
                         }
                     },
-                    shape = RoundedCornerShape(14.dp),
-                    color = textBackgroundColor.copy(alpha = 0.12f),
+                    shape = buttonShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
                     modifier = Modifier
                         .height(44.dp)
                         .width(44.dp)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphic(
+                                    shape = buttonShape,
+                                    tintColor = textBackgroundColor.copy(alpha = 0.12f),
+                                    fallbackColor = textBackgroundColor.copy(alpha = 0.12f),
+                                    borderColor = Color.White.copy(alpha = 0.08f)
+                                )
+                            } else Modifier
+                        )
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Icon(
@@ -443,12 +495,12 @@ fun PlayerTopActions(
         }
 
         PlayerDesignStyle.V1 -> {
+            val buttonShape = RoundedCornerShape(24.dp)
             Box(
                 modifier =
                 Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(textButtonColor)
+                    .glassmorphicButton(isGlassActive, buttonShape, textButtonColor)
                     .clickable {
                         onShareClick()
                     },
@@ -471,8 +523,7 @@ fun PlayerTopActions(
                 modifier =
                 Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(textButtonColor)
+                    .glassmorphicButton(isGlassActive, buttonShape, textButtonColor)
                     .clickable {
                         menuState.show {
                             PlayerMenu(
@@ -495,6 +546,7 @@ fun PlayerTopActions(
                     painter = painterResource(R.drawable.more_horiz),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(iconButtonColor),
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -555,6 +607,13 @@ fun StyledPlaybackSlider(
                 onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
                 colors = PlayerSliderColors.standardSliderColors(activeColor),
+                track = { sliderState ->
+                    PlayerSliderTrack(
+                        sliderState = sliderState,
+                        colors = PlayerSliderColors.standardSliderColors(activeColor),
+                        trackHeight = 4.dp
+                    )
+                },
                 modifier = modifier
             )
         }
@@ -680,9 +739,14 @@ fun PlayerPlaybackControls(
     currentSongLiked: Boolean
 ) {
     val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
+    val glassEffectsMode by rememberEnumPreference(
+        key = GlassEffectsKey,
+        defaultValue = GlassEffectsMode.ADAPTIVE
+    )
+    val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
 
     when (playerDesignStyle) {
-        PlayerDesignStyle.V2 -> {
+        PlayerDesignStyle.V2, PlayerDesignStyle.V2_GLASS -> {
             BoxWithConstraints(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -702,12 +766,21 @@ fun PlayerPlaybackControls(
                         onClick = playerConnection::seekToPrevious,
                         enabled = canSkipPrevious,
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = textButtonColor,
-                            contentColor = iconButtonColor
+                            containerColor = if (isGlassActive) Color.Transparent else textButtonColor,
+                            contentColor = if (isGlassActive) textBackgroundColor else iconButtonColor
                         ),
                         modifier = Modifier
                             .size(width = sideButtonWidth, height = sideButtonHeight)
                             .clip(RoundedCornerShape(32.dp))
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(32.dp),
+                                        baseColor = textButtonColor.copy(alpha = 0.2f)
+                                    )
+                                } else Modifier
+                            )
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.skip_previous),
@@ -728,12 +801,21 @@ fun PlayerPlaybackControls(
                             }
                         },
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = textButtonColor,
-                            contentColor = iconButtonColor
+                            containerColor = if (isGlassActive) Color.Transparent else textButtonColor,
+                            contentColor = if (isGlassActive) textBackgroundColor else iconButtonColor
                         ),
                         modifier = Modifier
                             .size(width = playButtonWidth, height = playButtonHeight)
                             .clip(RoundedCornerShape(32.dp))
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(32.dp),
+                                        baseColor = textButtonColor.copy(alpha = 0.3f)
+                                    )
+                                } else Modifier
+                            )
                     ) {
                         if (isLoading) {
                             VeluneLoader(size = 42.dp)
@@ -762,12 +844,21 @@ fun PlayerPlaybackControls(
                         onClick = playerConnection::seekToNext,
                         enabled = canSkipNext,
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = textButtonColor,
-                            contentColor = iconButtonColor
+                            containerColor = if (isGlassActive) Color.Transparent else textButtonColor,
+                            contentColor = if (isGlassActive) textBackgroundColor else iconButtonColor
                         ),
                         modifier = Modifier
                             .size(width = sideButtonWidth, height = sideButtonHeight)
                             .clip(RoundedCornerShape(32.dp))
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(32.dp),
+                                        baseColor = textButtonColor.copy(alpha = 0.2f)
+                                    )
+                                } else Modifier
+                            )
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.skip_next),
@@ -779,7 +870,7 @@ fun PlayerPlaybackControls(
             }
         }
 
-        PlayerDesignStyle.V3 -> {
+        PlayerDesignStyle.V3, PlayerDesignStyle.V3_GLASS -> {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -795,6 +886,15 @@ fun PlayerPlaybackControls(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(10.dp))
+                            .then(
+                                if (isGlassActive && shuffleModeEnabled) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(10.dp),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.15f)
+                                    )
+                                } else Modifier
+                            )
                             .semantics {
                                 role = Role.Button
                                 contentDescription = "Shuffle"
@@ -819,7 +919,17 @@ fun PlayerPlaybackControls(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(textBackgroundColor.copy(alpha = 0.08f))
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(14.dp),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                    )
+                                } else {
+                                    Modifier.background(textBackgroundColor.copy(alpha = 0.08f))
+                                }
+                            )
                             .clickable(enabled = canSkipPrevious) {
                                 playerConnection.seekToPrevious()
                             },
@@ -837,7 +947,17 @@ fun PlayerPlaybackControls(
                         modifier = Modifier
                             .size(70.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(textBackgroundColor)
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(50),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.25f)
+                                    )
+                                } else {
+                                    Modifier.background(textBackgroundColor)
+                                }
+                            )
                             .clickable {
                                 if (playbackState == STATE_ENDED) {
                                     playerConnection.player.seekTo(0, 0)
@@ -864,7 +984,7 @@ fun PlayerPlaybackControls(
                                     isPlaying -> "Pause"
                                     else -> "Play"
                                 },
-                                tint = icBackgroundColor,
+                                tint = if (isGlassActive) textBackgroundColor else icBackgroundColor,
                                 modifier = Modifier.size(34.dp)
                             )
                         }
@@ -874,7 +994,17 @@ fun PlayerPlaybackControls(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(textBackgroundColor.copy(alpha = 0.08f))
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(14.dp),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                    )
+                                } else {
+                                    Modifier.background(textBackgroundColor.copy(alpha = 0.08f))
+                                }
+                            )
                             .clickable(enabled = canSkipNext) {
                                 playerConnection.seekToNext()
                             },
@@ -892,6 +1022,15 @@ fun PlayerPlaybackControls(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(10.dp))
+                            .then(
+                                if (isGlassActive && repeatMode != Player.REPEAT_MODE_OFF) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(10.dp),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.15f)
+                                    )
+                                } else Modifier
+                            )
                             .semantics {
                                 role = Role.Button
                                 contentDescription = "Repeat"
@@ -924,7 +1063,7 @@ fun PlayerPlaybackControls(
             }
         }
 
-        PlayerDesignStyle.V4 -> {
+        PlayerDesignStyle.V4, PlayerDesignStyle.V4_GLASS -> {
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -964,10 +1103,22 @@ fun PlayerPlaybackControls(
                                 playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
                             },
                             shape = RoundedCornerShape(smallRadius),
-                            color = textBackgroundColor.copy(
+                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
                                 alpha = if (shuffleModeEnabled) 0.2f else 0.08f
                             ),
-                            modifier = Modifier.size(small)
+                            modifier = Modifier
+                                .size(small)
+                                .then(
+                                    if (isGlassActive) {
+                                        Modifier.glassmorphicButton(
+                                            isGlassActive = true,
+                                            shape = RoundedCornerShape(smallRadius),
+                                            baseColor = textBackgroundColor.copy(
+                                                alpha = if (shuffleModeEnabled) 0.2f else 0.08f
+                                            )
+                                        )
+                                    } else Modifier
+                                )
                         ) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -990,9 +1141,18 @@ fun PlayerPlaybackControls(
                             onClick = { playerConnection.seekToPrevious() },
                             enabled = canSkipPrevious,
                             shape = RoundedCornerShape(largeRadius),
-                            color = textBackgroundColor.copy(alpha = 0.15f),
+                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.15f),
                             modifier = Modifier
                                 .size(large)
+                                .then(
+                                    if (isGlassActive) {
+                                        Modifier.glassmorphicButton(
+                                            isGlassActive = true,
+                                            shape = RoundedCornerShape(largeRadius),
+                                            baseColor = textBackgroundColor.copy(alpha = 0.15f)
+                                        )
+                                    } else Modifier
+                                )
                                 .semantics {
                                     role = Role.Button
                                     contentDescription = "Previous"
@@ -1024,10 +1184,19 @@ fun PlayerPlaybackControls(
                             }
                         },
                         shape = RoundedCornerShape(28.dp),
-                        color = textButtonColor,
+                        color = if (isGlassActive) Color.Transparent else textButtonColor,
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
                             .size(88.dp)
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(28.dp),
+                                        baseColor = textButtonColor.copy(alpha = 0.3f)
+                                    )
+                                } else Modifier
+                            )
                             .semantics {
                                 role = Role.Button
                                 contentDescription = when {
@@ -1053,7 +1222,7 @@ fun PlayerPlaybackControls(
                                         }
                                     ),
                                     contentDescription = null,
-                                    tint = icBackgroundColor,
+                                    tint = if (isGlassActive) textBackgroundColor else icBackgroundColor,
                                     modifier = Modifier.size(44.dp)
                                 )
                             }
@@ -1068,9 +1237,18 @@ fun PlayerPlaybackControls(
                             onClick = { playerConnection.seekToNext() },
                             enabled = canSkipNext,
                             shape = RoundedCornerShape(largeRadius),
-                            color = textBackgroundColor.copy(alpha = 0.15f),
+                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.15f),
                             modifier = Modifier
                                 .size(large)
+                                .then(
+                                    if (isGlassActive) {
+                                        Modifier.glassmorphicButton(
+                                            isGlassActive = true,
+                                            shape = RoundedCornerShape(largeRadius),
+                                            baseColor = textBackgroundColor.copy(alpha = 0.15f)
+                                        )
+                                    } else Modifier
+                                )
                                 .semantics {
                                     role = Role.Button
                                     contentDescription = "Next"
@@ -1096,11 +1274,22 @@ fun PlayerPlaybackControls(
                         Surface(
                             onClick = { playerConnection.player.toggleRepeatMode() },
                             shape = RoundedCornerShape(smallRadius),
-                            color = textBackgroundColor.copy(
+                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
                                 alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.2f else 0.08f
                             ),
                             modifier = Modifier
                                 .size(small)
+                                .then(
+                                    if (isGlassActive) {
+                                        Modifier.glassmorphicButton(
+                                            isGlassActive = true,
+                                            shape = RoundedCornerShape(smallRadius),
+                                            baseColor = textBackgroundColor.copy(
+                                                alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.2f else 0.08f
+                                            )
+                                        )
+                                    } else Modifier
+                                )
                                 .semantics {
                                     role = Role.Button
                                     contentDescription = "Repeat"
@@ -1136,7 +1325,7 @@ fun PlayerPlaybackControls(
             }
         }
 
-        PlayerDesignStyle.V1, PlayerDesignStyle.V5 -> {
+        PlayerDesignStyle.V1, PlayerDesignStyle.V1_GLASS, PlayerDesignStyle.V5, PlayerDesignStyle.V5_GLASS -> {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
@@ -1144,38 +1333,64 @@ fun PlayerPlaybackControls(
                     .fillMaxWidth()
                     .padding(horizontal = PlayerHorizontalPadding),
             ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    ResizableIconButton(
-                        icon = when (repeatMode) {
-                            Player.REPEAT_MODE_OFF, Player.REPEAT_MODE_ALL -> R.drawable.repeat
-                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                            else -> throw IllegalStateException()
-                        },
-                        contentDescription = "Toggle repeat",
-                        color = textBackgroundColor,
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
                         modifier = Modifier
-                            .size(32.dp)
-                            .padding(4.dp)
-                            .align(Alignment.Center)
-                            .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.5f else 1f),
-                        onClick = {
-                            playerConnection.player.toggleRepeatMode()
-                        },
-                    )
+                            .size(40.dp)
+                            .then(
+                                if (isGlassActive && repeatMode != Player.REPEAT_MODE_OFF) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(50),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.15f)
+                                    )
+                                } else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ResizableIconButton(
+                            icon = when (repeatMode) {
+                                Player.REPEAT_MODE_OFF, Player.REPEAT_MODE_ALL -> R.drawable.repeat
+                                Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                else -> throw IllegalStateException()
+                            },
+                            contentDescription = "Toggle repeat",
+                            color = textBackgroundColor,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(4.dp)
+                                .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.5f else 1f),
+                            onClick = {
+                                playerConnection.player.toggleRepeatMode()
+                            },
+                        )
+                    }
                 }
 
-                Box(modifier = Modifier.weight(1f)) {
-                    ResizableIconButton(
-                        icon = R.drawable.skip_previous,
-                        contentDescription = "Previous",
-                        enabled = canSkipPrevious,
-                        color = textBackgroundColor,
-                        modifier =
-                        Modifier
-                            .size(32.dp)
-                            .align(Alignment.Center),
-                        onClick = playerConnection::seekToPrevious,
-                    )
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(50),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                    )
+                                } else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ResizableIconButton(
+                            icon = R.drawable.skip_previous,
+                            contentDescription = "Previous",
+                            enabled = canSkipPrevious,
+                            color = textBackgroundColor,
+                            modifier = Modifier.size(32.dp),
+                            onClick = playerConnection::seekToPrevious,
+                        )
+                    }
                 }
 
                 Spacer(Modifier.width(8.dp))
@@ -1185,7 +1400,17 @@ fun PlayerPlaybackControls(
                     Modifier
                         .size(72.dp)
                         .clip(RoundedCornerShape(playPauseRoundness))
-                        .background(textButtonColor)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = RoundedCornerShape(playPauseRoundness),
+                                    baseColor = textButtonColor.copy(alpha = 0.25f)
+                                )
+                            } else {
+                                Modifier.background(textButtonColor)
+                            }
+                        )
                         .clickable {
                             if (playbackState == STATE_ENDED) {
                                 playerConnection.player.seekTo(0, 0)
@@ -1216,7 +1441,7 @@ fun PlayerPlaybackControls(
                                 isPlaying -> "Pause"
                                 else -> "Play"
                             },
-                            colorFilter = ColorFilter.tint(iconButtonColor),
+                            colorFilter = ColorFilter.tint(if (isGlassActive) textBackgroundColor else iconButtonColor),
                             modifier =
                             Modifier
                                 .align(Alignment.Center)
@@ -1227,36 +1452,66 @@ fun PlayerPlaybackControls(
 
                 Spacer(Modifier.width(8.dp))
 
-                Box(modifier = Modifier.weight(1f)) {
-                    ResizableIconButton(
-                        icon = R.drawable.skip_next,
-                        contentDescription = "Next",
-                        enabled = canSkipNext,
-                        color = textBackgroundColor,
-                        modifier =
-                        Modifier
-                            .size(32.dp)
-                            .align(Alignment.Center),
-                        onClick = playerConnection::seekToNext,
-                    )
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .then(
+                                if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(50),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                    )
+                                } else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ResizableIconButton(
+                            icon = R.drawable.skip_next,
+                            contentDescription = "Next",
+                            enabled = canSkipNext,
+                            color = textBackgroundColor,
+                            modifier = Modifier.size(32.dp),
+                            onClick = playerConnection::seekToNext,
+                        )
+                    }
                 }
 
-                Box(modifier = Modifier.weight(1f)) {
-                    ResizableIconButton(
-                        icon = if (currentSongLiked) R.drawable.favorite else R.drawable.favorite_border,
-                        contentDescription = if (currentSongLiked) "Dislike" else "Like",
-                        color = if (currentSongLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
-                        modifier =
-                        Modifier
-                            .size(32.dp)
-                            .padding(4.dp)
-                            .align(Alignment.Center),
-                        onClick = playerConnection::toggleLike,
-                    )
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .then(
+                                if (isGlassActive && currentSongLiked) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(50),
+                                        baseColor = MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                                    )
+                                } else if (isGlassActive) {
+                                    Modifier.glassmorphicButton(
+                                        isGlassActive = true,
+                                        shape = RoundedCornerShape(50),
+                                        baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                    )
+                                } else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ResizableIconButton(
+                            icon = if (currentSongLiked) R.drawable.favorite else R.drawable.favorite_border,
+                            contentDescription = if (currentSongLiked) "Dislike" else "Like",
+                            color = if (currentSongLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(4.dp),
+                            onClick = playerConnection::toggleLike,
+                        )
+                    }
                 }
             }
         }
-        else -> {}
     }
 }
 
@@ -1392,13 +1647,24 @@ fun PlayerBackground(
     playerCustomContrast: Float,
     playerCustomBrightness: Float
 ) {
+    val glassState = com.mudassir131.yt.ui.theme.LocalGlassmorphismState.current
+    val isBatteryLow = glassState?.isBatteryLow == true
+    val isFpsLow = glassState?.isFpsLow == true
+    val shouldReduceAnimations = glassState?.shouldReduceAnimations == true
+    
+    val animDuration = when {
+        isBatteryLow -> 300
+        isFpsLow -> 500
+        else -> 1000
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (playerBackground) {
             PlayerBackgroundStyle.BLUR -> {
                 AnimatedContent(
                     targetState = mediaMetadata?.thumbnailUrl,
                     transitionSpec = {
-                        fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
+                        fadeIn(tween(animDuration)) togetherWith fadeOut(tween(animDuration))
                     },
                     label = ""
                 ) { thumbnailUrl ->
@@ -1432,7 +1698,7 @@ fun PlayerBackground(
                 AnimatedContent(
                     targetState = gradientColors,
                     transitionSpec = {
-                        fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
+                        fadeIn(tween(animDuration)) togetherWith fadeOut(tween(animDuration))
                     },
                     label = ""
                 ) { colors ->
@@ -1471,7 +1737,7 @@ fun PlayerBackground(
                 AnimatedContent(
                     targetState = gradientColors,
                     transitionSpec = {
-                        fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
+                        fadeIn(tween(animDuration)) togetherWith fadeOut(tween(animDuration))
                     },
                     label = ""
                 ) { colors ->
@@ -1499,7 +1765,7 @@ fun PlayerBackground(
                 AnimatedContent(
                     targetState = mediaMetadata?.thumbnailUrl,
                     transitionSpec = {
-                        fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
+                        fadeIn(tween(animDuration)) togetherWith fadeOut(tween(animDuration))
                     },
                     label = ""
                 ) { thumbnailUrl ->
@@ -1534,7 +1800,7 @@ fun PlayerBackground(
                 AnimatedContent(
                     targetState = playerCustomImageUri,
                     transitionSpec = {
-                        fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
+                        fadeIn(tween(animDuration)) togetherWith fadeOut(tween(animDuration))
                     },
                     label = ""
                 ) { uri ->
@@ -1577,7 +1843,7 @@ fun PlayerBackground(
                 AnimatedContent(
                     targetState = gradientColors,
                     transitionSpec = {
-                        fadeIn(tween(1200)) togetherWith fadeOut(tween(1200))
+                        fadeIn(tween(animDuration + 200)) togetherWith fadeOut(tween(animDuration + 200))
                     },
                     label = ""
                 ) { colors ->
@@ -1685,22 +1951,26 @@ fun PlayerBackground(
                 AnimatedContent(
                     targetState = gradientColors,
                     transitionSpec = {
-                        fadeIn(tween(1200)) togetherWith fadeOut(tween(1200))
+                        fadeIn(tween(animDuration + 200)) togetherWith fadeOut(tween(animDuration + 200))
                     },
                     label = "GlowAnimatedContent"
                 ) { colors ->
                     if (colors.isNotEmpty()) {
                         val infiniteTransition = rememberInfiniteTransition(label = "GlowAnimation")
 
-                        val progress by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 1f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(20000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "glowProgress"
-                        )
+                        val progress by if (shouldReduceAnimations) {
+                            remember { mutableStateOf(0f) }
+                        } else {
+                            infiniteTransition.animateFloat(
+                                initialValue = 0f,
+                                targetValue = 1f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(20000, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Restart
+                                ),
+                                label = "glowProgress"
+                            )
+                        }
 
                         fun rotatedColorAt(index: Int): Color {
                             val size = colors.size

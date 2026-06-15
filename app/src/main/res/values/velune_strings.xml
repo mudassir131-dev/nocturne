@@ -279,4 +279,24 @@
     <string name="restore_step_restoring_settings">Restoring settings</string>
     <string name="restore_step_restoring_file">Restoring %1$s</string>
     <string name="restore_step_restarting">Restarting app</string>
+
+    <!-- Glassmorphism settings strings -->
+    <string name="player_design_v1_glass">Classic Glass</string>
+    <string name="player_design_v2_glass">Modern Glass</string>
+    <string name="player_design_v3_glass">Minimal Glass</string>
+    <string name="player_design_v4_glass">Cinematic Glass</string>
+    <string name="player_design_v5_glass">Metro Glass</string>
+    <string name="glass_effects">Glass effects</string>
+    <string name="glass_effects_disabled">Disabled</string>
+    <string name="glass_effects_adaptive">Adaptive</string>
+    <string name="glass_effects_premium">Premium</string>
+    <string name="glass_blur_intensity">Blur intensity</string>
+    <string name="glass_transparency">Transparency</string>
+    <string name="glass_dynamic_tint">Dynamic glass tint</string>
+    <string name="glass_performance_mode">Performance optimization</string>
+    <string name="glass_quality_mode">Glass Quality</string>
+    <string name="glass_quality_auto">Auto</string>
+    <string name="glass_quality_low">Low</string>
+    <string name="glass_quality_medium">Medium</string>
+    <string name="glass_quality_high">High</string>
 </resources>
