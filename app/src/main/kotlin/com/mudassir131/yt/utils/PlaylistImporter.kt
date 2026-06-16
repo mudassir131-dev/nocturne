@@ -71,14 +71,26 @@ object PlaylistImporter {
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val trimmedUrl = url.trim()
-            val resolvedUrl = resolveRedirect(trimmedUrl)
+            val resolvedUrl = if (trimmedUrl.contains("spotify.link")) {
+                resolveRedirect(trimmedUrl)
+            } else {
+                trimmedUrl
+            }
             
-            if (resolvedUrl.contains("youtube.com") || resolvedUrl.contains("youtu.be")) {
-                val uri = Uri.parse(resolvedUrl)
-                val playlistId = uri.getQueryParameter("list")
-                    ?: return@runCatching Result.failure<String>(IllegalArgumentException("Invalid YouTube Playlist URL")).getOrThrow()
-                
-                val playlistPage = YouTube.playlist(playlistId).getOrThrow()
+            // Extract YouTube playlist ID from URL or use raw ID if provided
+            val youtubePlaylistId = when {
+                resolvedUrl.contains("youtube.com") || resolvedUrl.contains("youtu.be") -> {
+                    val uri = Uri.parse(resolvedUrl)
+                    uri.getQueryParameter("list")
+                }
+                resolvedUrl.startsWith("PL") || resolvedUrl.startsWith("OLAK") -> {
+                    resolvedUrl
+                }
+                else -> null
+            }
+            
+            if (youtubePlaylistId != null) {
+                val playlistPage = YouTube.playlist(youtubePlaylistId).getOrThrow()
                 val playlistName = playlistPage.playlist.title ?: "Imported YouTube Playlist"
                 
                 val newPlaylistId = UUID.randomUUID().toString()
@@ -158,21 +170,27 @@ object PlaylistImporter {
                     )
                 }
 
-                // Resolve all tracks in parallel
-                val deferreds = tracks.mapIndexed { index, (songName, artistName) ->
-                    async {
-                        val query = "$songName $artistName"
-                        val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
-                        val songItem = searchResult?.items?.firstOrNull() as? SongItem
-                        if (songItem != null) {
-                            Triple(index, songItem.toMediaMetadata(), songItem.setVideoId)
-                        } else {
-                            null
+                // Resolve all tracks in chunks of 5 to avoid connection flooding/rate-limiting
+                val results = mutableListOf<Triple<Int, com.mudassir131.yt.models.MediaMetadata, String?>>()
+                val chunks = tracks.mapIndexed { index, pair -> index to pair }.chunked(5)
+                for (chunk in chunks) {
+                    val deferreds = chunk.map { (index, pair) ->
+                        async {
+                            runCatching {
+                                val (songName, artistName) = pair
+                                val query = "$songName $artistName"
+                                val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                                val songItem = searchResult?.items?.firstOrNull() as? SongItem
+                                if (songItem != null) {
+                                    Triple(index, songItem.toMediaMetadata(), songItem.setVideoId)
+                                } else {
+                                    null
+                                }
+                            }.getOrNull()
                         }
                     }
+                    results.addAll(deferreds.awaitAll().filterNotNull())
                 }
-
-                val results = deferreds.awaitAll().filterNotNull()
 
                 database.withTransaction {
                     results.forEach { (index, metadata, setVideoId) ->
@@ -189,8 +207,16 @@ object PlaylistImporter {
                 }
                 return@runCatching playlistName
             } else if (resolvedUrl.contains("music.apple.com/")) {
-                val html = fetchHtml(resolvedUrl)
-                val doc = Jsoup.parse(html)
+                var doc: org.jsoup.nodes.Document
+                try {
+                    val html = fetchHtml(resolvedUrl)
+                    doc = Jsoup.parse(html)
+                } catch (e: Exception) {
+                    // Apple Music is optional, provide a clean, descriptive message if WAF blocks it
+                    return@runCatching Result.failure<String>(
+                        Exception("Apple Music block: ${e.localizedMessage}. Please try Spotify/YouTube.")
+                    ).getOrThrow()
+                }
 
                 var playlistName = doc.title().replace(" on Apple Music", "").trim()
                 val tracks = mutableListOf<Pair<String, String>>()
@@ -257,21 +283,27 @@ object PlaylistImporter {
                     )
                 }
 
-                // Resolve all tracks in parallel
-                val deferreds = tracks.mapIndexed { index, (songName, artistName) ->
-                    async {
-                        val query = "$songName $artistName"
-                        val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
-                        val songItem = searchResult?.items?.firstOrNull() as? SongItem
-                        if (songItem != null) {
-                            Triple(index, songItem.toMediaMetadata(), songItem.setVideoId)
-                        } else {
-                            null
+                // Resolve all tracks in chunks of 5 to avoid connection flooding/rate-limiting
+                val results = mutableListOf<Triple<Int, com.mudassir131.yt.models.MediaMetadata, String?>>()
+                val chunks = tracks.mapIndexed { index, pair -> index to pair }.chunked(5)
+                for (chunk in chunks) {
+                    val deferreds = chunk.map { (index, pair) ->
+                        async {
+                            runCatching {
+                                val (songName, artistName) = pair
+                                val query = "$songName $artistName"
+                                val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                                val songItem = searchResult?.items?.firstOrNull() as? SongItem
+                                if (songItem != null) {
+                                    Triple(index, songItem.toMediaMetadata(), songItem.setVideoId)
+                                } else {
+                                    null
+                                }
+                            }.getOrNull()
                         }
                     }
+                    results.addAll(deferreds.awaitAll().filterNotNull())
                 }
-
-                val results = deferreds.awaitAll().filterNotNull()
 
                 database.withTransaction {
                     results.forEach { (index, metadata, setVideoId) ->

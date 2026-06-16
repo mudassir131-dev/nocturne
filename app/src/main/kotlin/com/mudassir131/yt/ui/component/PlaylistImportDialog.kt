@@ -9,13 +9,13 @@ import android.widget.Toast
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import com.mudassir131.yt.LocalDatabase
 import com.mudassir131.yt.R
 import com.mudassir131.yt.utils.PlaylistImporter
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,7 +25,6 @@ fun PlaylistImportDialog(
     onDismiss: () -> Unit
 ) {
     val database = LocalDatabase.current
-    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
     TextFieldDialog(
@@ -36,7 +35,7 @@ fun PlaylistImportDialog(
         onDismiss = onDismiss,
         onDone = { url ->
             Toast.makeText(context, "Importing playlist in the background...", Toast.LENGTH_SHORT).show()
-            coroutineScope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 val result = PlaylistImporter.importPlaylist(database, url)
                 withContext(Dispatchers.Main) {
                     result.onSuccess { playlistName ->
