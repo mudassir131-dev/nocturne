@@ -125,7 +125,7 @@ fun PlayerSettings(
     )
     val (autoSkipNextOnError, onAutoSkipNextOnErrorChange) = rememberPreference(
         AutoSkipNextOnErrorKey,
-        defaultValue = false
+        defaultValue = true
     )
     val (pauseOnDeviceMute, onPauseOnDeviceMuteChange) = rememberPreference(
         PauseOnDeviceMuteKey,

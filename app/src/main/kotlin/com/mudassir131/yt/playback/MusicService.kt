@@ -3947,6 +3947,11 @@ class MusicService :
                 error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ||
                     error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND ||
                     error.errorCode == PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE ||
+                    error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED ||
+                    error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED ||
+                    error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ||
+                    error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED ||
+                    error.errorCode == PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK ||
                     httpStatusCode in setOf(403, 404, 410, 416, 429, 500, 502, 503)
                 )
 
@@ -4009,7 +4014,7 @@ class MusicService :
                 } catch (t: Throwable) {
                     Timber.tag("MusicService").e(t, "failed to recover from silence-skipper error")
                 }
-                if (dataStore.get(AutoSkipNextOnErrorKey, false)) {
+                if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
                     skipOnError()
                 } else {
                     stopOnError()
@@ -4019,7 +4024,7 @@ class MusicService :
             return
         }
 
-        if (dataStore.get(AutoSkipNextOnErrorKey, false)) {
+        if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
             skipOnError()
         } else {
             stopOnError()

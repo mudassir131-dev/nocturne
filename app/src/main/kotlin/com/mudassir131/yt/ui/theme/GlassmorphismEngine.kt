@@ -365,6 +365,28 @@ fun Modifier.glassmorphic(
         baseTintColor.copy(alpha = finalTransparency)
     }
 
+    val borderBrush = if (quality == GlassQualityMode.HIGH && !isBatteryLow) {
+        if (isDark) {
+            Brush.linearGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = baseBorderAlpha * 1.5f),
+                    Color.White.copy(alpha = baseBorderAlpha * 0.5f),
+                    Color.Black.copy(alpha = baseBorderAlpha * 0.8f)
+                )
+            )
+        } else {
+            Brush.linearGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = baseBorderAlpha * 2.0f),
+                    Color.Black.copy(alpha = baseBorderAlpha * 0.2f),
+                    Color.Black.copy(alpha = baseBorderAlpha * 0.6f)
+                )
+            )
+        }
+    } else {
+        null
+    }
+
     val supportsBackdrop = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !shouldDisableBlur
     val supportsLens = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !isBatteryLow && !isFpsLow
 
@@ -399,26 +421,44 @@ fun Modifier.glassmorphic(
                         // Specular light reflection overlay (iOS liquid glass inspired)
                         if (quality == GlassQualityMode.HIGH && !isBatteryLow && alpha > 0.3f) {
                             val specularAlpha = if (isDark) 0.06f else 0.10f
+                            
+                            // 1. Primary diagonal sweep gradient (3D sheen)
                             drawRect(
                                 brush = Brush.linearGradient(
                                     colors = listOf(
-                                        Color.White.copy(alpha = specularAlpha * alpha),
-                                        Color.White.copy(alpha = specularAlpha * 0.4f * alpha),
+                                        Color.White.copy(alpha = specularAlpha * 1.5f * alpha),
+                                        Color.White.copy(alpha = specularAlpha * 0.8f * alpha),
+                                        Color.White.copy(alpha = specularAlpha * 0.2f * alpha),
                                         Color.Transparent
                                     ),
                                     start = Offset.Zero,
-                                    end = Offset(size.width * 0.7f, size.height * 0.7f)
+                                    end = Offset(size.width * 0.8f, size.height * 0.8f)
                                 )
                             )
-                            // Subtle inner highlight at top edge
+                            
+                            // 2. Secondary organic/curved liquid specular shine
+                            drawRect(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.White.copy(alpha = specularAlpha * 1.8f * alpha),
+                                        Color.White.copy(alpha = specularAlpha * 0.4f * alpha),
+                                        Color.Transparent
+                                    ),
+                                    start = Offset(0f, size.height * 0.15f),
+                                    end = Offset(size.width * 0.85f, size.height * 0.85f)
+                                )
+                            )
+                            
+                            // 3. Subtle inner highlight at top edge (Apple top bezel reflection)
                             drawRect(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color.White.copy(alpha = 0.08f * alpha),
+                                        Color.White.copy(alpha = 0.12f * alpha),
                                         Color.Transparent
                                     ),
                                     startY = 0f,
-                                    endY = size.height * 0.15f
+                                    endY = size.height * 0.12f
                                 )
                             )
                         }
@@ -431,10 +471,20 @@ fun Modifier.glassmorphic(
                 )
             }
         )
-        .border(
-            width = borderWidth,
-            color = finalBorderColor,
-            shape = shape
+        .then(
+            if (borderBrush != null) {
+                Modifier.border(
+                    width = borderWidth,
+                    brush = borderBrush,
+                    shape = shape
+                )
+            } else {
+                Modifier.border(
+                    width = borderWidth,
+                    color = finalBorderColor,
+                    shape = shape
+                )
+            }
         )
 }
 
