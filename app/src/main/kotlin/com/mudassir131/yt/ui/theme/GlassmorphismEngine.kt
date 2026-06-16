@@ -438,10 +438,13 @@ fun Modifier.glassmorphic(
         )
 }
 
+val LocalIsLightContrast = compositionLocalOf<Boolean?> { null }
+
 fun Modifier.glassmorphicButton(
     isGlassActive: Boolean,
     shape: Shape,
-    baseColor: Color
+    baseColor: Color,
+    isLight: Boolean? = null
 ): Modifier = composed {
     if (isGlassActive) {
         val sharedState = LocalGlassmorphismState.current
@@ -452,7 +455,7 @@ fun Modifier.glassmorphicButton(
             if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
         }
         val pureBlack = sharedState?.pureBlack ?: pureBlackPref
-        val isLightMode = !useDarkTheme
+        val isLightMode = isLight ?: LocalIsLightContrast.current ?: !useDarkTheme
         
         val tintColor = when {
             pureBlack -> Color.Black.copy(alpha = 0.25f)

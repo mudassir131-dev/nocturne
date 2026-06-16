@@ -238,6 +238,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.text.style.TextAlign
+import com.mudassir131.yt.constants.WelcomeShownKey
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Locale
@@ -1133,111 +1141,14 @@ class MainActivity : ComponentActivity() {
                     var showStarDialog by remember { mutableStateOf(false) }
                     var showWelcomeDialog by remember { mutableStateOf(false) }
 
-                    // First-launch welcome dialog
+                    // First-launch welcome bottom sheet dialog
                     LaunchedEffect(Unit) {
-                        val launchCount = withContext(Dispatchers.IO) {
-                            dataStore[LaunchCountKey] ?: 0
+                        val hasSeenWelcome = withContext(Dispatchers.IO) {
+                            dataStore[WelcomeShownKey] ?: false
                         }
-                        if (launchCount == 0) {
+                        if (!hasSeenWelcome) {
                             delay(800)
                             showWelcomeDialog = true
-                        }
-                    }
-
-                    if (showWelcomeDialog) {
-                        Dialog(
-                            onDismissRequest = { showWelcomeDialog = false },
-                            properties = DialogProperties(
-                                dismissOnBackPress = false,
-                                dismissOnClickOutside = false
-                            )
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
-                                shape = RoundedCornerShape(28.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(28.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.ic_velune_concept),
-                                        contentDescription = "Nocturne Logo",
-                                        modifier = Modifier.size(72.dp)
-                                    )
-
-                                    Text(
-                                        text = "Welcome to Nocturne",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    Text(
-                                        text = "Choose your preferred visual style. You can always change this later in Settings.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 4.dp)
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Button(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                withContext(Dispatchers.IO) {
-                                                    dataStore.edit { prefs ->
-                                                        prefs[GlassEffectsKey] = GlassEffectsMode.ADAPTIVE.name
-                                                    }
-                                                }
-                                            }
-                                            showWelcomeDialog = false
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(52.dp),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ) {
-                                        Text(
-                                            text = "✨ Glass Effects UI",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-
-                                    TextButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                withContext(Dispatchers.IO) {
-                                                    dataStore.edit { prefs ->
-                                                        prefs[GlassEffectsKey] = GlassEffectsMode.DISABLED.name
-                                                    }
-                                                }
-                                            }
-                                            showWelcomeDialog = false
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(48.dp),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ) {
-                                        Text(
-                                            text = "Simple UI",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -1918,6 +1829,138 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+
+                        if (showWelcomeDialog) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.4f))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = {} // block touches
+                                    )
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = showWelcomeDialog,
+                            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .let { with(this@BoxWithConstraints) { it.align(Alignment.BottomCenter) } }
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .windowInsetsPadding(WindowInsets.navigationBars)
+                                    .padding(16.dp),
+                                shape = RoundedCornerShape(28.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(28.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(36.dp)
+                                            .height(4.dp)
+                                            .clip(RoundedCornerShape(50))
+                                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_velune_concept),
+                                        contentDescription = "Nocturne Logo",
+                                        modifier = Modifier.size(72.dp)
+                                    )
+
+                                    Text(
+                                        text = "Welcome to Nocturne",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    Text(
+                                        text = "Choose your preferred visual style. You can always change this later in Settings.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                withContext(Dispatchers.IO) {
+                                                    dataStore.edit { prefs ->
+                                                        prefs[GlassEffectsKey] = GlassEffectsMode.DISABLED.name
+                                                        prefs[WelcomeShownKey] = true
+                                                    }
+                                                }
+                                            }
+                                            showWelcomeDialog = false
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(52.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "Simple UI",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                withContext(Dispatchers.IO) {
+                                                    dataStore.edit { prefs ->
+                                                        prefs[GlassEffectsKey] = GlassEffectsMode.ADAPTIVE.name
+                                                        prefs[WelcomeShownKey] = true
+                                                    }
+                                                }
+                                            }
+                                            showWelcomeDialog = false
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(52.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "✨ Glass Effects UI",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         if (showSplashScreen) {
                             SplashScreen(onDismiss = { showSplashScreen = false })
                         }

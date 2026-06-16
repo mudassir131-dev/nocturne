@@ -126,6 +126,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
+import androidx.compose.runtime.CompositionLocalProvider
+import com.mudassir131.yt.ui.theme.LocalIsLightContrast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -340,29 +342,11 @@ fun BottomSheetPlayer(
 
     state.expandedBound / 3
 
-    val TextBackgroundColor =
-        when (playerBackground) {
-            PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
-            PlayerBackgroundStyle.BLUR -> if (useDarkTheme) Color.White else Color.Black
-            PlayerBackgroundStyle.GRADIENT -> if (useDarkTheme) Color.White else Color.Black
-            PlayerBackgroundStyle.COLORING -> if (useDarkTheme) Color.White else Color.Black
-            PlayerBackgroundStyle.BLUR_GRADIENT -> if (useDarkTheme) Color.White else Color.Black
-            PlayerBackgroundStyle.GLOW -> if (useDarkTheme) Color.White else Color.Black
-            PlayerBackgroundStyle.GLOW_ANIMATED -> if (useDarkTheme) Color.White else Color.Black
-            PlayerBackgroundStyle.CUSTOM -> if (useDarkTheme) Color.White else Color.Black
-        }
+    val isPlayerVisuallyDark = playerBackground != PlayerBackgroundStyle.DEFAULT || useDarkTheme
 
-    val icBackgroundColor =
-        when (playerBackground) {
-            PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surface
-            PlayerBackgroundStyle.BLUR -> if (useDarkTheme) Color.Black else Color.White
-            PlayerBackgroundStyle.GRADIENT -> if (useDarkTheme) Color.Black else Color.White
-            PlayerBackgroundStyle.COLORING -> if (useDarkTheme) Color.Black else Color.White
-            PlayerBackgroundStyle.BLUR_GRADIENT -> if (useDarkTheme) Color.Black else Color.White
-            PlayerBackgroundStyle.GLOW -> if (useDarkTheme) Color.Black else Color.White
-            PlayerBackgroundStyle.GLOW_ANIMATED -> if (useDarkTheme) Color.Black else Color.White
-            PlayerBackgroundStyle.CUSTOM -> if (useDarkTheme) Color.Black else Color.White
-        }
+    val TextBackgroundColor = if (isPlayerVisuallyDark) Color.White else Color.Black
+
+    val icBackgroundColor = if (isPlayerVisuallyDark) Color.Black else Color.White
 
     val (textButtonColor, iconButtonColor) = when (playerButtonsStyle) {
         PlayerButtonsStyle.DEFAULT -> Pair(TextBackgroundColor, icBackgroundColor)
@@ -558,7 +542,8 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val onSliderValueChange: (Long) -> Unit = { sliderPosition = it }
+        CompositionLocalProvider(LocalIsLightContrast provides (TextBackgroundColor == Color.Black)) {
+            val onSliderValueChange: (Long) -> Unit = { sliderPosition = it }
         val onSliderValueChangeFinished: () -> Unit = {
             sliderPosition?.let {
                 playerConnection.player.seekTo(it)
@@ -888,6 +873,7 @@ fun BottomSheetPlayer(
                 title = "Creating Story...",
                 indeterminate = true
             )
+        }
         }
     }
 }
