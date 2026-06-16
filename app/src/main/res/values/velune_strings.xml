@@ -286,7 +286,7 @@
     <string name="player_design_v3_glass">Minimal Glass</string>
     <string name="player_design_v4_glass">Cinematic Glass</string>
     <string name="player_design_v5_glass">Metro Glass</string>
-    <string name="glass_effects">Glass effects</string>
+    <string name="glass_effects">Glass effects ( experimental )</string>
     <string name="glass_effects_disabled">Disabled</string>
     <string name="glass_effects_adaptive">Adaptive</string>
     <string name="glass_effects_premium">Premium</string>

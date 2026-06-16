@@ -6,6 +6,7 @@
 package com.mudassir131.yt.utils
 
 import android.content.Context
+import android.net.Uri
 import com.mudassir131.yt.db.MusicDatabase
 import com.mudassir131.yt.db.entities.PlaylistEntity
 import com.mudassir131.yt.db.entities.PlaylistSongMap
@@ -20,8 +21,49 @@ import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.time.LocalDateTime
 import java.util.UUID
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 object PlaylistImporter {
+
+    private val httpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private suspend fun fetchHtml(url: String): String = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("Referer", "https://www.google.com")
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw Exception("HTTP Error: ${response.code}")
+            return@withContext response.body?.string() ?: ""
+        }
+    }
+
+    private suspend fun resolveRedirect(url: String): String = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+            httpClient.newCall(request).execute().use { response ->
+                return@withContext response.request.url.toString()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return@withContext url
+        }
+    }
 
     suspend fun importPlaylist(
         database: MusicDatabase,
@@ -29,8 +71,11 @@ object PlaylistImporter {
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val trimmedUrl = url.trim()
-            if (trimmedUrl.contains("youtube.com") || trimmedUrl.contains("youtu.be")) {
-                val playlistId = extractQueryParameter(trimmedUrl, "list")
+            val resolvedUrl = resolveRedirect(trimmedUrl)
+            
+            if (resolvedUrl.contains("youtube.com") || resolvedUrl.contains("youtu.be")) {
+                val uri = Uri.parse(resolvedUrl)
+                val playlistId = uri.getQueryParameter("list")
                     ?: return@runCatching Result.failure<String>(IllegalArgumentException("Invalid YouTube Playlist URL")).getOrThrow()
                 
                 val playlistPage = YouTube.playlist(playlistId).getOrThrow()
@@ -61,13 +106,10 @@ object PlaylistImporter {
                     }
                 }
                 return@runCatching playlistName
-            } else if (trimmedUrl.contains("spotify.com/playlist/")) {
-                val playlistId = trimmedUrl.substringAfter("playlist/").substringBefore("?").substringBefore("/")
-                val doc = Jsoup.connect("https://open.spotify.com/embed/playlist/$playlistId")
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .referrer("https://www.google.com")
-                    .timeout(15000)
-                    .get()
+            } else if (resolvedUrl.contains("spotify.com/playlist/")) {
+                val playlistId = resolvedUrl.substringAfter("playlist/").substringBefore("?").substringBefore("/")
+                val html = fetchHtml("https://open.spotify.com/embed/playlist/$playlistId")
+                val doc = Jsoup.parse(html)
 
                 val nextDataScript = doc.getElementById("__NEXT_DATA__")
                 val jsonText = nextDataScript?.data()?.trim() ?: ""
@@ -146,12 +188,9 @@ object PlaylistImporter {
                     }
                 }
                 return@runCatching playlistName
-            } else if (trimmedUrl.contains("music.apple.com/")) {
-                val doc = Jsoup.connect(trimmedUrl)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
-                    .referrer("https://www.google.com")
-                    .timeout(15000)
-                    .get()
+            } else if (resolvedUrl.contains("music.apple.com/")) {
+                val html = fetchHtml(resolvedUrl)
+                val doc = Jsoup.parse(html)
 
                 var playlistName = doc.title().replace(" on Apple Music", "").trim()
                 val tracks = mutableListOf<Pair<String, String>>()
@@ -252,18 +291,5 @@ object PlaylistImporter {
                 return@runCatching Result.failure<String>(IllegalArgumentException("Unsupported Playlist URL")).getOrThrow()
             }
         }
-    }
-
-    private fun extractQueryParameter(url: String, key: String): String? {
-        val query = url.substringAfter("?", "")
-        if (query.isEmpty()) return null
-        val params = query.split("&")
-        for (param in params) {
-            val parts = param.split("=")
-            if (parts.size == 2 && parts[0] == key) {
-                return parts[1]
-            }
-        }
-        return null
     }
 }

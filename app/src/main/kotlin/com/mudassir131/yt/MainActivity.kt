@@ -105,6 +105,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -2220,10 +2221,14 @@ fun SplashScreen(
         }
     }
 
+    val isSystemInDarkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (isSystemInDarkTheme) Color.Black else Color.White
+    val tintColor = if (isSystemInDarkTheme) Color.White else Color.Black
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(backgroundColor),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -2234,6 +2239,7 @@ fun SplashScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_velune_concept),
                 contentDescription = "Nocturne Logo",
+                colorFilter = ColorFilter.tint(tintColor),
                 modifier = Modifier
                     .size(130.dp)
                     .graphicsLayer(
@@ -2248,7 +2254,7 @@ fun SplashScreen(
             // App Name
             Text(
                 text = "NOCTURNE",
-                color = Color.White,
+                color = tintColor,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 4.sp,
@@ -2260,7 +2266,7 @@ fun SplashScreen(
             )
         }
         
-        // Footer: by Mudassir
+        // Footer: M Labs Logo & Name
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -2273,10 +2279,17 @@ fun SplashScreen(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_m_labs),
+                    contentDescription = "M Labs Logo",
+                    colorFilter = ColorFilter.tint(tintColor),
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "by Mudassir",
-                    color = Color.White,
-                    fontSize = 16.sp,
+                    text = "M Labs",
+                    color = tintColor,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 1.sp
                 )
