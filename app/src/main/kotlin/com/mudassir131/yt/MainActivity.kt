@@ -222,6 +222,7 @@ import com.mudassir131.yt.ui.theme.extractThemeColor
 import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.constants.GlassEffectsKey
 import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.constants.AppIconStyleKey
 import com.mudassir131.yt.ui.utils.appBarScrollBehavior
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.ui.utils.resetHeightOffset
@@ -837,6 +838,7 @@ class MainActivity : ComponentActivity() {
                     val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                     val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                     val defaultOpenTab by rememberEnumPreference(DefaultOpenTabKey, NavigationTab.HOME)
+                    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
                     val pauseSearchHistory by rememberPreference(PauseSearchHistoryKey, defaultValue = false)
                     val tabOpenedFromShortcut =
                         remember {
@@ -1353,14 +1355,19 @@ class MainActivity : ComponentActivity() {
                                                 } else WindowInsetsSides.Horizontal) + WindowInsetsSides.Top),
                                                 title = {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        // app icon
-                                                        Icon(
-                                                            painter = painterResource(id = R.drawable.ic_velune_concept),
-                                                            contentDescription = "Velune Logo",
-                                                            tint = MaterialTheme.colorScheme.onSurface,
+                                                        val topBarLogoRes = when (appIconStyle) {
+                                                            "midnight" -> R.drawable.ic_logo_midnight
+                                                            "aura" -> R.drawable.ic_logo_aura
+                                                            "pulse" -> R.drawable.ic_logo_pulse
+                                                            else -> R.drawable.ic_logo_eclipse
+                                                        }
+                                                        Image(
+                                                            painter = painterResource(id = topBarLogoRes),
+                                                            contentDescription = "App Logo",
                                                             modifier = Modifier
                                                                 .size(35.dp)
                                                                 .padding(end = 6.dp)
+                                                                .clip(RoundedCornerShape(8.dp))
                                                         )
 
                                                         Text(
@@ -1882,7 +1889,7 @@ class MainActivity : ComponentActivity() {
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     Image(
-                                        painter = painterResource(id = R.drawable.ic_velune_concept),
+                                        painter = painterResource(id = if (isSystemInDarkTheme) R.drawable.ic_logo_eclipse else R.drawable.ic_logo_light),
                                         contentDescription = "Nocturne Logo",
                                         modifier = Modifier.size(72.dp)
                                     )
@@ -2236,12 +2243,17 @@ fun SplashScreen(
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
             // App Logo
+            val openingLogoRes = if (isSystemInDarkTheme) {
+                R.drawable.ic_logo_eclipse
+            } else {
+                R.drawable.ic_logo_light
+            }
             Image(
-                painter = painterResource(id = R.drawable.ic_velune_concept),
+                painter = painterResource(id = openingLogoRes),
                 contentDescription = "Nocturne Logo",
-                colorFilter = ColorFilter.tint(tintColor),
                 modifier = Modifier
                     .size(130.dp)
+                    .clip(RoundedCornerShape(28.dp))
                     .graphicsLayer(
                         scaleX = scale.value,
                         scaleY = scale.value,

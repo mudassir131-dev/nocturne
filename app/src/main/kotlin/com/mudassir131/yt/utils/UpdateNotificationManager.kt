@@ -159,7 +159,7 @@ object UpdateNotificationManager {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_velune_concept)
+            .setSmallIcon(R.drawable.ic_logo_eclipse_vector)
             .setContentTitle("Update Available: $newVersion")
             .setContentText("Features: Content Filtration, Song Card Share, Playlist Import")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

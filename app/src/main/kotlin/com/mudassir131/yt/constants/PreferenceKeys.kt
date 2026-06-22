@@ -616,4 +616,5 @@ val GlassBlurIntensityKey = floatPreferencesKey("glass_blur_intensity")
 val GlassTransparencyKey = floatPreferencesKey("glass_transparency")
 val GlassDynamicTintKey = booleanPreferencesKey("glass_dynamic_tint")
 val GlassPerformanceModeKey = booleanPreferencesKey("glass_performance_mode")
+val AppIconStyleKey = stringPreferencesKey("appIconStyle")
 

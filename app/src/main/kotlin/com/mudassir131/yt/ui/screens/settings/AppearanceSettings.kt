@@ -101,6 +101,9 @@ import com.mudassir131.yt.constants.VeluneCanvasKey
 import com.mudassir131.yt.constants.ThumbnailCornerRadiusKey
 import com.mudassir131.yt.constants.CropThumbnailToSquareKey
 import com.mudassir131.yt.constants.DisableBlurKey
+import com.mudassir131.yt.constants.AppIconStyleKey
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 
 import com.mudassir131.yt.constants.UseLyricsV2Key
 import com.mudassir131.yt.constants.GlassEffectsKey
@@ -281,6 +284,10 @@ fun AppearanceSettings(
         ShowHomeCategoryChipsKey,
         defaultValue = true
     )
+    val (appIconKey, onAppIconKeyChange) = rememberPreference(
+        key = AppIconStyleKey,
+        defaultValue = "eclipse"
+    )
 
     val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
         it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -424,6 +431,69 @@ fun AppearanceSettings(
             checked = useSystemFont,
             onCheckedChange = onUseSystemFontChange,
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "App Icon",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val iconOptions = remember {
+            listOf(
+                Triple("eclipse", "Eclipse", R.drawable.ic_logo_eclipse),
+                Triple("midnight", "Midnight", R.drawable.ic_logo_midnight),
+                Triple("aura", "Aura", R.drawable.ic_logo_aura),
+                Triple("pulse", "Pulse", R.drawable.ic_logo_pulse)
+            )
+        }
+
+        LazyRow(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        ) {
+            items(iconOptions.size) { index ->
+                val (key, label, resId) = iconOptions[index]
+                val isSelected = appIconKey == key
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .width(80.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            if (appIconKey != key) {
+                                onAppIconKeyChange(key)
+                                val style = com.mudassir131.yt.utils.AppIconStyle.fromKey(key)
+                                com.mudassir131.yt.utils.AppIconManager.setAppIcon(context, style)
+                            }
+                        }
+                        .padding(4.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = label,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .border(
+                                width = if (isSelected) 3.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(14.dp)
+                            )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
 
         PreferenceGroupTitle(
             title = stringResource(R.string.player),

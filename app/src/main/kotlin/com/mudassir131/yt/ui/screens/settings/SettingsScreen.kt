@@ -104,6 +104,8 @@ import com.mudassir131.yt.BuildConfig
 import com.mudassir131.yt.LocalPlayerAwareWindowInsets
 import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.InnerTubeCookieKey
+import com.mudassir131.yt.constants.AppIconStyleKey
+import androidx.compose.foundation.Image
 import com.mudassir131.yt.innertube.utils.parseCookieString
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.TopSearch
@@ -215,6 +217,7 @@ fun SettingsScreen(
     val accountName by viewModel.accountName.collectAsState()
     val accountImageUrl by viewModel.accountImageUrl.collectAsState()
     val (innerTubeCookie, onInnerTubeCookieChange) = rememberPreference(InnerTubeCookieKey, "")
+    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
@@ -1076,25 +1079,25 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsHeroHeader(modifier: Modifier = Modifier) {
+    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(
+        val headerLogoRes = when (appIconStyle) {
+            "midnight" -> R.drawable.ic_logo_midnight
+            "aura" -> R.drawable.ic_logo_aura
+            "pulse" -> R.drawable.ic_logo_pulse
+            else -> R.drawable.ic_logo_eclipse
+        }
+        Image(
+            painter = painterResource(id = headerLogoRes),
+            contentDescription = null,
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_velune_concept),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(26.dp),
-            )
-        }
+        )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = stringResource(R.string.app_name),

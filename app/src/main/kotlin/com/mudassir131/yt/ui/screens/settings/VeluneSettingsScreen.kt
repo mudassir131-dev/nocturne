@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.mudassir131.yt.App.Companion.forgetAccount
 import com.mudassir131.yt.utils.rememberPreference
 import com.mudassir131.yt.constants.InnerTubeCookieKey
+import com.mudassir131.yt.constants.AppIconStyleKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +47,7 @@ fun VeluneSettingsScreen(
     val isLoggedIn = accountName != "Guest" && !accountName.isNullOrEmpty()
     var showLogoutDialog by remember { mutableStateOf(false) }
     val (innerTubeCookie, onInnerTubeCookieChange) = rememberPreference(InnerTubeCookieKey, "")
+    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
 
     Scaffold(
         topBar = {
@@ -82,21 +84,19 @@ fun VeluneSettingsScreen(
                         .padding(vertical = 16.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
+                    val headerLogoRes = when (appIconStyle) {
+                        "midnight" -> R.drawable.ic_logo_midnight
+                        "aura" -> R.drawable.ic_logo_aura
+                        "pulse" -> R.drawable.ic_logo_pulse
+                        else -> R.drawable.ic_logo_eclipse
+                    }
+                    Image(
+                        painter = painterResource(id = headerLogoRes),
+                        contentDescription = "Nocturne Logo",
                         modifier = Modifier
                             .size(60.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_velune_concept),
-                            contentDescription = "Nocturne Logo",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp)
-                        )
-                    }
+                    )
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(

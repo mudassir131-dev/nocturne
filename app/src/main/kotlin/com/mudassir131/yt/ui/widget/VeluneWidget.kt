@@ -57,6 +57,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.palette.graphics.Palette
 import com.mudassir131.yt.R
+import com.mudassir131.yt.constants.AppIconStyleKey
 import com.mudassir131.yt.playback.MusicService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -122,10 +123,17 @@ class VeluneWidget : GlanceAppWidget() {
 
         val artPath = prefs[widgetArtPathKey]
         val artBitmap = artPath?.let { BitmapFactory.decodeFile(it) }
+        val appIconStyle = prefs[AppIconStyleKey] ?: "eclipse"
+        val widgetLogoRes = when (appIconStyle) {
+            "midnight" -> R.drawable.ic_logo_midnight
+            "aura" -> R.drawable.ic_logo_aura
+            "pulse" -> R.drawable.ic_logo_pulse
+            else -> R.drawable.ic_logo_eclipse
+        }
         val imageProvider = if (artBitmap != null) {
             ImageProvider(artBitmap)
         } else {
-            ImageProvider(R.drawable.ic_velune_concept)
+            ImageProvider(widgetLogoRes)
         }
 
         val defaultBg = android.graphics.Color.parseColor("#1E1E1E")

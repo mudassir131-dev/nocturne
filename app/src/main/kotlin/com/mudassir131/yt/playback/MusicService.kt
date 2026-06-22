@@ -63,6 +63,7 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
 import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -481,7 +482,7 @@ class MusicService :
                     )
 
                 NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_velune_concept)
+                    .setSmallIcon(R.drawable.ic_logo_eclipse_vector)
                     .setContentTitle(getString(R.string.music_player))
                     .setContentText(getString(R.string.app_name))
                     .setContentIntent(contentIntent)
@@ -538,6 +539,7 @@ class MusicService :
                 .Builder(this)
                 .setMediaSourceFactory(createMediaSourceFactory())
                 .setRenderersFactory(createRenderersFactory())
+                .setLoadControl(createLoadControl())
                 .setHandleAudioBecomingNoisy(true)
                 .setWakeMode(C.WAKE_MODE_NETWORK)
                 .setAudioAttributes(
@@ -586,7 +588,7 @@ class MusicService :
                 CHANNEL_ID,
                 R.string.music_player
             ).apply {
-                setSmallIcon(R.drawable.ic_velune_concept)
+                setSmallIcon(R.drawable.ic_logo_eclipse_vector)
             }
         )
         
@@ -738,6 +740,7 @@ class MusicService :
                         .Builder(this)
                         .setMediaSourceFactory(createMediaSourceFactory())
                         .setRenderersFactory(createRenderersFactory())
+                        .setLoadControl(createLoadControl())
                         .setHandleAudioBecomingNoisy(false)
                         .setWakeMode(C.WAKE_MODE_NETWORK)
                         .setAudioAttributes(
@@ -4272,6 +4275,17 @@ class MusicService :
             },
         )
 
+    private fun createLoadControl() =
+        DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                50_000, // minBufferMs
+                120_000, // maxBufferMs
+                1_500, // bufferForPlaybackMs
+                3_000 // bufferForPlaybackAfterRebufferMs
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
     private fun updateAudioOffload(enabled: Boolean) {
         runCatching {
             val builder = player.trackSelectionParameters.buildUpon()
@@ -4760,7 +4774,7 @@ class MusicService :
         const val CHANNEL_ID = "music_channel_01"
         const val NOTIFICATION_ID = 888
         const val ERROR_CODE_NO_STREAM = 1000001
-        const val CHUNK_LENGTH = 512 * 1024L
+        const val CHUNK_LENGTH = 5 * 1024 * 1024L
         const val PERSISTENT_QUEUE_FILE = "persistent_queue.data"
         const val PERSISTENT_AUTOMIX_FILE = "persistent_automix.data"
         const val PERSISTENT_PLAYER_STATE_FILE = "persistent_player_state.data"

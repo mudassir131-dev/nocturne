@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a16"/>
+      <stop offset="50%" stop-color="#12122c"/>
+      <stop offset="100%" stop-color="#050510"/>
+    </linearGradient>
+    
+    <!-- Neon Border Glow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glassmorphic Glow -->
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <!-- Liquid Blob Gradients -->
+    <radialGradient id="blob1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff2d55" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ff2d55" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5856d6" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#5856d6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <style>
+    /* Keyframe Animations */
+    @keyframes blobMove1 {
+      0% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(50px, -30px) scale(1.1); }
+      66% { transform: translate(-30px, 40px) scale(0.9); }
+      100% { transform: translate(0px, 0px) scale(1); }
+    }
+    @keyframes blobMove2 {
+      0% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(-60px, 40px) scale(0.9); }
+      66% { transform: translate(40px, -50px) scale(1.1); }
+      100% { transform: translate(0px, 0px) scale(1); }
+    }
+    @keyframes textGlow {
+      0%, 100% { text-shadow: 0 0 10px rgba(255,45,85,0.5), 0 0 20px rgba(88,86,214,0.3); }
+      50% { text-shadow: 0 0 20px rgba(255,45,85,0.8), 0 0 30px rgba(88,86,214,0.6); }
+    }
+    @keyframes borderPulse {
+      0%, 100% { stroke-opacity: 0.4; }
+      50% { stroke-opacity: 0.9; }
+    }
+    
+    .blob-1 {
+      animation: blobMove1 8s infinite ease-in-out;
+    }
+    .blob-2 {
+      animation: blobMove2 10s infinite ease-in-out;
+    }
+    .brand-title {
+      font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+      font-weight: 800;
+      font-size: 42px;
+      fill: #ffffff;
+      animation: textGlow 4s infinite ease-in-out;
+    }
+    .brand-subtitle {
+      font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+      font-weight: 500;
+      font-size: 16px;
+      fill: #a0a0c0;
+      letter-spacing: 2px;
+    }
+    .brand-m-labs {
+      font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      fill: #ff2d55;
+    }
+    .card-border {
+      animation: borderPulse 4s infinite ease-in-out;
+    }
+  </style>
+
+  <!-- Base Card Background -->
+  <rect width="800" height="350" rx="24" fill="url(#bgGrad)"/>
+
+  <!-- Liquid Animated Blobs (Under Glass) -->
+  <g filter="url(#glow)">
+    <circle class="blob-1" cx="300" cy="150" r="140" fill="url(#blob1)" />
+    <circle class="blob-2" cx="500" cy="200" r="150" fill="url(#blob2)" />
+  </g>
+
+  <!-- Frosted Glass Overlay -->
+  <rect x="15" y="15" width="770" height="320" rx="20" fill="url(#glassGrad)" stroke="#ffffff" stroke-width="1.5" class="card-border" stroke-opacity="0.4" />
+
+  <!-- Content Group -->
+  <g transform="translate(50, 60)">
+    <!-- App Logo Icon (Liquid Styled Note) -->
+    <g transform="translate(0, 10)">
+      <circle cx="50" cy="50" r="45" fill="#181830" stroke="#ff2d55" stroke-width="3" />
+      <!-- Stylized 'M' Logo for M Labs / Nocturne -->
+      <path d="M28 65 V35 L50 50 L72 35 V65" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+      <path d="M50 50 L50 72" stroke="#ff2d55" stroke-width="4" stroke-linecap="round" fill="none" />
+    </g>
+
+    <!-- Brand Header -->
+    <text x="120" y="45" class="brand-title">Nocturne</text>
+    <text x="122" y="70" class="brand-subtitle">THE PREMIUM STANDALONE YTM CLIENT</text>
+
+    <!-- Divider Line -->
+    <line x1="120" y1="90" x2="680" y2="90" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1" />
+
+    <!-- Description -->
+    <text x="120" y="125" font-family="'Inter', sans-serif" font-size="14" fill="#d0d0e0">
+      Inspired by Apple's liquid glassmorphic design system and fluid layouts.
+    </text>
+    <text x="120" y="145" font-family="'Inter', sans-serif" font-size="14" fill="#d0d0e0">
+      Fully native Android architecture with dynamic styling, crossfade playback,
+    </text>
+    <text x="120" y="165" font-family="'Inter', sans-serif" font-size="14" fill="#d0d0e0">
+      and experimental glass effects powered by CHGlassmorphismView.
+    </text>
+
+    <!-- Developer Footer -->
+    <g transform="translate(120, 200)">
+      <!-- Mini M Labs Logo -->
+      <rect width="32" height="32" rx="8" fill="#ff2d55" />
+      <path d="M8 22 V12 L16 17 L24 12 V22" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+      <text x="45" y="22" class="brand-m-labs">M Labs</text>
+      <text x="135" y="21" font-family="'Outfit', sans-serif" font-size="14" fill="#8888b0">by Mudassir</text>
+    </g>
+  </g>
+</svg>

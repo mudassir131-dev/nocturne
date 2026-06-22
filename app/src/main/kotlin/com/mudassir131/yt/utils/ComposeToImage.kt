@@ -453,7 +453,7 @@ object ComposeToImage {
         val baseSize = minOf(canvasWidth, canvasHeight).toFloat()
         val logoSize = (baseSize * 0.045f).toInt()
 
-        val rawLogo = context.getDrawable(R.drawable.ic_velune_concept)?.toBitmap(logoSize, logoSize)
+        val rawLogo = context.getDrawable(R.drawable.ic_logo_eclipse_vector)?.toBitmap(logoSize, logoSize)
         val logo = rawLogo?.let { source ->
             val colored = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
             val canvasLogo = Canvas(colored)
@@ -619,7 +619,7 @@ object ComposeToImage {
             isAntiAlias = true
         }
 
-        val rawLogo = context.getDrawable(R.drawable.ic_velune_concept)?.toBitmap(logoSize.toInt(), logoSize.toInt())
+        val rawLogo = context.getDrawable(R.drawable.ic_logo_eclipse_vector)?.toBitmap(logoSize.toInt(), logoSize.toInt())
         val logoBitmap = rawLogo?.let { source ->
             val colored = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
             val canvasLogo = Canvas(colored)
