@@ -203,9 +203,13 @@ import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.LocalBottomSheetPageState
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.StarDialog
+import com.mudassir131.yt.ui.component.UpdateDialog
+import com.mudassir131.yt.ui.component.WelcomeUpdateDialog
 import com.mudassir131.yt.ui.component.TopSearch
 import com.mudassir131.yt.ui.component.rememberBottomSheetState
 import com.mudassir131.yt.ui.component.shimmer.ShimmerTheme
+import com.mudassir131.yt.constants.DismissedUpdateVersionKey
+import com.mudassir131.yt.constants.LastWelcomedVersionKey
 import com.mudassir131.yt.ui.menu.YouTubeSongMenu
 import com.mudassir131.yt.ui.player.BottomSheetPlayer
 import com.mudassir131.yt.ui.screens.Screens
@@ -486,8 +490,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var showSplashScreen by remember { mutableStateOf(true) }
-            var latestVersionName by remember { mutableStateOf("") }
-            val releaseNotesState = remember { mutableStateOf<String?>(null) }
+            var latestReleaseInfo by remember { mutableStateOf<com.mudassir131.yt.utils.ReleaseInfo?>(null) }
+            var showUpdateDialog by remember { mutableStateOf(false) }
+            var showWelcomeUpdateDialog by remember { mutableStateOf(false) }
 
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -506,8 +511,31 @@ class MainActivity : ComponentActivity() {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
 
-                Updater.getLatestVersionName().onSuccess {
-                    latestVersionName = it
+                Updater.getLatestReleaseInfo().onSuccess { info ->
+                    latestReleaseInfo = info
+                    val latestVer = info.tagName
+                    val installedVer = BuildConfig.VERSION_NAME
+                    
+                    if (compareVersion(latestVer, installedVer) > 0) {
+                        val dismissedVer = withContext(Dispatchers.IO) {
+                            dataStore[DismissedUpdateVersionKey] ?: ""
+                        }
+                        if (latestVer != dismissedVer) {
+                            showUpdateDialog = true
+                        }
+                    } else {
+                        val lastWelcomed = withContext(Dispatchers.IO) {
+                            dataStore[LastWelcomedVersionKey] ?: ""
+                        }
+                        val hasSeenWelcome = withContext(Dispatchers.IO) {
+                            dataStore[WelcomeShownKey] ?: false
+                        }
+                        if (hasSeenWelcome && lastWelcomed != installedVer) {
+                            showWelcomeUpdateDialog = true
+                        }
+                    }
+                }.onFailure {
+                    it.printStackTrace()
                 }
                 com.mudassir131.yt.utils.UpdateNotificationManager.checkForUpdates(this@MainActivity)
             }
@@ -520,197 +548,40 @@ class MainActivity : ComponentActivity() {
             val menuState = remember { com.mudassir131.yt.ui.component.MenuState() }
             LocalUriHandler.current
 
-            val updateSheetContent: @Composable ColumnScope.() -> Unit = {
-                val uriHandler = LocalUriHandler.current
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.update),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+            val updateCoroutineScope = rememberCoroutineScope()
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "New Update Available!",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "Version $latestVersionName",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "What's New:",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    text = "• ",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Column {
-                                    Text(
-                                        text = "Content Filtration",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Filter content and manage restrictions under Content settings.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    text = "• ",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Column {
-                                    Text(
-                                        text = "Song Card Share on Instagram & Snapchat",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Share beautiful high-res song cards directly to Instagram & Snapchat stories.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    text = "• ",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Column {
-                                    Text(
-                                        text = "Playlist Import",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Easily import Spotify playlists in the background.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+            if (showUpdateDialog && latestReleaseInfo != null) {
+                UpdateDialog(
+                    latestVersion = latestReleaseInfo!!.tagName,
+                    downloadUrl = latestReleaseInfo!!.browserDownloadUrl,
+                    onDismissRequest = { showUpdateDialog = false },
+                    onLater = {
+                        showUpdateDialog = false
+                        updateCoroutineScope.launch {
+                            withContext(Dispatchers.IO) {
+                                dataStore.edit { prefs ->
+                                    prefs[DismissedUpdateVersionKey] = latestReleaseInfo!!.tagName
                                 }
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        TextButton(
-                            onClick = { bottomSheetPageState.dismiss() },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Later",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                val downloadUrl = Updater.getLatestDownloadUrl()
-                                uriHandler.openUri(downloadUrl)
-                                bottomSheetPageState.dismiss()
-                            },
-                            modifier = Modifier.weight(1.5f),
-                            shape = RoundedCornerShape(100.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.download),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Download Now",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+                )
             }
 
-            LaunchedEffect(latestVersionName) {
-                val cleanLatest = latestVersionName
-                    .removePrefix("Velune ")
-                    .removePrefix("v")
-                    .trim()
-                if (cleanLatest.isNotEmpty() && cleanLatest != BuildConfig.VERSION_NAME) {
-                    Updater.getLatestReleaseNotes().onSuccess {
-                        releaseNotesState.value = it
-                    }.onFailure {
-                        releaseNotesState.value = null
+            if (showWelcomeUpdateDialog) {
+                WelcomeUpdateDialog(
+                    versionName = BuildConfig.VERSION_NAME,
+                    onDismissRequest = {
+                        showWelcomeUpdateDialog = false
+                        updateCoroutineScope.launch {
+                            withContext(Dispatchers.IO) {
+                                dataStore.edit { prefs ->
+                                    prefs[LastWelcomedVersionKey] = BuildConfig.VERSION_NAME
+                                }
+                            }
+                        }
                     }
-                    bottomSheetPageState.show(updateSheetContent)
-                }
+                )
             }
 
 
@@ -1918,6 +1789,7 @@ class MainActivity : ComponentActivity() {
                                                     dataStore.edit { prefs ->
                                                         prefs[GlassEffectsKey] = GlassEffectsMode.DISABLED.name
                                                         prefs[WelcomeShownKey] = true
+                                                        prefs[LastWelcomedVersionKey] = BuildConfig.VERSION_NAME
                                                     }
                                                 }
                                             }
@@ -1946,6 +1818,7 @@ class MainActivity : ComponentActivity() {
                                                     dataStore.edit { prefs ->
                                                         prefs[GlassEffectsKey] = GlassEffectsMode.ADAPTIVE.name
                                                         prefs[WelcomeShownKey] = true
+                                                        prefs[LastWelcomedVersionKey] = BuildConfig.VERSION_NAME
                                                     }
                                                 }
                                             }
@@ -2308,5 +2181,23 @@ fun SplashScreen(
             }
         }
     }
+}
+
+private fun compareVersion(version1: String, version2: String): Int {
+    val v1Clean = version1.removePrefix("v").removePrefix("Velune ").removePrefix("Nocturne ").trim()
+    val v2Clean = version2.removePrefix("v").removePrefix("Velune ").removePrefix("Nocturne ").trim()
+
+    val parts1 = v1Clean.split(".", "_", "-").mapNotNull { it.toIntOrNull() }
+    val parts2 = v2Clean.split(".", "_", "-").mapNotNull { it.toIntOrNull() }
+
+    val length = maxOf(parts1.size, parts2.size)
+    for (i in 0 until length) {
+        val num1 = parts1.getOrElse(i) { 0 }
+        val num2 = parts2.getOrElse(i) { 0 }
+        if (num1 != num2) {
+            return num1.compareTo(num2)
+        }
+    }
+    return 0
 }
 

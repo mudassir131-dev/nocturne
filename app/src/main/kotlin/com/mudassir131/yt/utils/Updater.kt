@@ -37,7 +37,8 @@ data class ReleaseInfo(
     val name: String,
     val body: String?,
     val publishedAt: String,
-    val htmlUrl: String
+    val htmlUrl: String,
+    val browserDownloadUrl: String
 )
 
 private data class ReleasesNetworkResult(
@@ -59,13 +60,36 @@ object Updater {
         val releases = ArrayList<ReleaseInfo>(jsonArray.length())
         for (i in 0 until jsonArray.length()) {
             val item = jsonArray.getJSONObject(i)
+            val assets = item.optJSONArray("assets")
+            var downloadUrl = ""
+            if (assets != null && assets.length() > 0) {
+                val arch = BuildConfig.ARCHITECTURE
+                var foundUrl: String? = null
+                for (j in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(j)
+                    val assetName = asset.optString("name", "").lowercase()
+                    val assetUrl = asset.optString("browser_download_url", "")
+                    if (assetName.contains(arch.lowercase())) {
+                        foundUrl = assetUrl
+                        break
+                    }
+                }
+                if (foundUrl == null) {
+                    foundUrl = assets.getJSONObject(0).optString("browser_download_url", "")
+                }
+                downloadUrl = foundUrl ?: ""
+            }
+            if (downloadUrl.isEmpty()) {
+                downloadUrl = getLatestDownloadUrl()
+            }
             releases.add(
                 ReleaseInfo(
                     tagName = item.optString("tag_name", ""),
                     name = item.optString("name", ""),
                     body = if (item.has("body")) item.optString("body") else null,
                     publishedAt = item.optString("published_at", ""),
-                    htmlUrl = item.optString("html_url", "")
+                    htmlUrl = item.optString("html_url", ""),
+                    browserDownloadUrl = downloadUrl
                 )
             )
         }
@@ -133,11 +157,56 @@ object Updater {
 
     suspend fun getLatestReleaseInfo(): Result<ReleaseInfo> =
         runCatching {
-            val releases = getAllReleases().getOrThrow()
-            val latest = releases.firstOrNull()
-                ?: throw IllegalStateException("No releases found")
+            val response: HttpResponse = client.get("https://api.github.com/repos/mudassir131-dev/nocturne/releases/latest") {
+                headers {
+                    append("Accept", "application/vnd.github+json")
+                    append("User-Agent", "Nocturne")
+                }
+            }
+            if (response.status.value !in 200..299) {
+                throw IllegalStateException("Failed to fetch latest release: HTTP ${response.status.value}")
+            }
+            val bodyText = response.bodyAsText()
+            val item = JSONObject(bodyText)
+            
+            val tagName = item.optString("tag_name", "")
+            val name = item.optString("name", "")
+            val body = if (item.has("body")) item.optString("body") else null
+            val publishedAt = item.optString("published_at", "")
+            val htmlUrl = item.optString("html_url", "")
+            
+            val assets = item.optJSONArray("assets")
+            var downloadUrl = ""
+            if (assets != null && assets.length() > 0) {
+                val arch = BuildConfig.ARCHITECTURE
+                var foundUrl: String? = null
+                for (j in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(j)
+                    val assetName = asset.optString("name", "").lowercase()
+                    val assetUrl = asset.optString("browser_download_url", "")
+                    if (assetName.contains(arch.lowercase())) {
+                        foundUrl = assetUrl
+                        break
+                    }
+                }
+                if (foundUrl == null) {
+                    foundUrl = assets.getJSONObject(0).optString("browser_download_url", "")
+                }
+                downloadUrl = foundUrl ?: ""
+            }
+            if (downloadUrl.isEmpty()) {
+                downloadUrl = getLatestDownloadUrl()
+            }
+            
             lastCheckTime = System.currentTimeMillis()
-            latest
+            ReleaseInfo(
+                tagName = tagName,
+                name = name.ifBlank { tagName },
+                body = body,
+                publishedAt = publishedAt,
+                htmlUrl = htmlUrl,
+                browserDownloadUrl = downloadUrl
+            )
         }
 
     suspend fun getCommitHistory(count: Int = 20, branch: String = "dev"): Result<List<GitCommit>> =
