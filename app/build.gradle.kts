@@ -19,6 +19,12 @@ android {
     namespace = "com.mudassir131.yt"
     compileSdk = 36
 
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
+
     defaultConfig {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
