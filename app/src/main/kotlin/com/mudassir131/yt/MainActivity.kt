@@ -199,6 +199,7 @@ import com.mudassir131.yt.ui.component.COLLAPSED_ANCHOR
 import com.mudassir131.yt.ui.component.DISMISSED_ANCHOR
 import com.mudassir131.yt.ui.component.EXPANDED_ANCHOR
 import com.mudassir131.yt.ui.component.IconButton
+import android.util.Log
 
 import com.mudassir131.yt.ui.component.LocalBottomSheetPageState
 import com.mudassir131.yt.ui.component.LocalMenuState
@@ -233,6 +234,7 @@ import com.mudassir131.yt.ui.utils.resetHeightOffset
 import com.mudassir131.yt.utils.SyncUtils
 import com.mudassir131.yt.utils.dataStore
 import com.mudassir131.yt.utils.get
+import com.mudassir131.yt.utils.getAsync
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
 import com.mudassir131.yt.utils.reportException
@@ -493,6 +495,7 @@ class MainActivity : ComponentActivity() {
             var latestReleaseInfo by remember { mutableStateOf<com.mudassir131.yt.utils.ReleaseInfo?>(null) }
             var showUpdateDialog by remember { mutableStateOf(false) }
             var showWelcomeUpdateDialog by remember { mutableStateOf(false) }
+            var welcomeReleaseNotes by remember { mutableStateOf("") }
 
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -511,31 +514,53 @@ class MainActivity : ComponentActivity() {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
 
-                Updater.getLatestReleaseInfo().onSuccess { info ->
+                // 1. Local check for Welcome Dialog (offline-safe)
+                val installedVer = BuildConfig.VERSION_NAME
+                val lastWelcomed = withContext(Dispatchers.IO) {
+                    dataStore.getAsync(LastWelcomedVersionKey, "")
+                }
+                val hasSeenWelcome = withContext(Dispatchers.IO) {
+                    dataStore.getAsync(WelcomeShownKey, false)
+                }
+                
+                Log.d("NocturneUpdater", "Local Welcome check: installed=$installedVer, lastWelcomed=$lastWelcomed, onboardingSeen=$hasSeenWelcome")
+                
+                if (hasSeenWelcome && lastWelcomed != installedVer) {
+                    // Try to extract release notes from cached releases
+                    val cachedList = withContext(Dispatchers.IO) {
+                        com.mudassir131.yt.utils.Updater.getCachedReleases()
+                    }
+                    val cleanInstalled = installedVer.removePrefix("v").trim()
+                    val match = cachedList.find { 
+                        it.tagName.removePrefix("v").trim() == cleanInstalled ||
+                        it.name.removePrefix("v").trim() == cleanInstalled
+                    }
+                    welcomeReleaseNotes = match?.body ?: "Enjoy the new updates in Nocturne!"
+                    showWelcomeUpdateDialog = true
+                    Log.d("NocturneUpdater", "Welcome dialog triggered. Release notes found: ${match != null}")
+                }
+
+                // 2. Background check for Updates
+                Log.d("NocturneUpdater", "Triggering background update check.")
+                com.mudassir131.yt.utils.Updater.getLatestReleaseInfo().onSuccess { info ->
                     latestReleaseInfo = info
                     val latestVer = info.tagName
-                    val installedVer = BuildConfig.VERSION_NAME
                     
-                    if (compareVersion(latestVer, installedVer) > 0) {
+                    val comp = compareVersion(latestVer, installedVer)
+                    Log.d("NocturneUpdater", "Update check comparison: latest=$latestVer, installed=$installedVer, result=$comp")
+                    
+                    if (comp > 0) {
                         val dismissedVer = withContext(Dispatchers.IO) {
-                            dataStore[DismissedUpdateVersionKey] ?: ""
+                            dataStore.getAsync(DismissedUpdateVersionKey, "")
                         }
+                        Log.d("NocturneUpdater", "Dismissed version: $dismissedVer")
                         if (latestVer != dismissedVer) {
                             showUpdateDialog = true
-                        }
-                    } else {
-                        val lastWelcomed = withContext(Dispatchers.IO) {
-                            dataStore[LastWelcomedVersionKey] ?: ""
-                        }
-                        val hasSeenWelcome = withContext(Dispatchers.IO) {
-                            dataStore[WelcomeShownKey] ?: false
-                        }
-                        if (hasSeenWelcome && lastWelcomed != installedVer) {
-                            showWelcomeUpdateDialog = true
+                            Log.d("NocturneUpdater", "Update dialog displayed. Latest version: $latestVer")
                         }
                     }
-                }.onFailure {
-                    it.printStackTrace()
+                }.onFailure { err ->
+                    Log.w("NocturneUpdater", "Background update check failed: ${err.message}")
                 }
                 com.mudassir131.yt.utils.UpdateNotificationManager.checkForUpdates(this@MainActivity)
             }
@@ -552,11 +577,15 @@ class MainActivity : ComponentActivity() {
 
             if (showUpdateDialog && latestReleaseInfo != null) {
                 UpdateDialog(
+                    currentVersion = BuildConfig.VERSION_NAME,
                     latestVersion = latestReleaseInfo!!.tagName,
+                    releaseDate = latestReleaseInfo!!.publishedAt,
+                    releaseNotes = latestReleaseInfo!!.body ?: "",
                     downloadUrl = latestReleaseInfo!!.browserDownloadUrl,
                     onDismissRequest = { showUpdateDialog = false },
                     onLater = {
                         showUpdateDialog = false
+                        Log.d("NocturneUpdater", "Update dismissed. Dismissed version: ${latestReleaseInfo!!.tagName}")
                         updateCoroutineScope.launch {
                             withContext(Dispatchers.IO) {
                                 dataStore.edit { prefs ->
@@ -571,8 +600,10 @@ class MainActivity : ComponentActivity() {
             if (showWelcomeUpdateDialog) {
                 WelcomeUpdateDialog(
                     versionName = BuildConfig.VERSION_NAME,
+                    releaseNotes = welcomeReleaseNotes,
                     onDismissRequest = {
                         showWelcomeUpdateDialog = false
+                        Log.d("NocturneUpdater", "Welcome dialog dismissed. Version welcomed: ${BuildConfig.VERSION_NAME}")
                         updateCoroutineScope.launch {
                             withContext(Dispatchers.IO) {
                                 dataStore.edit { prefs ->
@@ -2177,8 +2208,15 @@ private fun compareVersion(version1: String, version2: String): Int {
     val v1Clean = version1.removePrefix("v").removePrefix("Velune ").removePrefix("Nocturne ").trim()
     val v2Clean = version2.removePrefix("v").removePrefix("Velune ").removePrefix("Nocturne ").trim()
 
-    val parts1 = v1Clean.split(".", "_", "-").mapNotNull { it.toIntOrNull() }
-    val parts2 = v2Clean.split(".", "_", "-").mapNotNull { it.toIntOrNull() }
+    val parseSegments = { version: String ->
+        version.split(".", "_", "-").map { segment ->
+            val digits = segment.takeWhile { it.isDigit() }
+            digits.toIntOrNull() ?: 0
+        }
+    }
+
+    val parts1 = parseSegments(v1Clean)
+    val parts2 = parseSegments(v2Clean)
 
     val length = maxOf(parts1.size, parts2.size)
     for (i in 0 until length) {

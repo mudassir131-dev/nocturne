@@ -619,4 +619,5 @@ val GlassPerformanceModeKey = booleanPreferencesKey("glass_performance_mode")
 val AppIconStyleKey = stringPreferencesKey("appIconStyle")
 val DismissedUpdateVersionKey = stringPreferencesKey("dismissed_update_version")
 val LastWelcomedVersionKey = stringPreferencesKey("last_welcomed_version")
+val LatestReleaseJsonKey = stringPreferencesKey("latest_release_json")
 

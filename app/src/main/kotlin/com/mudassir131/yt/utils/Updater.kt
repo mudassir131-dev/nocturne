@@ -15,6 +15,8 @@ import com.mudassir131.yt.constants.GitHubReleasesEtagKey
 import com.mudassir131.yt.constants.GitHubReleasesFingerprintKey
 import com.mudassir131.yt.constants.GitHubReleasesJsonKey
 import com.mudassir131.yt.constants.GitHubReleasesLastCheckedAtKey
+import com.mudassir131.yt.constants.LatestReleaseJsonKey
+import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -50,6 +52,8 @@ private data class ReleasesNetworkResult(
 object Updater {
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
+    private var hasCheckedThisSession = false
+    private var cachedReleaseInfo: ReleaseInfo? = null
     var lastCheckTime = -1L
         private set
 
@@ -147,6 +151,62 @@ object Updater {
             ?: emptyList()
     }
 
+    private fun parseSingleReleaseJson(item: JSONObject): ReleaseInfo {
+        val tagName = item.optString("tag_name", "")
+        if (tagName.isBlank()) {
+            throw IllegalArgumentException("Missing tag_name")
+        }
+        if (item.optBoolean("draft", false) || item.optBoolean("prerelease", false)) {
+            throw IllegalArgumentException("Release is a draft or pre-release")
+        }
+        
+        val name = item.optString("name", "")
+        val body = if (item.has("body")) item.optString("body") else null
+        val publishedAt = item.optString("published_at", "")
+        val htmlUrl = item.optString("html_url", "")
+        
+        val assets = item.optJSONArray("assets")
+        var downloadUrl = ""
+        if (assets != null && assets.length() > 0) {
+            val arch = BuildConfig.ARCHITECTURE.lowercase()
+            var fallbackUniversalUrl: String? = null
+            var firstApkUrl: String? = null
+            var archMatchUrl: String? = null
+            
+            for (j in 0 until assets.length()) {
+                val asset = assets.getJSONObject(j)
+                val assetName = asset.optString("name", "").lowercase()
+                val assetUrl = asset.optString("browser_download_url", "")
+                
+                if (assetName.endsWith(".apk")) {
+                    if (firstApkUrl == null) {
+                        firstApkUrl = assetUrl
+                    }
+                    if (assetName.contains("universal")) {
+                        fallbackUniversalUrl = assetUrl
+                    }
+                    if (assetName.contains(arch)) {
+                        archMatchUrl = assetUrl
+                    }
+                }
+            }
+            downloadUrl = archMatchUrl ?: fallbackUniversalUrl ?: firstApkUrl ?: ""
+        }
+        
+        if (downloadUrl.isBlank()) {
+            throw IllegalArgumentException("No valid APK assets found in release")
+        }
+        
+        return ReleaseInfo(
+            tagName = tagName,
+            name = name.ifBlank { tagName },
+            body = body,
+            publishedAt = publishedAt,
+            htmlUrl = htmlUrl,
+            browserDownloadUrl = downloadUrl
+        )
+    }
+
     suspend fun getLatestVersionName(): Result<String> =
         getLatestReleaseInfo().map { latest ->
             latest.name.ifBlank { latest.tagName }
@@ -155,8 +215,15 @@ object Updater {
     suspend fun getLatestReleaseNotes(): Result<String?> =
         getLatestReleaseInfo().map { it.body }
 
-    suspend fun getLatestReleaseInfo(): Result<ReleaseInfo> =
-        runCatching {
+    suspend fun getLatestReleaseInfo(): Result<ReleaseInfo> {
+        val cached = cachedReleaseInfo
+        if (hasCheckedThisSession && cached != null) {
+            Log.d("NocturneUpdater", "Update check skipped: already checked this session. Cache hit.")
+            return Result.success(cached)
+        }
+
+        Log.d("NocturneUpdater", "Update check started. Fetching latest release...")
+        val networkResult = runCatching {
             val response: HttpResponse = client.get("https://api.github.com/repos/mudassir131-dev/nocturne/releases/latest") {
                 headers {
                     append("Accept", "application/vnd.github+json")
@@ -167,47 +234,48 @@ object Updater {
                 throw IllegalStateException("Failed to fetch latest release: HTTP ${response.status.value}")
             }
             val bodyText = response.bodyAsText()
+            Log.d("NocturneUpdater", "GitHub API response received successfully.")
+            
             val item = JSONObject(bodyText)
+            val parsedInfo = parseSingleReleaseJson(item)
             
-            val tagName = item.optString("tag_name", "")
-            val name = item.optString("name", "")
-            val body = if (item.has("body")) item.optString("body") else null
-            val publishedAt = item.optString("published_at", "")
-            val htmlUrl = item.optString("html_url", "")
-            
-            val assets = item.optJSONArray("assets")
-            var downloadUrl = ""
-            if (assets != null && assets.length() > 0) {
-                val arch = BuildConfig.ARCHITECTURE
-                var foundUrl: String? = null
-                for (j in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(j)
-                    val assetName = asset.optString("name", "").lowercase()
-                    val assetUrl = asset.optString("browser_download_url", "")
-                    if (assetName.contains(arch.lowercase())) {
-                        foundUrl = assetUrl
-                        break
-                    }
+            // Save to persistent cache
+            runCatching {
+                App.instance.dataStore.edit { prefs ->
+                    prefs[LatestReleaseJsonKey] = bodyText
                 }
-                if (foundUrl == null) {
-                    foundUrl = assets.getJSONObject(0).optString("browser_download_url", "")
-                }
-                downloadUrl = foundUrl ?: ""
-            }
-            if (downloadUrl.isEmpty()) {
-                downloadUrl = getLatestDownloadUrl()
+                Log.d("NocturneUpdater", "Latest release payload cached to DataStore.")
+            }.onFailure { e ->
+                Log.e("NocturneUpdater", "Failed to cache latest release payload: ${e.message}")
             }
             
-            lastCheckTime = System.currentTimeMillis()
-            ReleaseInfo(
-                tagName = tagName,
-                name = name.ifBlank { tagName },
-                body = body,
-                publishedAt = publishedAt,
-                htmlUrl = htmlUrl,
-                browserDownloadUrl = downloadUrl
-            )
+            cachedReleaseInfo = parsedInfo
+            hasCheckedThisSession = true
+            
+            Log.d("NocturneUpdater", "Latest release retrieved from network. Version: ${parsedInfo.tagName}, Asset: ${parsedInfo.browserDownloadUrl}")
+            parsedInfo
         }
+
+        return networkResult.recoverCatching { networkError ->
+            Log.w("NocturneUpdater", "Latest release network request failed: ${networkError.message}. Accessing local cache...")
+            
+            val cachedJson = App.instance.dataStore.getAsync(LatestReleaseJsonKey)
+            if (!cachedJson.isNullOrBlank()) {
+                val item = JSONObject(cachedJson)
+                val parsedInfo = parseSingleReleaseJson(item)
+                
+                // Cache locally in memory for this session as well
+                cachedReleaseInfo = parsedInfo
+                hasCheckedThisSession = true
+                
+                Log.d("NocturneUpdater", "Latest release retrieved from local cache. Version: ${parsedInfo.tagName}, Asset: ${parsedInfo.browserDownloadUrl}")
+                parsedInfo
+            } else {
+                Log.w("NocturneUpdater", "Local cache miss: no cached release info available.")
+                throw networkError
+            }
+        }
+    }
 
     suspend fun getCommitHistory(count: Int = 20, branch: String = "dev"): Result<List<GitCommit>> =
         runCatching {

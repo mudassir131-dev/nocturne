@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,26 +36,88 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mudassir131.yt.R
+import android.util.Log
 
-val NocturneChangelog = listOf(
-    "Introduced a brand-new official Nocturne app icon.",
-    "Added Custom App Icons support. You can now personalize Nocturne with multiple launcher icon styles directly from Settings.",
-    "Fixed playback-related issues that could cause songs to stop unexpectedly.",
-    "Resolved \"Unknown Playback Error\" occurring on some devices.",
-    "Improved media loading reliability and playback stability.",
-    "Fixed several bugs affecting the player experience.",
-    "Improved app performance, responsiveness, and overall smoothness.",
-    "Optimized memory usage and reduced unnecessary resource consumption.",
-    "Enhanced UI consistency across multiple screens.",
-    "Improved navigation and user experience throughout the application.",
-    "Fixed minor crashes and stability issues reported by users.",
-    "General bug fixes and under-the-hood improvements."
-)
+private fun formatReleaseDate(isoDate: String): String {
+    if (isoDate.isBlank()) return "Unknown Date"
+    if (isoDate.length < 10) return isoDate
+    val datePart = isoDate.take(10) // YYYY-MM-DD
+    val parts = datePart.split("-")
+    if (parts.size != 3) return datePart
+    val year = parts[0]
+    val month = when (parts[1]) {
+        "01" -> "Jan"
+        "02" -> "Feb"
+        "03" -> "Mar"
+        "04" -> "Apr"
+        "05" -> "May"
+        "06" -> "Jun"
+        "07" -> "Jul"
+        "08" -> "Aug"
+        "09" -> "Sep"
+        "10" -> "Oct"
+        "11" -> "Nov"
+        "12" -> "Dec"
+        else -> parts[1]
+    }
+    val day = parts[2].removePrefix("0")
+    return "$month $day, $year"
+}
+
+@Composable
+fun ReleaseNotesRenderer(notes: String, modifier: Modifier = Modifier) {
+    val lines = remember(notes) {
+        notes.lines().map { it.trim() }.filter { it.isNotEmpty() }
+    }
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        lines.forEach { line ->
+            if (line.startsWith("#")) {
+                val headerText = line.replace("#", "").trim()
+                Text(
+                    text = headerText,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            } else {
+                val isBullet = line.startsWith("*") || line.startsWith("-") || line.startsWith("•")
+                val cleanLine = if (isBullet) {
+                    line.substring(1).trim()
+                } else {
+                    line
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = "• ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = cleanLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdateDialog(
+    currentVersion: String,
     latestVersion: String,
+    releaseDate: String,
+    releaseNotes: String,
     downloadUrl: String,
     onDismissRequest: () -> Unit,
     onLater: () -> Unit,
@@ -68,15 +131,27 @@ fun UpdateDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "A new version of Nocturne is available.",
+                    text = "A new version of Nocturne is available and ready to install.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Text(
-                    text = "Latest Version: $latestVersion",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Current Version: $currentVersion",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Latest Version: $latestVersion",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Release Date: ${formatReleaseDate(releaseDate)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "What's New",
@@ -91,23 +166,14 @@ fun UpdateDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    NocturneChangelog.forEach { bullet ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text(
-                                text = "• ",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = bullet,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                    if (releaseNotes.isBlank()) {
+                        Text(
+                            text = "General stability and performance improvements.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        ReleaseNotesRenderer(notes = releaseNotes)
                     }
                 }
             }
@@ -116,6 +182,7 @@ fun UpdateDialog(
             FilledTonalButton(
                 onClick = {
                     try {
+                        Log.d("NocturneUpdater", "Download started via browser redirection. URL: $downloadUrl")
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
                         context.startActivity(intent)
                     } catch (e: Exception) {
@@ -146,6 +213,7 @@ fun UpdateDialog(
 @Composable
 fun WelcomeUpdateDialog(
     versionName: String,
+    releaseNotes: String,
     onDismissRequest: () -> Unit,
 ) {
     AlertDialog(
@@ -173,23 +241,14 @@ fun WelcomeUpdateDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    NocturneChangelog.forEach { bullet ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text(
-                                text = "• ",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = bullet,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                    if (releaseNotes.isBlank()) {
+                        Text(
+                            text = "Enjoy the new version of Nocturne!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        ReleaseNotesRenderer(notes = releaseNotes)
                     }
                 }
             }
