@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -1079,24 +1080,17 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsHeroHeader(modifier: Modifier = Modifier) {
-    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        val headerLogoRes = when (appIconStyle) {
-            "midnight" -> R.drawable.ic_logo_midnight
-            "aura" -> R.drawable.ic_logo_aura
-            "pulse" -> R.drawable.ic_logo_pulse
-            else -> R.drawable.ic_logo_eclipse
-        }
-        Image(
-            painter = painterResource(id = headerLogoRes),
+        Icon(
+            painter = painterResource(id = R.drawable.ic_velune_concept),
             contentDescription = null,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(16.dp))
+            tint = if (isDark) Color.White else Color.Black,
+            modifier = Modifier.size(48.dp)
         )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(

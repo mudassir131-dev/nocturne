@@ -1226,19 +1226,13 @@ class MainActivity : ComponentActivity() {
                                                 } else WindowInsetsSides.Horizontal) + WindowInsetsSides.Top),
                                                 title = {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        val topBarLogoRes = when (appIconStyle) {
-                                                            "midnight" -> R.drawable.ic_logo_midnight
-                                                            "aura" -> R.drawable.ic_logo_aura
-                                                            "pulse" -> R.drawable.ic_logo_pulse
-                                                            else -> R.drawable.ic_logo_eclipse
-                                                        }
-                                                        Image(
-                                                            painter = painterResource(id = topBarLogoRes),
+                                                        Icon(
+                                                            painter = painterResource(id = R.drawable.ic_velune_concept),
                                                             contentDescription = "App Logo",
+                                                            tint = if (useDarkTheme) Color.White else Color.Black,
                                                             modifier = Modifier
                                                                 .size(35.dp)
                                                                 .padding(end = 6.dp)
-                                                                .clip(RoundedCornerShape(8.dp))
                                                         )
 
                                                         Text(
@@ -1759,9 +1753,10 @@ class MainActivity : ComponentActivity() {
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    Image(
-                                        painter = painterResource(id = if (isSystemInDarkTheme) R.drawable.ic_logo_eclipse else R.drawable.ic_logo_light),
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_velune_concept),
                                         contentDescription = "Nocturne Logo",
+                                        tint = if (useDarkTheme) Color.White else Color.Black,
                                         modifier = Modifier.size(72.dp)
                                     )
 
@@ -2116,17 +2111,12 @@ fun SplashScreen(
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
             // App Logo
-            val openingLogoRes = if (isSystemInDarkTheme) {
-                R.drawable.ic_logo_eclipse
-            } else {
-                R.drawable.ic_logo_light
-            }
-            Image(
-                painter = painterResource(id = openingLogoRes),
+            Icon(
+                painter = painterResource(id = R.drawable.ic_velune_concept),
                 contentDescription = "Nocturne Logo",
+                tint = tintColor,
                 modifier = Modifier
                     .size(130.dp)
-                    .clip(RoundedCornerShape(28.dp))
                     .graphicsLayer(
                         scaleX = scale.value,
                         scaleY = scale.value,

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +48,6 @@ fun VeluneSettingsScreen(
     val isLoggedIn = accountName != "Guest" && !accountName.isNullOrEmpty()
     var showLogoutDialog by remember { mutableStateOf(false) }
     val (innerTubeCookie, onInnerTubeCookieChange) = rememberPreference(InnerTubeCookieKey, "")
-    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
 
     Scaffold(
         topBar = {
@@ -84,18 +84,12 @@ fun VeluneSettingsScreen(
                         .padding(vertical = 16.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val headerLogoRes = when (appIconStyle) {
-                        "midnight" -> R.drawable.ic_logo_midnight
-                        "aura" -> R.drawable.ic_logo_aura
-                        "pulse" -> R.drawable.ic_logo_pulse
-                        else -> R.drawable.ic_logo_eclipse
-                    }
-                    Image(
-                        painter = painterResource(id = headerLogoRes),
+                    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_velune_concept),
                         contentDescription = "Nocturne Logo",
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                        tint = if (isDark) Color.White else Color.Black,
+                        modifier = Modifier.size(60.dp)
                     )
                     Spacer(Modifier.width(16.dp))
                     Column {

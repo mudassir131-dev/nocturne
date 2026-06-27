@@ -743,7 +743,6 @@ fun PlayerPlaybackControls(
     currentSongLiked: Boolean
 ) {
     val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
-    val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
         defaultValue = GlassEffectsMode.ADAPTIVE
@@ -796,12 +795,19 @@ fun PlayerPlaybackControls(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    PlayPauseContent(
-                        isPlaying = isPlaying,
-                        playbackState = playbackState,
-                        iconSize = 42.dp,
-                        appIconStyle = appIconStyle,
-                        isLoading = isLoading,
+                    FilledTonalIconButton(
+                        onClick = {
+                            if (playbackState == STATE_ENDED) {
+                                playerConnection.player.seekTo(0, 0)
+                                playerConnection.player.playWhenReady = true
+                            } else {
+                                playerConnection.player.togglePlayPause()
+                            }
+                        },
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = if (isGlassActive) Color.Transparent else textButtonColor,
+                            contentColor = if (isGlassActive) textBackgroundColor else iconButtonColor
+                        ),
                         modifier = Modifier
                             .size(width = playButtonWidth, height = playButtonHeight)
                             .clip(RoundedCornerShape(32.dp))
@@ -814,15 +820,27 @@ fun PlayerPlaybackControls(
                                     )
                                 } else Modifier
                             )
-                            .clickable {
-                                if (playbackState == STATE_ENDED) {
-                                    playerConnection.player.seekTo(0, 0)
-                                    playerConnection.player.playWhenReady = true
-                                } else {
-                                    playerConnection.player.togglePlayPause()
-                                }
-                            }
-                    )
+                    ) {
+                        if (isLoading) {
+                            VeluneLoader(size = 42.dp)
+                        } else {
+                            Icon(
+                                painter = painterResource(
+                                    when {
+                                        playbackState == STATE_ENDED -> R.drawable.replay
+                                        isPlaying -> R.drawable.pause
+                                        else -> R.drawable.play
+                                    }
+                                ),
+                                contentDescription = when {
+                                    playbackState == STATE_ENDED -> "Replay"
+                                    isPlaying -> "Pause"
+                                    else -> "Play"
+                                },
+                                modifier = Modifier.size(42.dp)
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
@@ -929,12 +947,7 @@ fun PlayerPlaybackControls(
                         )
                     }
 
-                    PlayPauseContent(
-                        isPlaying = isPlaying,
-                        playbackState = playbackState,
-                        iconSize = 34.dp,
-                        appIconStyle = appIconStyle,
-                        isLoading = isLoading,
+                    Box(
                         modifier = Modifier
                             .size(70.dp)
                             .clip(RoundedCornerShape(50))
@@ -945,7 +958,9 @@ fun PlayerPlaybackControls(
                                         shape = RoundedCornerShape(50),
                                         baseColor = textBackgroundColor.copy(alpha = 0.25f)
                                     )
-                                } else Modifier
+                                } else {
+                                    Modifier.background(textBackgroundColor)
+                                }
                             )
                             .clickable {
                                 if (playbackState == STATE_ENDED) {
@@ -954,8 +969,29 @@ fun PlayerPlaybackControls(
                                 } else {
                                     playerConnection.player.togglePlayPause()
                                 }
-                            }
-                    )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading) {
+                            VeluneLoader(size = 32.dp)
+                        } else {
+                            Icon(
+                                painter = painterResource(
+                                    when {
+                                        playbackState == STATE_ENDED -> R.drawable.replay
+                                        isPlaying -> R.drawable.pause
+                                        else -> R.drawable.play
+                                    }
+                                ),
+                                contentDescription = when {
+                                    playbackState == STATE_ENDED -> "Replay"
+                                    isPlaying -> "Pause"
+                                    else -> "Play"
+                                },
+                                tint = if (isGlassActive) textBackgroundColor else icBackgroundColor,
+                            )
+                        }
+                    }
 
                     Box(
                         modifier = Modifier
@@ -1141,16 +1177,20 @@ fun PlayerPlaybackControls(
                         }
                     }
 
-                    PlayPauseContent(
-                        isPlaying = isPlaying,
-                        playbackState = playbackState,
-                        iconSize = 44.dp,
-                        appIconStyle = appIconStyle,
-                        isLoading = isLoading,
+                    Surface(
+                        onClick = {
+                            if (playbackState == STATE_ENDED) {
+                                playerConnection.player.seekTo(0, 0)
+                                playerConnection.player.playWhenReady = true
+                            } else {
+                                playerConnection.player.togglePlayPause()
+                            }
+                        },
+                        shape = RoundedCornerShape(28.dp),
+                        color = if (isGlassActive) Color.Transparent else textButtonColor,
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
                             .size(88.dp)
-                            .clip(RoundedCornerShape(28.dp))
                             .then(
                                 if (isGlassActive) {
                                     Modifier.glassmorphicButton(
@@ -1160,14 +1200,6 @@ fun PlayerPlaybackControls(
                                     )
                                 } else Modifier
                             )
-                            .clickable {
-                                if (playbackState == STATE_ENDED) {
-                                    playerConnection.player.seekTo(0, 0)
-                                    playerConnection.player.playWhenReady = true
-                                } else {
-                                    playerConnection.player.togglePlayPause()
-                                }
-                            }
                             .semantics {
                                 role = Role.Button
                                 contentDescription = when {
@@ -1176,7 +1208,29 @@ fun PlayerPlaybackControls(
                                     else -> "Play"
                                 }
                             }
-                    )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isLoading) {
+                                VeluneLoader(size = 40.dp)
+                            } else {
+                                Icon(
+                                    painter = painterResource(
+                                        when {
+                                            playbackState == STATE_ENDED -> R.drawable.replay
+                                            isPlaying -> R.drawable.pause
+                                            else -> R.drawable.play
+                                        }
+                                    ),
+                                    contentDescription = null,
+                                    tint = if (isGlassActive) textBackgroundColor else icBackgroundColor,
+                                    modifier = Modifier.size(44.dp)
+                                )
+                            }
+                        }
+                    }
                     Row(
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.Start,
@@ -1344,13 +1398,9 @@ fun PlayerPlaybackControls(
 
                 Spacer(Modifier.width(8.dp))
 
-                PlayPauseContent(
-                    isPlaying = isPlaying,
-                    playbackState = playbackState,
-                    iconSize = 36.dp,
-                    appIconStyle = appIconStyle,
-                    isLoading = isLoading,
-                    modifier = Modifier
+                Box(
+                    modifier =
+                    Modifier
                         .size(72.dp)
                         .clip(RoundedCornerShape(playPauseRoundness))
                         .then(
@@ -1360,7 +1410,9 @@ fun PlayerPlaybackControls(
                                     shape = RoundedCornerShape(playPauseRoundness),
                                     baseColor = textButtonColor.copy(alpha = 0.25f)
                                 )
-                            } else Modifier
+                            } else {
+                                Modifier.background(textButtonColor)
+                            }
                         )
                         .clickable {
                             if (playbackState == STATE_ENDED) {
@@ -1369,8 +1421,37 @@ fun PlayerPlaybackControls(
                             } else {
                                 playerConnection.player.togglePlayPause()
                             }
-                        }
-                )
+                        },
+                ) {
+                    if (isLoading) {
+                        VeluneLoader(size = 36.dp)
+                    } else {
+                        Image(
+                            painter =
+                            painterResource(
+                                if (playbackState ==
+                                    STATE_ENDED
+                                ) {
+                                    R.drawable.replay
+                                } else if (isPlaying) {
+                                    R.drawable.pause
+                                } else {
+                                    R.drawable.play
+                                },
+                            ),
+                            contentDescription = when {
+                                playbackState == STATE_ENDED -> "Replay"
+                                isPlaying -> "Pause"
+                                else -> "Play"
+                            },
+                            colorFilter = ColorFilter.tint(if (isGlassActive) textBackgroundColor else iconButtonColor),
+                            modifier =
+                            Modifier
+                                .align(Alignment.Center)
+                                .size(36.dp),
+                        )
+                    }
+                }
 
                 Spacer(Modifier.width(8.dp))
 
@@ -2001,52 +2082,4 @@ fun PlayerBackground(
     }
 }
 
-@Composable
-fun PlayPauseContent(
-    isPlaying: Boolean,
-    playbackState: Int,
-    iconSize: Dp,
-    appIconStyle: String,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    val logoRes = when (appIconStyle) {
-        "midnight" -> R.drawable.ic_logo_midnight
-        "aura" -> R.drawable.ic_logo_aura
-        "pulse" -> R.drawable.ic_logo_pulse
-        else -> R.drawable.ic_logo_eclipse
-    }
 
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = logoRes),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.35f))
-        )
-        if (isLoading) {
-            VeluneLoader(size = iconSize)
-        } else {
-            Icon(
-                painter = painterResource(
-                    id = when {
-                        playbackState == STATE_ENDED -> R.drawable.replay
-                        isPlaying -> R.drawable.pause
-                        else -> R.drawable.play
-                    }
-                ),
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(iconSize)
-            )
-        }
-    }
-}
