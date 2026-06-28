@@ -29,8 +29,8 @@ android {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
         targetSdk = 36
-        versionCode = 24
-        versionName = "2.2.3.4.03"
+        versionCode = 25
+        versionName = "2.2.3.4.04"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
