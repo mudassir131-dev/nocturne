@@ -1258,12 +1258,12 @@ class MainActivity : ComponentActivity() {
                                                 } else WindowInsetsSides.Horizontal) + WindowInsetsSides.Top),
                                                 title = {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Image(
-                                                            painter = painterResource(id = if (useDarkTheme) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
+                                                        Icon(
+                                                            painter = painterResource(id = R.drawable.ic_logo_eclipse_vector),
                                                             contentDescription = "App Logo",
-                                                            contentScale = ContentScale.Fit,
+                                                            tint = if (useDarkTheme) Color.White else Color.Black,
                                                             modifier = Modifier
-                                                                .size(35.dp)
+                                                                .size(30.dp)
                                                                 .padding(end = 6.dp)
                                                         )
 
@@ -1785,9 +1785,10 @@ class MainActivity : ComponentActivity() {
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    Image(
-                                        painter = painterResource(id = if (useDarkTheme) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_logo_eclipse_vector),
                                         contentDescription = "Nocturne Logo",
+                                        tint = if (useDarkTheme) Color.White else Color.Black,
                                         modifier = Modifier.size(72.dp)
                                     )
 

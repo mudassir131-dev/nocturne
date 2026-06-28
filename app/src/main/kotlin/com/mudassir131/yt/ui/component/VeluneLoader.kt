@@ -12,10 +12,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
-import com.mudassir131.yt.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +41,6 @@ fun VeluneLoader(
     color: Color? = null,
 ) {
     val accentColor = color ?: MaterialTheme.colorScheme.primary
-
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val logoRes = if (isDark) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light
 
     val infiniteTransition = rememberInfiniteTransition(label = "velune_loader")
 
@@ -88,17 +81,60 @@ fun VeluneLoader(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(size)
     ) {
-        Image(
-            painter = painterResource(id = logoRes),
-            contentDescription = "Loading",
-            modifier = Modifier
-                .size(size)
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    rotationZ = rotation,
-                    alpha = alpha
-                )
-        )
+        Canvas(modifier = Modifier.size(size)) {
+            val w = this.size.width
+            val h = this.size.height
+            val strokeWidth = w * 0.08f
+            val scaleX = w / 100f
+            val scaleY = h / 100f
+
+            rotate(rotation, pivot = Offset(w / 2f, h / 2f)) {
+                scale(scale, pivot = Offset(w / 2f, h / 2f)) {
+                    val path = Path().apply {
+                        // Left curve
+                        moveTo(32f * scaleX, 62f * scaleY)
+                        lineTo(32f * scaleX, 44f * scaleY)
+                        arcTo(
+                            rect = Rect(
+                                left = 32f * scaleX,
+                                top = 32f * scaleY,
+                                right = 56f * scaleX,
+                                bottom = 56f * scaleY
+                            ),
+                            startAngleDegrees = 180f,
+                            sweepAngleDegrees = 180f,
+                            forceMoveTo = false
+                        )
+                        lineTo(56f * scaleX, 50f * scaleY)
+
+                        // Right curve
+                        moveTo(68f * scaleX, 38f * scaleY)
+                        lineTo(68f * scaleX, 56f * scaleY)
+                        arcTo(
+                            rect = Rect(
+                                left = 44f * scaleX,
+                                top = 44f * scaleY,
+                                right = 68f * scaleX,
+                                bottom = 68f * scaleY
+                            ),
+                            startAngleDegrees = 0f,
+                            sweepAngleDegrees = 180f,
+                            forceMoveTo = false
+                        )
+                        lineTo(44f * scaleX, 50f * scaleY)
+                    }
+
+                    drawPath(
+                        path = path,
+                        color = accentColor.copy(alpha = alpha),
+                        style = Stroke(
+                            width = strokeWidth,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                }
+            }
+        }
     }
 }

@@ -23,7 +23,7 @@ object AppIconManager {
         val pm = context.packageManager
         
         // 1. Enable the new launcher component first
-        val newCompName = ComponentName(context, "${context.packageName}${newStyle.activityName}")
+        val newCompName = ComponentName(context, "com.mudassir131.yt${newStyle.activityName}")
         try {
             pm.setComponentEnabledSetting(
                 newCompName,
@@ -37,7 +37,7 @@ object AppIconManager {
 
         // 2. Disable all other launcher components
         AppIconStyle.values().filter { it != newStyle }.forEach { style ->
-            val compName = ComponentName(context, "${context.packageName}${style.activityName}")
+            val compName = ComponentName(context, "com.mudassir131.yt${style.activityName}")
             try {
                 pm.setComponentEnabledSetting(
                     compName,
