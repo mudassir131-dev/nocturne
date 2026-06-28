@@ -1258,10 +1258,9 @@ class MainActivity : ComponentActivity() {
                                                 } else WindowInsetsSides.Horizontal) + WindowInsetsSides.Top),
                                                 title = {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(
-                                                            painter = painterResource(id = R.drawable.ic_logo_eclipse_vector),
+                                                        Image(
+                                                            painter = painterResource(id = if (useDarkTheme) R.drawable.ic_nocturne_logo_dark_trans else R.drawable.ic_nocturne_logo_light_trans),
                                                             contentDescription = "App Logo",
-                                                            tint = if (useDarkTheme) Color.White else Color.Black,
                                                             modifier = Modifier
                                                                 .size(30.dp)
                                                                 .padding(end = 6.dp)
@@ -1785,10 +1784,9 @@ class MainActivity : ComponentActivity() {
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_logo_eclipse_vector),
+                                    Image(
+                                        painter = painterResource(id = if (useDarkTheme) R.drawable.ic_nocturne_logo_dark_trans else R.drawable.ic_nocturne_logo_light_trans),
                                         contentDescription = "Nocturne Logo",
-                                        tint = if (useDarkTheme) Color.White else Color.Black,
                                         modifier = Modifier.size(72.dp)
                                     )
 
@@ -2143,7 +2141,7 @@ fun SplashScreen(
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
             Image(
-                painter = painterResource(id = if (isSystemInDarkTheme) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
+                painter = painterResource(id = if (isSystemInDarkTheme) R.drawable.ic_nocturne_logo_dark_trans else R.drawable.ic_nocturne_logo_light_trans),
                 contentDescription = "Nocturne Logo",
                 modifier = Modifier
                     .size(130.dp)

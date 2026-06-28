@@ -96,6 +96,8 @@ object UpdateNotificationManager {
                     // Persistent update notification bypasses user settings & intervals
                     showUpdateNotification(context, latestVersion)
                     return@launch
+                } else {
+                    cancelUpdateNotification(context)
                 }
 
                 val isEnabled = dataStore.data.map { it[EnableUpdateNotificationKey] ?: true }.first()

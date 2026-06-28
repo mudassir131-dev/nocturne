@@ -124,12 +124,7 @@ class VeluneWidget : GlanceAppWidget() {
         val artPath = prefs[widgetArtPathKey]
         val artBitmap = artPath?.let { BitmapFactory.decodeFile(it) }
         val appIconStyle = prefs[AppIconStyleKey] ?: "eclipse"
-        val widgetLogoRes = when (appIconStyle) {
-            "midnight" -> R.drawable.ic_logo_midnight
-            "aura" -> R.drawable.ic_logo_aura
-            "pulse" -> R.drawable.ic_logo_pulse
-            else -> R.drawable.ic_logo_eclipse
-        }
+        val widgetLogoRes = R.drawable.ic_nocturne_logo_dark_trans
         val imageProvider = if (artBitmap != null) {
             ImageProvider(artBitmap)
         } else {

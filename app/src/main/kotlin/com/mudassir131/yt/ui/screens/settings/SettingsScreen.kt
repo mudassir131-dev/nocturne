@@ -1086,10 +1086,9 @@ private fun SettingsHeroHeader(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_logo_eclipse_vector),
+        Image(
+            painter = painterResource(id = if (isDark) R.drawable.ic_nocturne_logo_dark_trans else R.drawable.ic_nocturne_logo_light_trans),
             contentDescription = null,
-            tint = if (isDark) Color.White else Color.Black,
             modifier = Modifier.size(48.dp)
         )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

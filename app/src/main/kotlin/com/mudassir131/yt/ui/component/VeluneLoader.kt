@@ -20,6 +20,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -27,12 +30,11 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Velune custom loading animation - animated V that pulses and rotates
+ * Nocturne custom loading animation - animated Pill-Infinity logo that pulses and rotates
  */
 @Composable
 fun VeluneLoader(
@@ -84,55 +86,131 @@ fun VeluneLoader(
         Canvas(modifier = Modifier.size(size)) {
             val w = this.size.width
             val h = this.size.height
-            val strokeWidth = w * 0.08f
+            val strokeWidth = w * 0.07f
+            val waveStrokeWidth = w * 0.05f
             val scaleX = w / 100f
             val scaleY = h / 100f
 
             rotate(rotation, pivot = Offset(w / 2f, h / 2f)) {
                 scale(scale, pivot = Offset(w / 2f, h / 2f)) {
-                    val path = Path().apply {
-                        // Left curve
-                        moveTo(32f * scaleX, 62f * scaleY)
-                        lineTo(32f * scaleX, 44f * scaleY)
-                        arcTo(
-                            rect = Rect(
-                                left = 32f * scaleX,
-                                top = 32f * scaleY,
-                                right = 56f * scaleX,
-                                bottom = 56f * scaleY
-                            ),
-                            startAngleDegrees = 180f,
-                            sweepAngleDegrees = 180f,
-                            forceMoveTo = false
-                        )
-                        lineTo(56f * scaleX, 50f * scaleY)
+                    
+                    // 1. Draw back U-shapes (rotated +45 degrees)
+                    rotate(45f, pivot = Offset(w / 2f, h / 2f)) {
+                        // Top U-shape
+                        val topPath = Path().apply {
+                            moveTo(36f * scaleX, 40f * scaleY)
+                            lineTo(36f * scaleX, 36f * scaleY)
+                            arcTo(
+                                rect = Rect(
+                                    left = 36f * scaleX,
+                                    top = 22f * scaleY,
+                                    right = 64f * scaleX,
+                                    bottom = 50f * scaleY
+                                ),
+                                startAngleDegrees = 180f,
+                                sweepAngleDegrees = 180f,
+                                forceMoveTo = false
+                            )
+                            lineTo(64f * scaleX, 40f * scaleY)
+                        }
+                        
+                        // Bottom U-shape
+                        val bottomPath = Path().apply {
+                            moveTo(64f * scaleX, 60f * scaleY)
+                            lineTo(64f * scaleX, 64f * scaleY)
+                            arcTo(
+                                rect = Rect(
+                                    left = 36f * scaleX,
+                                    top = 50f * scaleY,
+                                    right = 64f * scaleX,
+                                    bottom = 78f * scaleY
+                                ),
+                                startAngleDegrees = 0f,
+                                sweepAngleDegrees = 180f,
+                                forceMoveTo = false
+                            )
+                            lineTo(36f * scaleX, 60f * scaleY)
+                        }
 
-                        // Right curve
-                        moveTo(68f * scaleX, 38f * scaleY)
-                        lineTo(68f * scaleX, 56f * scaleY)
-                        arcTo(
-                            rect = Rect(
-                                left = 44f * scaleX,
-                                top = 44f * scaleY,
-                                right = 68f * scaleX,
-                                bottom = 68f * scaleY
-                            ),
-                            startAngleDegrees = 0f,
-                            sweepAngleDegrees = 180f,
-                            forceMoveTo = false
+                        drawPath(
+                            path = topPath,
+                            color = accentColor.copy(alpha = alpha),
+                            style = Stroke(
+                                width = strokeWidth,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
                         )
-                        lineTo(44f * scaleX, 50f * scaleY)
+                        drawPath(
+                            path = bottomPath,
+                            color = accentColor.copy(alpha = alpha),
+                            style = Stroke(
+                                width = strokeWidth,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
+                        )
                     }
 
-                    drawPath(
-                        path = path,
-                        color = accentColor.copy(alpha = alpha),
-                        style = Stroke(
-                            width = strokeWidth,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
+                    // 2. Draw front complete capsule & vertical waveform (rotated -45 degrees)
+                    rotate(-45f, pivot = Offset(w / 2f, h / 2f)) {
+                        // Main Capsule Outline
+                        drawRoundRect(
+                            color = accentColor.copy(alpha = alpha),
+                            topLeft = Offset(36f * scaleX, 22f * scaleY),
+                            size = Size(28f * scaleX, 56f * scaleY),
+                            cornerRadius = CornerRadius(14f * scaleX, 14f * scaleY),
+                            style = Stroke(
+                                width = strokeWidth,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
                         )
-                    )
+
+                        // 5 Vertical Soundwave Lines inside front capsule
+                        val waveColor = accentColor.copy(alpha = alpha)
+                        
+                        // Line 1 (x = 42)
+                        drawLine(
+                            color = waveColor,
+                            start = Offset(42f * scaleX, 47f * scaleY),
+                            end = Offset(42f * scaleX, 53f * scaleY),
+                            strokeWidth = waveStrokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                        // Line 2 (x = 46)
+                        drawLine(
+                            color = waveColor,
+                            start = Offset(46f * scaleX, 44f * scaleY),
+                            end = Offset(46f * scaleX, 56f * scaleY),
+                            strokeWidth = waveStrokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                        // Line 3 (x = 50, Center)
+                        drawLine(
+                            color = waveColor,
+                            start = Offset(50f * scaleX, 40f * scaleY),
+                            end = Offset(50f * scaleX, 60f * scaleY),
+                            strokeWidth = waveStrokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                        // Line 4 (x = 54)
+                        drawLine(
+                            color = waveColor,
+                            start = Offset(54f * scaleX, 44f * scaleY),
+                            end = Offset(54f * scaleX, 56f * scaleY),
+                            strokeWidth = waveStrokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                        // Line 5 (x = 58)
+                        drawLine(
+                            color = waveColor,
+                            start = Offset(58f * scaleX, 47f * scaleY),
+                            end = Offset(58f * scaleX, 53f * scaleY),
+                            strokeWidth = waveStrokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
             }
         }
