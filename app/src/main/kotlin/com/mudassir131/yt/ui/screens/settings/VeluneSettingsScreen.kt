@@ -85,10 +85,9 @@ fun VeluneSettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_velune_concept),
+                    Image(
+                        painter = painterResource(id = if (isDark) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
                         contentDescription = "Nocturne Logo",
-                        tint = if (isDark) Color.White else Color.Black,
                         modifier = Modifier.size(60.dp)
                     )
                     Spacer(Modifier.width(16.dp))

@@ -158,8 +158,11 @@ object UpdateNotificationManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val isDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val notificationIcon = if (isDark) R.drawable.ic_nocturne_notification_dark else R.drawable.ic_nocturne_notification_light
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_logo_eclipse_vector)
+            .setSmallIcon(notificationIcon)
             .setContentTitle("Update Available: $newVersion")
             .setContentText("Features: Content Filtration, Song Card Share, Playlist Import")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -166,15 +166,19 @@ fun UpdateDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (releaseNotes.isBlank()) {
-                        Text(
-                            text = "General stability and performance improvements.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        ReleaseNotesRenderer(notes = releaseNotes)
-                    }
+                    val changelog = """
+                        • Introduced the new official Nocturne app icon.
+                        • Added Custom App Icons.
+                        • Fixed Playback Error.
+                        • Fixed Unknown Playback Error.
+                        • Improved playback stability.
+                        • Fixed multiple application bugs.
+                        • Improved overall application performance.
+                        • Optimized memory usage.
+                        • UI improvements.
+                        • General stability improvements.
+                    """.trimIndent()
+                    ReleaseNotesRenderer(notes = changelog)
                 }
             }
         },
@@ -241,15 +245,19 @@ fun WelcomeUpdateDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (releaseNotes.isBlank()) {
-                        Text(
-                            text = "Enjoy the new version of Nocturne!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        ReleaseNotesRenderer(notes = releaseNotes)
-                    }
+                    val changelog = """
+                        • Introduced the new official Nocturne app icon.
+                        • Added Custom App Icons.
+                        • Fixed Playback Error.
+                        • Fixed Unknown Playback Error.
+                        • Improved playback stability.
+                        • Fixed multiple application bugs.
+                        • Improved overall application performance.
+                        • Optimized memory usage.
+                        • UI improvements.
+                        • General stability improvements.
+                    """.trimIndent()
+                    ReleaseNotesRenderer(notes = changelog)
                 }
             }
         },

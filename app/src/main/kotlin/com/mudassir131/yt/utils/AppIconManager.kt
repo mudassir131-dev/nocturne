@@ -22,22 +22,31 @@ object AppIconManager {
     fun setAppIcon(context: Context, newStyle: AppIconStyle) {
         val pm = context.packageManager
         
-        AppIconStyle.values().forEach { style ->
+        // 1. Enable the new launcher component first
+        val newCompName = ComponentName(context, "${context.packageName}${newStyle.activityName}")
+        try {
+            pm.setComponentEnabledSetting(
+                newCompName,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+            )
+            Timber.d("Enabled new app icon component: ${newCompName.className}")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to enable component: ${newCompName.className}")
+        }
+
+        // 2. Disable all other launcher components
+        AppIconStyle.values().filter { it != newStyle }.forEach { style ->
             val compName = ComponentName(context, "${context.packageName}${style.activityName}")
-            val state = if (style == newStyle) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
             try {
                 pm.setComponentEnabledSetting(
                     compName,
-                    state,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                     PackageManager.DONT_KILL_APP
                 )
-                Timber.d("Component ${compName.className} set to state $state")
+                Timber.d("Disabled old app icon component: ${compName.className}")
             } catch (e: Exception) {
-                Timber.e(e, "Failed to set component state for ${compName.className} to $state")
+                Timber.e(e, "Failed to disable component: ${compName.className}")
             }
         }
     }

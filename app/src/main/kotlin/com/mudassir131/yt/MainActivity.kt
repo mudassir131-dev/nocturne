@@ -40,6 +40,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -1257,10 +1258,10 @@ class MainActivity : ComponentActivity() {
                                                 } else WindowInsetsSides.Horizontal) + WindowInsetsSides.Top),
                                                 title = {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(
-                                                            painter = painterResource(id = R.drawable.ic_velune_concept),
+                                                        Image(
+                                                            painter = painterResource(id = if (useDarkTheme) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
                                                             contentDescription = "App Logo",
-                                                            tint = if (useDarkTheme) Color.White else Color.Black,
+                                                            contentScale = ContentScale.Fit,
                                                             modifier = Modifier
                                                                 .size(35.dp)
                                                                 .padding(end = 6.dp)
@@ -1784,10 +1785,9 @@ class MainActivity : ComponentActivity() {
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_velune_concept),
+                                    Image(
+                                        painter = painterResource(id = if (useDarkTheme) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
                                         contentDescription = "Nocturne Logo",
-                                        tint = if (useDarkTheme) Color.White else Color.Black,
                                         modifier = Modifier.size(72.dp)
                                     )
 
@@ -2141,11 +2141,9 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
-            // App Logo
-            Icon(
-                painter = painterResource(id = R.drawable.ic_velune_concept),
+            Image(
+                painter = painterResource(id = if (isSystemInDarkTheme) R.drawable.ic_nocturne_logo_dark else R.drawable.ic_nocturne_logo_light),
                 contentDescription = "Nocturne Logo",
-                tint = tintColor,
                 modifier = Modifier
                     .size(130.dp)
                     .graphicsLayer(

@@ -248,6 +248,12 @@ class MusicService :
     @Inject
     lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
 
+    private val notificationIcon: Int
+        get() {
+            val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            return if (isDark) R.drawable.ic_nocturne_notification_dark else R.drawable.ic_nocturne_notification_light
+        }
+
     private lateinit var audioManager: AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
     private var lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
@@ -482,7 +488,7 @@ class MusicService :
                     )
 
                 NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_logo_eclipse_vector)
+                    .setSmallIcon(notificationIcon)
                     .setContentTitle(getString(R.string.music_player))
                     .setContentText(getString(R.string.app_name))
                     .setContentIntent(contentIntent)
@@ -588,7 +594,7 @@ class MusicService :
                 CHANNEL_ID,
                 R.string.music_player
             ).apply {
-                setSmallIcon(R.drawable.ic_logo_eclipse_vector)
+                setSmallIcon(notificationIcon)
             }
         )
         
