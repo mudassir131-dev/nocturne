@@ -43,8 +43,8 @@ sealed class Screens(
 
     object Stats : Screens(
         titleId = R.string.stats,
-        iconIdInactive = R.drawable.trending_up,
-        iconIdActive = R.drawable.trending_up,
+        iconIdInactive = R.drawable.stats_outlined,
+        iconIdActive = R.drawable.stats,
         route = "stats"
     )
 
@@ -57,6 +57,6 @@ sealed class Screens(
 
 
     companion object {
-        val MainScreens = listOf(Home, Stats, History, Library)
+        val MainScreens = listOf(Home, Stats, History, Library, Search)
     }
 }

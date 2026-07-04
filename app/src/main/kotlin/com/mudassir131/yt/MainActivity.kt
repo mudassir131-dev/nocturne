@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt
 
-import com.mudassir131.yt.ui.component.FluidSlidingNavigationBar
+import com.mudassir131.yt.ui.component.NocturneBottomBar
 import android.annotation.SuppressLint
 import android.Manifest
 import android.app.ActivityManager
@@ -769,11 +769,22 @@ class MainActivity : ComponentActivity() {
                         mutableStateOf(false)
                     }
 
+                    LaunchedEffect(currentRoute) {
+                        if (currentRoute == "search") {
+                            active = true
+                        } else if (currentRoute != null && currentRoute.startsWith("search/").not()) {
+                            active = false
+                        }
+                    }
+
                     val onActiveChange: (Boolean) -> Unit = { newActive ->
                         active = newActive
                         if (!newActive) {
                             focusManager.clearFocus()
-                            if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                            if (currentRoute == "search") {
+                                navController.popBackStack()
+                            }
+                            if (navigationItems.fastAny { it.route == currentRoute }) {
                                 onQueryChange(TextFieldValue())
                             }
                         }
@@ -810,7 +821,7 @@ class MainActivity : ComponentActivity() {
                         remember(navBackStackEntry, active) {
                             navBackStackEntry?.destination?.route == null ||
                                     navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } &&
-                                    !active
+                                    (navBackStackEntry?.destination?.route == "search" || !active)
                         }
 
                     fun getBottomNavPadding(): Dp {
@@ -1276,13 +1287,6 @@ class MainActivity : ComponentActivity() {
                                                 },
 
                                                 actions = {
-                                                    IconButton(onClick = { onActiveChange(true) }) {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.search),
-                                                            contentDescription = stringResource(R.string.search)
-                                                        )
-                                                    }
-
                                                     IconButton(onClick = { navController.navigate("settings") }) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.settings),
@@ -1394,53 +1398,22 @@ class MainActivity : ComponentActivity() {
                                                         }
                                                     },
                                         ) {
-                                            if (pureBlack) Color.Black
-                                            else MaterialTheme.colorScheme.surfaceContainer
-
-                                            val glassEffectsMode by rememberEnumPreference(
-                                                key = GlassEffectsKey,
-                                                defaultValue = GlassEffectsMode.ADAPTIVE
-                                            )
-                                            val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
-
-                                            FluidSlidingNavigationBar(
+                                            NocturneBottomBar(
                                                 modifier = Modifier
                                                     .align(Alignment.BottomCenter)
                                                     .padding(
-                                                        start = 12.dp,
-                                                        end = 12.dp,
+                                                        start = 16.dp,
+                                                        end = 16.dp,
                                                         bottom = bottomInset + floatingBarsBottomPadding,
                                                     )
-                                                    .then(
-                                                        if (isGlassActive) {
-                                                            val baseColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
-                                                            Modifier.glassmorphic(
-                                                                shape = RoundedCornerShape(24.dp),
-                                                                tintColor = baseColor.copy(alpha = 0.3f),
-                                                                fallbackColor = baseColor,
-                                                                borderColor = Color.White.copy(alpha = 0.08f)
-                                                            )
-                                                        } else {
-                                                            Modifier
-                                                                .border(
-                                                                    width = 1.dp,
-                                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                                                                    shape = RoundedCornerShape(24.dp)
-                                                                )
-                                                                .clip(RoundedCornerShape(24.dp))
-                                                        }
-                                                    )
                                                     .fillMaxWidth()
-                                                    .height(navVisibleHeight),
+                                                    .height(72.dp),
                                                 items = navigationItems,
                                                 currentRoute = navBackStackEntry?.destination?.route ?: "",
-                                                pureBlack = pureBlack,
                                                 onTabSelected = { screen ->
                                                     val isSelected = navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true
 
-                                                    if (screen.route == Screens.Search.route) {
-                                                        onActiveChange(true)
-                                                    } else if (isSelected) {
+                                                    if (isSelected) {
                                                         navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
                                                         coroutineScope.launch {
                                                             searchBarScrollBehavior.state.resetHeightOffset()
@@ -1456,7 +1429,6 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
                                             )
-
                                         }
                                     }
                                 },

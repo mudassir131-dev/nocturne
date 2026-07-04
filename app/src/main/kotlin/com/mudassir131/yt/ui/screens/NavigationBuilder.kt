@@ -108,6 +108,9 @@ fun NavGraphBuilder.navigationBuilder(
     composable("stats") {
         StatsScreen(navController)
     }
+    composable(Screens.Search.route) {
+        Box(modifier = Modifier.fillMaxSize())
+    }
     composable("year_in_music") {
         YearInMusicScreen(navController)
     }
