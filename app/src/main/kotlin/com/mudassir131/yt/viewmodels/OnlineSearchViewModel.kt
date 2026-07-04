@@ -40,6 +40,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import java.net.URLDecoder
+import android.util.Log
+
 @HiltViewModel
 class OnlineSearchViewModel
 @Inject
@@ -47,7 +50,12 @@ constructor(
     @ApplicationContext val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val query = savedStateHandle.get<String>("query")!!
+    val rawQuery = savedStateHandle.get<String>("query")!!
+    val query = try {
+        URLDecoder.decode(rawQuery, "UTF-8")
+    } catch (e: Exception) {
+        rawQuery
+    }
     val filter = MutableStateFlow<YouTube.SearchFilter?>(null)
     
     // Raw (unfiltered) data cache

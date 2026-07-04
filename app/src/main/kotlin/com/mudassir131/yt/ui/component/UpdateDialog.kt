@@ -10,6 +10,8 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -112,48 +114,18 @@ fun UpdateDialog(
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        // Bullet 1
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "• ", color = Color(0xFFD2C795), fontWeight = FontWeight.Bold)
-                                Text(text = "Content Filtration", fontWeight = FontWeight.Bold, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Text(
-                                text = "Filter content and manage restrictions under Content settings.",
-                                color = Color(0xFF8E8E93),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
-                        // Bullet 2
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "• ", color = Color(0xFFD2C795), fontWeight = FontWeight.Bold)
-                                Text(text = "Song Card Share on Instagram & Snapchat", fontWeight = FontWeight.Bold, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Text(
-                                text = "Share beautiful high-res song cards directly to Instagram & Snapchat stories.",
-                                color = Color(0xFF8E8E93),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
-                        // Bullet 3
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "• ", color = Color(0xFFD2C795), fontWeight = FontWeight.Bold)
-                                Text(text = "Playlist Import", fontWeight = FontWeight.Bold, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Text(
-                                text = "Easily import Spotify playlists in the background.",
-                                color = Color(0xFF8E8E93),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
+                        val notes = releaseNotes.ifBlank { "Enjoy the new updates in Nocturne!" }
+                        MarkdownText(
+                            markdown = notes,
+                            color = Color.White.copy(alpha = 0.9f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
 
@@ -284,48 +256,18 @@ fun WelcomeUpdateDialog(
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        // Bullet 1
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "• ", color = Color(0xFFD2C795), fontWeight = FontWeight.Bold)
-                                Text(text = "Content Filtration", fontWeight = FontWeight.Bold, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Text(
-                                text = "Filter content and manage restrictions under Content settings.",
-                                color = Color(0xFF8E8E93),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
-                        // Bullet 2
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "• ", color = Color(0xFFD2C795), fontWeight = FontWeight.Bold)
-                                Text(text = "Song Card Share on Instagram & Snapchat", fontWeight = FontWeight.Bold, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Text(
-                                text = "Share beautiful high-res song cards directly to Instagram & Snapchat stories.",
-                                color = Color(0xFF8E8E93),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
-                        // Bullet 3
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "• ", color = Color(0xFFD2C795), fontWeight = FontWeight.Bold)
-                                Text(text = "Playlist Import", fontWeight = FontWeight.Bold, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Text(
-                                text = "Easily import Spotify playlists in the background.",
-                                color = Color(0xFF8E8E93),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
+                        val notes = releaseNotes.ifBlank { "Enjoy the new updates in Nocturne!" }
+                        MarkdownText(
+                            markdown = notes,
+                            color = Color.White.copy(alpha = 0.9f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
 
