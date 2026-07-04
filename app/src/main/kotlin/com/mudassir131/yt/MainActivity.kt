@@ -1407,9 +1407,10 @@ class MainActivity : ComponentActivity() {
                                                         bottom = bottomInset + floatingBarsBottomPadding,
                                                     )
                                                     .fillMaxWidth()
-                                                    .height(72.dp),
+                                                    .height(navVisibleHeight),
                                                 items = navigationItems,
                                                 currentRoute = navBackStackEntry?.destination?.route ?: "",
+                                                pureBlack = pureBlack,
                                                 onTabSelected = { screen ->
                                                     val isSelected = navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true
 
