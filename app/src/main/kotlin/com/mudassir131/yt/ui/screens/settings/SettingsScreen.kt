@@ -1099,7 +1099,7 @@ private fun SettingsHeroHeader(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "v${BuildConfig.VERSION_NAME}",
+                text = BuildConfig.VERSION_NAME,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -73,6 +73,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import com.mudassir131.yt.BuildConfig
+import com.mudassir131.yt.utils.compareSemanticVersions
 import com.mudassir131.yt.LocalPlayerAwareWindowInsets
 import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.EnableUpdateNotificationKey
@@ -400,7 +401,7 @@ fun UpdateScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             latestVersion?.let { latest ->
-                                if (latest != BuildConfig.VERSION_NAME) {
+                                if (compareSemanticVersions(latest, BuildConfig.VERSION_NAME) > 0) {
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = stringResource(R.string.latest_version_format, latest),

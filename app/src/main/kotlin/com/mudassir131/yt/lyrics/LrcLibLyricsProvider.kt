@@ -15,6 +15,7 @@ import com.mudassir131.yt.utils.dataStore
 import com.mudassir131.yt.utils.get
 
 object LrcLibLyricsProvider : LyricsProvider {
+    override val id = LyricsProviderId.LRCLIB
     override val name = "LrcLib"
 
     override fun isEnabled(context: Context): Boolean = context.dataStore[EnableLrcLibKey] ?: true

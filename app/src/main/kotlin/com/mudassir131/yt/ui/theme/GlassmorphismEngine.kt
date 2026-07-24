@@ -65,7 +65,7 @@ fun ProvideGlassmorphismState(content: @Composable () -> Unit) {
     val ramGb = rememberRamGb()
     val fps = rememberFpsState()
     val (pureBlackEnabled) = rememberPreference(key = PureBlackKey, defaultValue = true)
-    val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.ON)
+    val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.AUTO)
     val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     val useDarkTheme = remember(darkMode, isSystemInDarkTheme) {
         if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
@@ -215,7 +215,13 @@ fun Modifier.glassmorphic(
     borderWidth: Dp = 1.dp,
     fallbackColor: Color? = null,
     forceEnabledMode: GlassEffectsMode? = null,
-    alpha: Float = 1f
+    alpha: Float = 1f,
+    blurRadiusOverride: Dp? = null,
+    vibrancyEnabled: Boolean = true,
+    lensRefractionHeight: Dp? = null,
+    lensRefractionAmount: Float? = null,
+    depthEffectEnabled: Boolean = true,
+    chromaticAberrationEnabled: Boolean = false,
 ): Modifier = composed {
     if (alpha <= 0.001f) {
         return@composed this
@@ -223,7 +229,7 @@ fun Modifier.glassmorphic(
 
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     
     val activeMode = forceEnabledMode ?: glassEffectsMode
@@ -245,7 +251,7 @@ fun Modifier.glassmorphic(
     val ramGb = sharedState?.ramGb ?: rememberRamGb()
     val fps = sharedState?.fps ?: rememberFpsState()
     val (pureBlackPref) = rememberPreference(key = PureBlackKey, defaultValue = true)
-    val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.ON)
+    val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.AUTO)
     val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     val useDarkTheme = remember(darkMode, isSystemInDarkTheme) {
         if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
@@ -278,10 +284,11 @@ fun Modifier.glassmorphic(
     // Calculate settings
     val shouldDisableBlur = isLowEndDevice || (quality == GlassQualityMode.LOW && isBatteryLow)
     
+    val requestedBlurRadius = blurRadiusOverride?.value ?: blurIntensityPref
     var actualBlurRadius = if (isBatteryLow) {
-        (blurIntensityPref * 0.4f).dp // Battery < 20% -> Reduce blur by 60%
+        (requestedBlurRadius * 0.4f).dp // Battery < 20% -> Reduce blur by 60%
     } else {
-        blurIntensityPref.dp
+        requestedBlurRadius.dp
     }
     
     if (isFpsLow) {
@@ -405,12 +412,26 @@ fun Modifier.glassmorphic(
                     backdrop = backdrop,
                     shape = { shape },
                     effects = {
-                        vibrancy()
+                        if (vibrancyEnabled) {
+                            vibrancy()
+                        }
                         if (actualBlurRadius.value > 0f) {
                             blur(with(density) { actualBlurRadius.toPx() })
                         }
                         if (supportsLens) {
-                            lens(20f, 40f) // Reflections/lens disabled under Low Battery or Low FPS
+                            val refractionHeightPx = lensRefractionHeight
+                                ?.let { with(density) { it.toPx() } }
+                                ?: 20f
+                            val refractionAmountPx = lensRefractionAmount
+                                ?.coerceIn(0f, 1f)
+                                ?.times(64f)
+                                ?: 40f
+                            lens(
+                                refractionHeightPx,
+                                refractionAmountPx,
+                                depthEffectEnabled,
+                                chromaticAberrationEnabled,
+                            ) // Lens effects are disabled under Low Battery or Low FPS.
                         }
                     },
                     onDrawSurface = {
@@ -499,7 +520,7 @@ fun Modifier.glassmorphicButton(
     if (isGlassActive) {
         val sharedState = LocalGlassmorphismState.current
         val (pureBlackPref) = rememberPreference(key = PureBlackKey, defaultValue = true)
-        val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.ON)
+        val (darkMode) = rememberEnumPreference(key = DarkModeKey, defaultValue = DarkMode.AUTO)
         val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
         val useDarkTheme = remember(darkMode, isSystemInDarkTheme) {
             if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON

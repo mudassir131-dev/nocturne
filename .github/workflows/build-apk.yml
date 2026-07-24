@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build and publish Android release
 
 on:
   push:
@@ -7,11 +7,16 @@ on:
       - master
     tags:
       - 'v*'
+      - 'V*'
   workflow_dispatch:
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
-    name: Build debug APKs
+    name: Build signed production APKs
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,40 +24,97 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Java JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: zulu
           java-version: '21'
-          cache: 'gradle'
+          cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Build Release APKs
-        run: ./gradlew :app:assembleUniversalRelease :app:assembleArm64Release
+      - name: Validate and prepare release signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.NOCTURNE_RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.NOCTURNE_RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.NOCTURNE_RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.NOCTURNE_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || { echo "Missing NOCTURNE_RELEASE_KEYSTORE_BASE64" >&2; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "Missing NOCTURNE_RELEASE_KEYSTORE_PASSWORD" >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing NOCTURNE_RELEASE_KEY_ALIAS" >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Missing NOCTURNE_RELEASE_KEY_PASSWORD" >&2; exit 1; }
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/nocturne-release.p12"
+          test -s "$RUNNER_TEMP/nocturne-release.p12"
+          {
+            echo "NOCTURNE_KEYSTORE_FILE=$RUNNER_TEMP/nocturne-release.p12"
+            echo "NOCTURNE_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "NOCTURNE_KEY_ALIAS=$KEY_ALIAS"
+            echo "NOCTURNE_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
 
-      - name: Upload Universal Release APK
+      - name: Build release APKs
+        run: ./gradlew --no-daemon :app:assembleUniversalRelease :app:assembleArm64Release
+
+      - name: Prepare and verify release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          universal_apk="$(find app/build/outputs/apk/universal/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          arm64_apk="$(find app/build/outputs/apk/arm64/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$universal_apk" && test -s "$universal_apk"
+          test -n "$arm64_apk" && test -s "$arm64_apk"
+          cp "$universal_apk" release-artifacts/Nocturne-V2.22.03.19-universal-release.apk
+          cp "$arm64_apk" release-artifacts/Nocturne-V2.22.03.19-arm64-v8a-release.apk
+          unzip -tq release-artifacts/Nocturne-V2.22.03.19-universal-release.apk
+          unzip -tq release-artifacts/Nocturne-V2.22.03.19-arm64-v8a-release.apk
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          "$build_tools/apksigner" verify --verbose --print-certs release-artifacts/Nocturne-V2.22.03.19-universal-release.apk
+          "$build_tools/apksigner" verify --verbose --print-certs release-artifacts/Nocturne-V2.22.03.19-arm64-v8a-release.apk
+          apkanalyzer_bin="$(command -v apkanalyzer || find "$ANDROID_HOME/cmdline-tools" -type f -path '*/bin/apkanalyzer' -print -quit)"
+          test -n "$apkanalyzer_bin"
+          app_id="$("$apkanalyzer_bin" manifest application-id release-artifacts/Nocturne-V2.22.03.19-universal-release.apk)"
+          test "$app_id" = "com.mudassir131.nocturne"
+          sha256sum release-artifacts/*.apk > release-artifacts/SHA256SUMS.txt
+
+      - name: Upload production APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: app-universal-release
-          path: app/build/outputs/apk/universal/release/*.apk
+          name: Nocturne-V2.22.03.19-production-apks
+          path: |
+            release-artifacts/Nocturne-V2.22.03.19-universal-release.apk
+            release-artifacts/Nocturne-V2.22.03.19-arm64-v8a-release.apk
+            release-artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
 
-      - name: Upload ARM64 Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-arm64-release
-          path: app/build/outputs/apk/arm64/release/*.apk
+      - name: Verify tag matches application version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_NAME,,}" = "v2.22.03.19"
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          name: Nocturne V2.22.03.19
+          body_path: .github/release-notes/V2.22.03.19.md
           files: |
-            app/build/outputs/apk/universal/release/*.apk
-            app/build/outputs/apk/arm64/release/*.apk
+            release-artifacts/Nocturne-V2.22.03.19-universal-release.apk
+            release-artifacts/Nocturne-V2.22.03.19-arm64-v8a-release.apk
+            release-artifacts/SHA256SUMS.txt
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

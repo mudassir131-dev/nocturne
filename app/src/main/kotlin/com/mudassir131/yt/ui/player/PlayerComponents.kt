@@ -109,10 +109,12 @@ import com.mudassir131.yt.extensions.toggleRepeatMode
 import com.mudassir131.yt.models.MediaMetadata
 import com.mudassir131.yt.playback.PlayerConnection
 import com.mudassir131.yt.ui.component.BottomSheetPageState
+import com.mudassir131.yt.ui.component.ActualPlaybackQualityBadge
 import com.mudassir131.yt.ui.component.BottomSheetState
 import com.mudassir131.yt.ui.component.MenuState
 import com.mudassir131.yt.ui.component.PlayerSliderTrack
 import com.mudassir131.yt.ui.component.ResizableIconButton
+import com.mudassir131.yt.db.entities.FormatEntity
 import com.mudassir131.yt.ui.menu.PlayerMenu
 import com.mudassir131.yt.ui.theme.PlayerBackgroundColorUtils
 import com.mudassir131.yt.ui.theme.PlayerSliderColors
@@ -263,7 +265,7 @@ fun PlayerTopActions(
 ) {
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
     val baseStyle = when (playerDesignStyle) {
@@ -697,7 +699,8 @@ fun PlayerTimeLabel(
     sliderPosition: Long?,
     position: Long,
     duration: Long,
-    textBackgroundColor: Color
+    textBackgroundColor: Color,
+    format: FormatEntity? = null,
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -713,6 +716,11 @@ fun PlayerTimeLabel(
             color = textBackgroundColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+
+        ActualPlaybackQualityBadge(
+            format = format,
+            color = textBackgroundColor,
         )
 
         Text(
@@ -1553,6 +1561,7 @@ fun PlayerControlsContent(
     onShareClick: () -> Unit
 ) {
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
+    val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
     val currentSongLiked = currentSong?.song?.liked == true
 
     val playPauseRoundness by animateDpAsState(
@@ -1617,7 +1626,8 @@ fun PlayerControlsContent(
         sliderPosition = sliderPosition,
         position = position,
         duration = duration,
-        textBackgroundColor = textBackgroundColor
+        textBackgroundColor = textBackgroundColor,
+        format = currentFormat,
     )
 
     Spacer(Modifier.height(12.dp))

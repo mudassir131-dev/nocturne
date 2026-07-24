@@ -70,11 +70,11 @@ import com.mudassir131.yt.constants.LibraryFilter
 import com.mudassir131.yt.constants.LyricsClickKey
 import com.mudassir131.yt.constants.LyricsScrollKey
 import com.mudassir131.yt.constants.LyricsTextPositionKey
-import com.mudassir131.yt.constants.PlayerDesignStyle
-import com.mudassir131.yt.constants.PlayerDesignStyleKey
+import com.mudassir131.yt.constants.AppleMusicInspiredKey
+import com.mudassir131.yt.constants.ApplePlayerBackgroundStyle
+import com.mudassir131.yt.constants.ApplePlayerBackgroundStyleKey
+import com.mudassir131.yt.constants.ApplePlayerDataSaverKey
 import com.mudassir131.yt.constants.UseNewMiniPlayerDesignKey
-import com.mudassir131.yt.constants.PlayerBackgroundStyle
-import com.mudassir131.yt.constants.PlayerBackgroundStyleKey
 import com.mudassir131.yt.constants.PureBlackKey
 import com.mudassir131.yt.constants.RandomThemeOnStartupKey
 import com.mudassir131.yt.constants.UseSystemFontKey
@@ -106,14 +106,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 
 import com.mudassir131.yt.constants.UseLyricsV2Key
-import com.mudassir131.yt.constants.GlassEffectsKey
-import com.mudassir131.yt.constants.GlassEffectsMode
-import com.mudassir131.yt.constants.GlassBlurIntensityKey
-import com.mudassir131.yt.constants.GlassTransparencyKey
-import com.mudassir131.yt.constants.GlassDynamicTintKey
-import com.mudassir131.yt.constants.GlassPerformanceModeKey
-import com.mudassir131.yt.constants.GlassQualityModeKey
-import com.mudassir131.yt.constants.GlassQualityMode
 import com.mudassir131.yt.ui.component.DefaultDialog
 import com.mudassir131.yt.ui.component.EnumListPreference
 import com.mudassir131.yt.ui.component.IconButton
@@ -122,7 +114,6 @@ import com.mudassir131.yt.ui.component.PreferenceEntry
 import com.mudassir131.yt.ui.component.PreferenceGroupTitle
 import com.mudassir131.yt.ui.component.SwitchPreference
 import com.mudassir131.yt.ui.component.ThumbnailCornerRadiusSelectorButton
-import com.mudassir131.yt.ui.component.NumberPickerPreference
 import com.mudassir131.yt.ui.player.StyledPlaybackSlider
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.utils.rememberEnumPreference
@@ -146,11 +137,19 @@ fun AppearanceSettings(
     )
     val (darkMode, onDarkModeChange) = rememberEnumPreference(
         DarkModeKey,
-        defaultValue = DarkMode.ON
+        defaultValue = DarkMode.AUTO
     )
-    val (playerDesignStyle, onPlayerDesignStyleChange) = rememberEnumPreference(
-        PlayerDesignStyleKey,
-        defaultValue = PlayerDesignStyle.V3
+    val (appleMusicInspired, onAppleMusicInspiredChange) = rememberPreference(
+        AppleMusicInspiredKey,
+        defaultValue = false,
+    )
+    val (applePlayerBackground, onApplePlayerBackgroundChange) = rememberEnumPreference(
+        ApplePlayerBackgroundStyleKey,
+        defaultValue = ApplePlayerBackgroundStyle.APPLE_MUSIC,
+    )
+    val (applePlayerDataSaver, onApplePlayerDataSaverChange) = rememberPreference(
+        ApplePlayerDataSaverKey,
+        defaultValue = false,
     )
     val (useNewMiniPlayerDesign, onUseNewMiniPlayerDesignChange) = rememberPreference(
         UseNewMiniPlayerDesignKey,
@@ -176,11 +175,6 @@ fun AppearanceSettings(
         CropThumbnailToSquareKey,
         defaultValue = false
     )
-    val (playerBackground, onPlayerBackgroundChange) =
-        rememberEnumPreference(
-            PlayerBackgroundStyleKey,
-            defaultValue = PlayerBackgroundStyle.COLORING,
-        )
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = true)
     val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = true)
     val (useSystemFont, onUseSystemFontChange) = rememberPreference(UseSystemFontKey, defaultValue = false)
@@ -206,30 +200,6 @@ fun AppearanceSettings(
     val (lyricsLineSpacing, onLyricsLineSpacingChange) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
     val (useLyricsV2, onUseLyricsV2Change) = rememberPreference(UseLyricsV2Key, defaultValue = false)
 
-    val (glassEffects, onGlassEffectsChange) = rememberEnumPreference(
-        key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
-    )
-    val (glassQuality, onGlassQualityChange) = rememberEnumPreference(
-        key = GlassQualityModeKey,
-        defaultValue = GlassQualityMode.AUTO
-    )
-    val (glassBlurIntensity, onGlassBlurIntensityChange) = rememberPreference(
-        key = GlassBlurIntensityKey,
-        defaultValue = 20f
-    )
-    val (glassTransparency, onGlassTransparencyChange) = rememberPreference(
-        key = GlassTransparencyKey,
-        defaultValue = 0.3f
-    )
-    val (glassDynamicTint, onGlassDynamicTintChange) = rememberPreference(
-        key = GlassDynamicTintKey,
-        defaultValue = true
-    )
-    val (glassPerformanceMode, onGlassPerformanceModeChange) = rememberPreference(
-        key = GlassPerformanceModeKey,
-        defaultValue = true
-    )
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
@@ -288,10 +258,6 @@ fun AppearanceSettings(
         key = AppIconStyleKey,
         defaultValue = "eclipse"
     )
-
-    val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
-        it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    }
 
     val isSystemInDarkTheme = isSystemInDarkTheme()
     val useDarkTheme =
@@ -499,26 +465,39 @@ fun AppearanceSettings(
             title = stringResource(R.string.player),
         )
 
-        EnumListPreference(
-            title = { Text(stringResource(R.string.player_design_style)) },
+        SwitchPreference(
+            title = { Text("Apple Music Inspired") },
+            description = "Use the optional Apple-inspired player presentation",
             icon = { Icon(painterResource(R.drawable.palette), null) },
-            selectedValue = playerDesignStyle,
-            onValueSelected = onPlayerDesignStyleChange,
-            valueText = {
-                when (it) {
-                    PlayerDesignStyle.V1 -> stringResource(R.string.player_design_v1)
-                    PlayerDesignStyle.V1_GLASS -> stringResource(R.string.player_design_v1_glass)
-                    PlayerDesignStyle.V2 -> stringResource(R.string.player_design_v2)
-                    PlayerDesignStyle.V2_GLASS -> stringResource(R.string.player_design_v2_glass)
-                    PlayerDesignStyle.V3 -> stringResource(R.string.player_design_v3)
-                    PlayerDesignStyle.V3_GLASS -> stringResource(R.string.player_design_v3_glass)
-                    PlayerDesignStyle.V4 -> stringResource(R.string.player_design_v4)
-                    PlayerDesignStyle.V4_GLASS -> stringResource(R.string.player_design_v4_glass)
-                    PlayerDesignStyle.V5 -> stringResource(R.string.player_design_v5)
-                    PlayerDesignStyle.V5_GLASS -> stringResource(R.string.player_design_v5_glass)
-                }
-            },
+            checked = appleMusicInspired,
+            onCheckedChange = onAppleMusicInspiredChange,
         )
+
+        AnimatedVisibility(appleMusicInspired) {
+            EnumListPreference(
+                title = { Text(stringResource(R.string.player_background_style)) },
+                icon = { Icon(painterResource(R.drawable.gradient), null) },
+                selectedValue = applePlayerBackground,
+                onValueSelected = onApplePlayerBackgroundChange,
+                valueText = {
+                    when (it) {
+                        ApplePlayerBackgroundStyle.APPLE_MUSIC -> "Apple Music"
+                        ApplePlayerBackgroundStyle.ARTWORK -> "Artwork"
+                        ApplePlayerBackgroundStyle.SOLID -> "Solid"
+                    }
+                },
+            )
+        }
+
+        AnimatedVisibility(appleMusicInspired) {
+            SwitchPreference(
+                title = { Text("Apple player Data Saver") },
+                description = "Use static artwork and skip live-artwork network requests",
+                icon = { Icon(painterResource(R.drawable.image), null) },
+                checked = applePlayerDataSaver,
+                onCheckedChange = onApplePlayerDataSaverChange,
+            )
+        }
 
         SwitchPreference(
             title = { Text(stringResource(R.string.new_mini_player_design)) },
@@ -537,33 +516,6 @@ fun AppearanceSettings(
             onCheckedChange = onUseNewLibraryDesignChange,
         )
 
-        EnumListPreference(
-            title = { Text(stringResource(R.string.player_background_style)) },
-            icon = { Icon(painterResource(R.drawable.gradient), null) },
-            selectedValue = playerBackground,
-            onValueSelected = onPlayerBackgroundChange,
-            valueText = {
-                when (it) {
-                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                        PlayerBackgroundStyle.CUSTOM -> stringResource(R.string.custom)
-                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                    PlayerBackgroundStyle.COLORING -> stringResource(R.string.coloring)
-                    PlayerBackgroundStyle.BLUR_GRADIENT -> stringResource(R.string.blur_gradient)
-                    PlayerBackgroundStyle.GLOW -> stringResource(R.string.glow)
-                    PlayerBackgroundStyle.GLOW_ANIMATED -> "Glow Animated"
-                }
-            },
-        )
-
-        // When custom background is selected, show a direct link to customize it
-        if (playerBackground == PlayerBackgroundStyle.CUSTOM) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.customized_background)) },
-                icon = { Icon(painterResource(R.drawable.image), null) },
-                onClick = { navController.navigate("customize_background") }
-            )
-        }
 
         SwitchPreference(
             title = { Text(stringResource(R.string.hide_player_thumbnail)) },
@@ -698,75 +650,6 @@ fun AppearanceSettings(
                 description = stringResource(R.string.sensitivity_percentage, (swipeSensitivity * 100).roundToInt()),
                 icon = { Icon(painterResource(R.drawable.tune), null) },
                 onClick = { showSensitivityDialog = true }
-            )
-        }
-
-        PreferenceGroupTitle(
-            title = stringResource(R.string.glass_effects),
-        )
-
-        EnumListPreference(
-            title = { Text(stringResource(R.string.glass_effects)) },
-            icon = { Icon(painterResource(R.drawable.style), null) },
-            selectedValue = glassEffects,
-            onValueSelected = onGlassEffectsChange,
-            valueText = {
-                when (it) {
-                    GlassEffectsMode.DISABLED -> stringResource(R.string.glass_effects_disabled)
-                    GlassEffectsMode.ADAPTIVE -> stringResource(R.string.glass_effects_adaptive)
-                    GlassEffectsMode.PREMIUM -> stringResource(R.string.glass_effects_premium)
-                }
-            },
-        )
-
-        if (glassEffects != GlassEffectsMode.DISABLED) {
-            EnumListPreference(
-                title = { Text(stringResource(R.string.glass_quality_mode)) },
-                icon = { Icon(painterResource(R.drawable.tune), null) },
-                selectedValue = glassQuality,
-                onValueSelected = onGlassQualityChange,
-                valueText = {
-                    when (it) {
-                        GlassQualityMode.AUTO -> stringResource(R.string.glass_quality_auto)
-                        GlassQualityMode.LOW -> stringResource(R.string.glass_quality_low)
-                        GlassQualityMode.MEDIUM -> stringResource(R.string.glass_quality_medium)
-                        GlassQualityMode.HIGH -> stringResource(R.string.glass_quality_high)
-                    }
-                },
-            )
-
-            NumberPickerPreference(
-                title = { Text(stringResource(R.string.glass_blur_intensity)) },
-                icon = { Icon(painterResource(R.drawable.sliders), null) },
-                value = glassBlurIntensity.toInt(),
-                onValueChange = { onGlassBlurIntensityChange(it.toFloat()) },
-                minValue = 5,
-                maxValue = 50,
-                valueText = { "${it}dp" }
-            )
-
-            NumberPickerPreference(
-                title = { Text(stringResource(R.string.glass_transparency)) },
-                icon = { Icon(painterResource(R.drawable.sliders), null) },
-                value = (glassTransparency * 100).roundToInt(),
-                onValueChange = { onGlassTransparencyChange(it / 100f) },
-                minValue = 0,
-                maxValue = 100,
-                valueText = { "${it}%" }
-            )
-
-            SwitchPreference(
-                title = { Text(stringResource(R.string.glass_dynamic_tint)) },
-                icon = { Icon(painterResource(R.drawable.palette), null) },
-                checked = glassDynamicTint,
-                onCheckedChange = onGlassDynamicTintChange
-            )
-
-            SwitchPreference(
-                title = { Text(stringResource(R.string.glass_performance_mode)) },
-                icon = { Icon(painterResource(R.drawable.speed), null) },
-                checked = glassPerformanceMode,
-                onCheckedChange = onGlassPerformanceModeChange
             )
         }
 

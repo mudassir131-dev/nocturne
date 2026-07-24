@@ -15,6 +15,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,6 +65,10 @@ import com.mudassir131.yt.ui.component.LocalArtistsGrid
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.LocalSongsGrid
 import com.mudassir131.yt.ui.component.NavigationTitle
+import com.mudassir131.yt.ui.component.RootScreenHeader
+import com.mudassir131.yt.ui.component.AnimatedHeaderAction
+import com.mudassir131.yt.ui.component.AutoHidingRootScaffold
+import com.mudassir131.yt.ui.component.NocturneDynamicScreen
 import com.mudassir131.yt.ui.menu.AlbumMenu
 import com.mudassir131.yt.ui.menu.ArtistMenu
 import com.mudassir131.yt.ui.menu.SongMenu
@@ -217,172 +222,66 @@ fun StatsScreen(
         }
 
     val (disableBlur) = rememberPreference(DisableBlurKey, true)
-    val color1 = MaterialTheme.colorScheme.primary
-    val color2 = MaterialTheme.colorScheme.secondary
-    val color3 = MaterialTheme.colorScheme.tertiary
-    val color4 = MaterialTheme.colorScheme.primaryContainer
-    val color5 = MaterialTheme.colorScheme.secondaryContainer
-
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    Box(modifier = Modifier
-        .fillMaxSize()
-    ) {
-        if (!disableBlur) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxSize(0.7f)
-                    .align(Alignment.TopCenter)
-                    .zIndex(-1f)
-                    .drawWithCache {
-                        val width = this.size.width
-                        val height = this.size.height
-
-                        val brush1 = Brush.radialGradient(
-                            colors = listOf(
-                                color1.copy(alpha = 0.38f),
-                                color1.copy(alpha = 0.24f),
-                                color1.copy(alpha = 0.14f),
-                                color1.copy(alpha = 0.06f),
-                                Color.Transparent
-                            ),
-                            center = Offset(width * 0.15f, height * 0.1f),
-                            radius = width * 0.55f
-                        )
-
-                        val brush2 = Brush.radialGradient(
-                            colors = listOf(
-                                color2.copy(alpha = 0.34f),
-                                color2.copy(alpha = 0.2f),
-                                color2.copy(alpha = 0.11f),
-                                color2.copy(alpha = 0.05f),
-                                Color.Transparent
-                            ),
-                            center = Offset(width * 0.85f, height * 0.2f),
-                            radius = width * 0.65f
-                        )
-
-                        val brush3 = Brush.radialGradient(
-                            colors = listOf(
-                                color3.copy(alpha = 0.3f),
-                                color3.copy(alpha = 0.17f),
-                                color3.copy(alpha = 0.09f),
-                                color3.copy(alpha = 0.04f),
-                                Color.Transparent
-                            ),
-                            center = Offset(width * 0.3f, height * 0.45f),
-                            radius = width * 0.6f
-                        )
-
-                        val brush4 = Brush.radialGradient(
-                            colors = listOf(
-                                color4.copy(alpha = 0.26f),
-                                color4.copy(alpha = 0.14f),
-                                color4.copy(alpha = 0.08f),
-                                color4.copy(alpha = 0.03f),
-                                Color.Transparent
-                            ),
-                            center = Offset(width * 0.7f, height * 0.5f),
-                            radius = width * 0.7f
-                        )
-
-                        val brush5 = Brush.radialGradient(
-                            colors = listOf(
-                                color5.copy(alpha = 0.22f),
-                                color5.copy(alpha = 0.12f),
-                                color5.copy(alpha = 0.06f),
-                                color5.copy(alpha = 0.02f),
-                                Color.Transparent
-                            ),
-                            center = Offset(width * 0.5f, height * 0.75f),
-                            radius = width * 0.8f
-                        )
-
-                        val overlayBrush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                                surfaceColor.copy(alpha = 0.22f),
-                                surfaceColor.copy(alpha = 0.55f),
-                                surfaceColor
-                            ),
-                            startY = height * 0.4f,
-                            endY = height
-                        )
-
-                        onDrawBehind {
-                            drawRect(brush = brush1)
-                            drawRect(brush = brush2)
-                            drawRect(brush = brush3)
-                            drawRect(brush = brush4)
-                            drawRect(brush = brush5)
-                            drawRect(brush = overlayBrush)
-                        }
-                    }
-            )
-        }
-
+    val statsFilters = @Composable {
+        ChoiceChipsRow(
+            chips =
+            when (selectedOption) {
+                OptionStats.WEEKS -> weeklyDates
+                OptionStats.MONTHS -> monthlyDates
+                OptionStats.YEARS -> yearlyDates
+                OptionStats.CONTINUOUS -> {
+                    listOf(
+                        StatPeriod.WEEK_1.ordinal to pluralStringResource(R.plurals.n_week, 1, 1),
+                        StatPeriod.MONTH_1.ordinal to pluralStringResource(R.plurals.n_month, 1, 1),
+                        StatPeriod.MONTH_3.ordinal to pluralStringResource(R.plurals.n_month, 3, 3),
+                        StatPeriod.MONTH_6.ordinal to pluralStringResource(R.plurals.n_month, 6, 6),
+                        StatPeriod.YEAR_1.ordinal to pluralStringResource(R.plurals.n_year, 1, 1),
+                        StatPeriod.ALL.ordinal to stringResource(R.string.filter_all),
+                    )
+                }
+            },
+            options =
+            listOf(
+                OptionStats.CONTINUOUS to stringResource(id = R.string.continuous),
+                OptionStats.WEEKS to stringResource(R.string.weeks),
+                OptionStats.MONTHS to stringResource(R.string.months),
+                OptionStats.YEARS to stringResource(R.string.years),
+            ),
+            selectedOption = selectedOption,
+            onSelectionChange = {
+                viewModel.selectedOption.value = it
+                viewModel.indexChips.value = 0
+            },
+            currentValue = indexChips,
+            onValueUpdate = { viewModel.indexChips.value = it },
+        )
+    }
+    NocturneDynamicScreen(disableBlur = disableBlur) {
+        AutoHidingRootScaffold(
+            header = {
+                Column(Modifier.fillMaxWidth()) {
+                    RootScreenHeader(
+                        title = stringResource(R.string.stats),
+                        action = {
+                            AnimatedHeaderAction(
+                                icon = R.drawable.settings,
+                                contentDescription = "Settings",
+                                onClick = { navController.navigate("settings") },
+                            )
+                        },
+                    )
+                    NavigationTitle(
+                        title = "${mostPlayedSongsStats.size} ${stringResource(id = R.string.songs)}",
+                    )
+                    statsFilters()
+                }
+            },
+        ) {
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-            modifier = Modifier
+            modifier = Modifier.fillMaxSize(),
         ) {
-            item {
-                Spacer(modifier = Modifier.height(10.dp))
-                ChoiceChipsRow(
-                    chips =
-                    when (selectedOption) {
-                        OptionStats.WEEKS -> weeklyDates
-                        OptionStats.MONTHS -> monthlyDates
-                        OptionStats.YEARS -> yearlyDates
-                        OptionStats.CONTINUOUS -> {
-                            listOf(
-                                StatPeriod.WEEK_1.ordinal to pluralStringResource(
-                                    R.plurals.n_week,
-                                    1,
-                                    1
-                                ),
-                                StatPeriod.MONTH_1.ordinal to pluralStringResource(
-                                    R.plurals.n_month,
-                                    1,
-                                    1
-                                ),
-                                StatPeriod.MONTH_3.ordinal to pluralStringResource(
-                                    R.plurals.n_month,
-                                    3,
-                                    3
-                                ),
-                                StatPeriod.MONTH_6.ordinal to pluralStringResource(
-                                    R.plurals.n_month,
-                                    6,
-                                    6
-                                ),
-                                StatPeriod.YEAR_1.ordinal to pluralStringResource(
-                                    R.plurals.n_year,
-                                    1,
-                                    1
-                                ),
-                                StatPeriod.ALL.ordinal to stringResource(R.string.filter_all),
-                            )
-                        }
-                    },
-                    options =
-                    listOf(
-                        OptionStats.CONTINUOUS to stringResource(id = R.string.continuous),
-                        OptionStats.WEEKS to stringResource(R.string.weeks),
-                        OptionStats.MONTHS to stringResource(R.string.months),
-                        OptionStats.YEARS to stringResource(R.string.years),
-                    ),
-                    selectedOption = selectedOption,
-                    onSelectionChange = {
-                        viewModel.selectedOption.value = it
-                        viewModel.indexChips.value = 0
-                    },
-                    currentValue = indexChips,
-                    onValueUpdate = { viewModel.indexChips.value = it },
-                )
-            }
-
             // HighLights Section
             item {
                 StatsHighlightsSection(
@@ -405,13 +304,6 @@ fun StatsScreen(
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }
-            }
-
-            item(key = "mostPlayedSongsHeader") {
-                NavigationTitle(
-                    title = "${mostPlayedSongsStats.size} ${stringResource(id = R.string.songs)}",
-                    modifier = Modifier.animateItem(),
-                )
             }
 
             itemsIndexed(
@@ -575,6 +467,7 @@ fun StatsScreen(
             }
 
 
+        }
         }
 
         // FAB to shuffle most played songs

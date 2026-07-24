@@ -104,6 +104,7 @@ import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.AppBarHeight
 import com.mudassir131.yt.constants.DisableBlurKey
 import com.mudassir131.yt.constants.HideExplicitKey
+import com.mudassir131.yt.constants.ShowAlbumCanvasKey
 import com.mudassir131.yt.db.entities.Album
 import com.mudassir131.yt.extensions.togglePlayPause
 import com.mudassir131.yt.playback.ExoDownloadService
@@ -117,6 +118,10 @@ import com.mudassir131.yt.ui.component.shimmer.ButtonPlaceholder
 import com.mudassir131.yt.ui.component.shimmer.ListItemPlaceHolder
 import com.mudassir131.yt.ui.component.shimmer.ShimmerHost
 import com.mudassir131.yt.ui.component.shimmer.TextPlaceholder
+import com.mudassir131.yt.ui.appleplayer.liveart.AppleLiveArtworkResolver
+import com.mudassir131.yt.ui.appleplayer.liveart.CanvasArtwork
+import com.mudassir131.yt.ui.appleplayer.liveart.CanvasArtworkPlayer
+import com.mudassir131.yt.models.toMediaMetadata
 import com.mudassir131.yt.ui.menu.AlbumMenu
 import com.mudassir131.yt.ui.menu.SelectionSongMenu
 import com.mudassir131.yt.ui.menu.SongMenu
@@ -154,6 +159,15 @@ fun AlbumScreen(
     val otherVersions by viewModel.otherVersions.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val (disableBlur) = rememberPreference(DisableBlurKey, false)
+    val (showAlbumCanvas) = rememberPreference(ShowAlbumCanvasKey, false)
+    var albumCanvas by remember { mutableStateOf<CanvasArtwork?>(null) }
+    LaunchedEffect(albumWithSongs?.songs?.firstOrNull()?.id, showAlbumCanvas) {
+        albumCanvas = if (showAlbumCanvas) {
+            albumWithSongs?.songs?.firstOrNull()?.let { AppleLiveArtworkResolver.resolve(it.toMediaMetadata()) }
+        } else {
+            null
+        }
+    }
 
     // System bars padding
     val systemBarsTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
@@ -413,12 +427,21 @@ fun AlbumScreen(
                                     ),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
-                                AsyncImage(
-                                    model = albumWithSongs.album.thumbnailUrl,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                if (albumCanvas?.preferredAnimationUrl != null) {
+                                    CanvasArtworkPlayer(
+                                        primaryUrl = albumCanvas?.preferredAnimationUrl,
+                                        fallbackUrl = albumCanvas?.videoUrl,
+                                        isPlaying = true,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = albumWithSongs.album.thumbnailUrl,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
                             }
                         }
 

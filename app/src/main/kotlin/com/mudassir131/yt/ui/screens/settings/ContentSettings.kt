@@ -75,15 +75,18 @@ fun ContentSettings(
     val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = true)
     val (enableSimpMusicLyrics, onEnableSimpMusicLyricsChange) =
         rememberPreference(key = EnableSimpMusicLyricsKey, defaultValue = true)
-    val (preferredProvider, onPreferredProviderChange) =
-        rememberEnumPreference(
-            key = PreferredLyricsProviderKey,
-            defaultValue = PreferredLyricsProvider.LRCLIB,
-        )
-    val (lyricsRomanizeJapanese, onLyricsRomanizeJapaneseChange) = rememberPreference(LyricsRomanizeJapaneseKey, defaultValue = true)
-    val (lyricsRomanizeKorean, onLyricsRomanizeKoreanChange) = rememberPreference(LyricsRomanizeKoreanKey, defaultValue = true)
+    val (enableYouLyPlus, onEnableYouLyPlusChange) =
+        rememberPreference(key = EnableYouLyPlusLyricsKey, defaultValue = true)
+    val (enablePaxSenix, onEnablePaxSenixChange) =
+        rememberPreference(key = EnablePaxSenixLyricsKey, defaultValue = true)
     val (preloadQueueLyricsEnabled, onPreloadQueueLyricsEnabledChange) = rememberPreference(PreloadQueueLyricsEnabledKey, defaultValue = true)
     val (queueLyricsPreloadCount, onQueueLyricsPreloadCountChange) = rememberPreference(QueueLyricsPreloadCountKey, defaultValue = 1)
+    val (showArtistDescription, onShowArtistDescriptionChange) = rememberPreference(ShowArtistDescriptionKey, true)
+    val (showArtistSubscriberCount, onShowArtistSubscriberCountChange) = rememberPreference(ShowArtistSubscriberCountKey, true)
+    val (showArtistMonthlyListeners, onShowArtistMonthlyListenersChange) = rememberPreference(ShowArtistMonthlyListenersKey, true)
+    val (showArtistCanvasVideo, onShowArtistCanvasVideoChange) = rememberPreference(ShowArtistCanvasVideoKey, true)
+    val (showArtistBackgroundVideo, onShowArtistBackgroundVideoChange) = rememberPreference(ShowArtistBackgroundVideoKey, true)
+    val (showAlbumCanvas, onShowAlbumCanvasChange) = rememberPreference(ShowAlbumCanvasKey, false)
     val (lengthTop, onLengthTopChange) = rememberPreference(key = TopSize, defaultValue = "50")
     val (quickPicks, onQuickPicksChange) = rememberEnumPreference(key = QuickPicksKey, defaultValue = QuickPicks.QUICK_PICKS)
     val (contentFilterMode, onContentFilterModeChange) = rememberEnumPreference(
@@ -255,48 +258,43 @@ fun ContentSettings(
         )
         SwitchPreference(
             title = { Text(stringResource(R.string.enable_betterlyrics)) },
+            description = "Use BetterLyrics for word-by-word synced lyrics",
             icon = { Icon(painterResource(R.drawable.lyrics), null) },
             checked = enableBetterLyrics,
             onCheckedChange = onEnableBetterLyricsChange,
         )
         SwitchPreference(
-            title = { Text(stringResource(R.string.enable_simpmusic_lyrics)) },
+            title = { Text("Enable SimpMusic Lyrics") },
+            description = "Use SimpMusic Lyrics for synced lyrics",
             icon = { Icon(painterResource(R.drawable.lyrics), null) },
             checked = enableSimpMusicLyrics,
             onCheckedChange = onEnableSimpMusicLyricsChange,
         )
-        ListPreference(
-            title = { Text(stringResource(R.string.set_first_lyrics_provider)) },
+        SwitchPreference(
+            title = { Text("YouLyPlus") },
+            description = "LyricsPlus multi-server provider (YouLy+ extension backend)",
             icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            selectedValue = preferredProvider,
-            values = listOf(
-                PreferredLyricsProvider.LRCLIB,
-                PreferredLyricsProvider.KUGOU,
-                PreferredLyricsProvider.BETTER_LYRICS,
-                PreferredLyricsProvider.SIMPMUSIC,
-            ),
-            valueText = {
-                when (it) {
-                    PreferredLyricsProvider.LRCLIB -> "LrcLib"
-                    PreferredLyricsProvider.KUGOU -> "KuGou"
-                    PreferredLyricsProvider.BETTER_LYRICS -> "BetterLyrics"
-                    PreferredLyricsProvider.SIMPMUSIC -> "Nocturne"
-                }
-            },
-            onValueSelected = onPreferredProviderChange,
+            checked = enableYouLyPlus,
+            onCheckedChange = onEnableYouLyPlusChange,
         )
         SwitchPreference(
-            title = { Text(stringResource(R.string.lyrics_romanize_japanese)) },
+            title = { Text("PaxSenix") },
+            description = "Apple Music quality synced lyrics with syllable-level timing",
             icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = lyricsRomanizeJapanese,
-            onCheckedChange = onLyricsRomanizeJapaneseChange,
+            checked = enablePaxSenix,
+            onCheckedChange = onEnablePaxSenixChange,
         )
-
-        SwitchPreference(
-            title = { Text(stringResource(R.string.lyrics_romanize_korean)) },
+        PreferenceEntry(
+            title = { Text("Lyrics provider priority") },
+            description = "Drag to reorder which provider is tried first",
             icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = lyricsRomanizeKorean,
-            onCheckedChange = onLyricsRomanizeKoreanChange,
+            onClick = { navController.navigate("settings/content/lyrics_priority") },
+        )
+        PreferenceEntry(
+            title = { Text("Lyrics romanization") },
+            description = "Japanese and Korean lyric conversion",
+            icon = { Icon(painterResource(R.drawable.language), null) },
+            onClick = { navController.navigate("settings/content/lyrics_romanization") },
         )
         // Queue lyrics pre-load settings
         SwitchPreference(
@@ -316,6 +314,50 @@ fun ContentSettings(
                 valueText = { if (it == 0) "Off" else it.toString() },
             )
         }
+
+        PreferenceGroupTitle(title = "Artist page")
+        SwitchPreference(
+            title = { Text("Show artist description") },
+            icon = { Icon(painterResource(R.drawable.info), null) },
+            checked = showArtistDescription,
+            onCheckedChange = onShowArtistDescriptionChange,
+        )
+        SwitchPreference(
+            title = { Text("Show subscriber count") },
+            icon = { Icon(painterResource(R.drawable.person), null) },
+            checked = showArtistSubscriberCount,
+            onCheckedChange = onShowArtistSubscriberCountChange,
+        )
+        SwitchPreference(
+            title = { Text("Show monthly listeners") },
+            description = "Shown only when the music service supplies a real value",
+            icon = { Icon(painterResource(R.drawable.person), null) },
+            checked = showArtistMonthlyListeners,
+            onCheckedChange = onShowArtistMonthlyListenersChange,
+        )
+        SwitchPreference(
+            title = { Text("Show artist canvas video") },
+            description = "Display available looping motion art next to the artist name",
+            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+            checked = showArtistCanvasVideo,
+            onCheckedChange = onShowArtistCanvasVideoChange,
+        )
+        SwitchPreference(
+            title = { Text("Show artist background video") },
+            description = "Display available looping motion art behind the artist image",
+            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+            checked = showArtistBackgroundVideo,
+            onCheckedChange = onShowArtistBackgroundVideoChange,
+        )
+
+        PreferenceGroupTitle(title = "Album")
+        SwitchPreference(
+            title = { Text("Show Album Canvas") },
+            description = "Display animated canvas in albums when real motion art is available",
+            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+            checked = showAlbumCanvas,
+            onCheckedChange = onShowAlbumCanvasChange,
+        )
 
         PreferenceGroupTitle(title = stringResource(R.string.misc))
         EditTextPreference(

@@ -99,6 +99,7 @@ fun TopSearch(
     onSearch: (String) -> Unit,
     active: Boolean,
     onActiveChange: (Boolean) -> Unit,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     placeholder: @Composable (() -> Unit)? = null,
@@ -116,7 +117,7 @@ fun TopSearch(
 ) {
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
@@ -253,7 +254,7 @@ fun TopSearch(
     }
 
     BackHandler(enabled = active) {
-        onActiveChange(false)
+        onBack?.invoke() ?: onActiveChange(false)
     }
 }
 

@@ -27,6 +27,9 @@ bin/
 gen/
 out/
 .gradle/
+.gradle-task/
+.gradle-*-home/
+.android-sdk/
 .kotlin/
 app/universal/release/
 
@@ -45,6 +48,10 @@ Thumbs.db
 # --- CRITICAL SECURITY ---
 *.jks
 *.keystore
+*.p12
+.signing/
+.codex-validation/
+outputs/
 *.properties
 !gradle.properties
 !**/gradle-wrapper.properties

@@ -122,7 +122,7 @@ fun AboutScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "v${BuildConfig.VERSION_NAME} • ${if (BuildConfig.DEBUG) "DEBUG" else "STABLE"}",
+                            text = "${BuildConfig.VERSION_NAME} • ${if (BuildConfig.DEBUG) "DEBUG" else "STABLE"}",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold

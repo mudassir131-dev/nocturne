@@ -33,7 +33,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.properties.ReadOnlyProperty
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "settings",
+    produceMigrations = {
+        listOf(OnboardingMigration, PlayerArchitectureMigration, AudioQualityMigration)
+    },
+)
 object PreferenceStore {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _prefs = MutableStateFlow<Preferences?>(null)

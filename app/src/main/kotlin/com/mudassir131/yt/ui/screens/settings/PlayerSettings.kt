@@ -65,6 +65,7 @@ import com.mudassir131.yt.ui.component.TagsManagementDialog
 import com.mudassir131.yt.ui.component.EnumListPreference
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.ListDialog
+import com.mudassir131.yt.ui.component.ListPreference
 import com.mudassir131.yt.ui.component.PreferenceEntry
 import com.mudassir131.yt.ui.component.PreferenceGroupTitle
 import com.mudassir131.yt.ui.component.SliderPreference
@@ -83,7 +84,7 @@ fun PlayerSettings(
 ) {
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
-        defaultValue = AudioQuality.AUTO
+        defaultValue = AudioQuality.OPUS
     )
     val (playerStreamClient, onPlayerStreamClientChange) = rememberEnumPreference(
         PlayerStreamClientKey,
@@ -247,17 +248,16 @@ fun PlayerSettings(
             title = stringResource(R.string.player)
         )
 
-        EnumListPreference(
+        ListPreference(
             title = { Text(stringResource(R.string.audio_quality)) },
             icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
             selectedValue = audioQuality,
+            values = listOf(AudioQuality.SAAVN, AudioQuality.OPUS),
             onValueSelected = onAudioQualityChange,
             valueText = {
                 when (it) {
-                    AudioQuality.HIGHEST -> stringResource(R.string.audio_quality_max)
-                    AudioQuality.HIGH -> stringResource(R.string.audio_quality_high)
-                    AudioQuality.AUTO -> stringResource(R.string.audio_quality_auto)
-                    AudioQuality.LOW -> stringResource(R.string.audio_quality_low)
+                    AudioQuality.SAAVN -> "Saavn"
+                    AudioQuality.OPUS -> "Opus"
                 }
             }
         )

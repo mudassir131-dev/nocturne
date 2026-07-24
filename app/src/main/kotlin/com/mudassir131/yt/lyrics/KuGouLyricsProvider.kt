@@ -15,6 +15,7 @@ import com.mudassir131.yt.utils.dataStore
 import com.mudassir131.yt.utils.get
 
 object KuGouLyricsProvider : LyricsProvider {
+    override val id = LyricsProviderId.KUGOU
     override val name = "Kugou"
     override fun isEnabled(context: Context): Boolean =
         context.dataStore[EnableKugouKey] ?: true

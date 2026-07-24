@@ -137,11 +137,11 @@ private fun NewMiniPlayer(
 
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val playerDesignStyle by rememberEnumPreference(
         key = PlayerDesignStyleKey,
-        defaultValue = PlayerDesignStyle.V3
+        defaultValue = PlayerDesignStyle.V4
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
 
@@ -234,7 +234,7 @@ private fun LegacyMiniPlayer(
     )
     val playerDesignStyle by rememberEnumPreference(
         key = PlayerDesignStyleKey,
-        defaultValue = PlayerDesignStyle.V3
+        defaultValue = PlayerDesignStyle.V4
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED || playerDesignStyle.name.endsWith("_GLASS")
 

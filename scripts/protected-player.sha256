@@ -1,0 +1,10 @@
+﻿6c386480571ebe55dec97f029cd1a8a45aa393392990257332c715f5c8f48284  app/src/main/kotlin/com/mudassir131/yt/ui/player/Player.kt
+3d40605dbf206789be38a3aa9653ae4d3acb7109870bbcbc2756eae1de1ace68  app/src/main/kotlin/com/mudassir131/yt/ui/player/PlayerComponents.kt
+b86a6926d976bad325ac6bf44d1d406f547f67c701d17a2ce6b9541d531625d6  app/src/main/kotlin/com/mudassir131/yt/ui/player/Thumbnail.kt
+d87a5a397b2384699c7356bd3c188c17ea5f4d90a0a46deb3b3830befaa014f2  app/src/main/kotlin/com/mudassir131/yt/ui/player/Queue.kt
+f56b67901ac846a7bdd4d89592409820f7903d76d32a0acbf4cca2153c566fce  app/src/main/kotlin/com/mudassir131/yt/ui/player/QueueComponents.kt
+6c7fea514da47224d3337c99e14356aa9957a152e099e138b41dcd5130aaa5ad  app/src/main/kotlin/com/mudassir131/yt/ui/player/LyricsScreen.kt
+7795e4658d87c4cf635c46edc4a2e85c40fd859700016816d685f329dff99000  app/src/main/kotlin/com/mudassir131/yt/ui/component/Lyrics.kt
+dc298ac1592f699d99e753d56a07d6b05675325ea514afba1ef65597e7fef775  app/src/main/kotlin/com/mudassir131/yt/ui/component/LyricsV2.kt
+b483a43542466561abb7c79b2d7dac17e4c17490375e7ad4399ac12c00aa187e  app/src/main/kotlin/com/mudassir131/yt/ui/menu/PlayerMenu.kt
+e9ba5f44fb8bac16f28f5d3c7dec35e3cbdc0386a25964880a2ef069a53aaca9  app/src/main/kotlin/com/mudassir131/yt/ui/menu/LyricsMenu.kt

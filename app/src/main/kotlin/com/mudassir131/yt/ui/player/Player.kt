@@ -147,12 +147,12 @@ fun BottomSheetPlayer(
 
     val playerDesignStyle by rememberEnumPreference(
         key = PlayerDesignStyleKey,
-        defaultValue = PlayerDesignStyle.V3
+        defaultValue = PlayerDesignStyle.V4
     )
 
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
@@ -183,7 +183,7 @@ fun BottomSheetPlayer(
     )
 
     val isSystemInDarkTheme = isSystemInDarkTheme()
-    val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.ON)
+    val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
@@ -238,8 +238,6 @@ fun BottomSheetPlayer(
     val currentSongLiked = currentSong?.song?.liked == true
     val queueWindows by playerConnection.queueWindows.collectAsState()
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
-    playerConnection.service.playerVolume.collectAsState()
-
     val automix by playerConnection.service.automixItems.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
 

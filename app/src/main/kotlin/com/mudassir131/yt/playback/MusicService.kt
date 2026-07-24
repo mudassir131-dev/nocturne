@@ -277,7 +277,7 @@ class MusicService :
     private val audioQuality by enumPreference(
         this,
         AudioQualityKey,
-        com.mudassir131.yt.constants.AudioQuality.AUTO
+        com.mudassir131.yt.constants.AudioQuality.OPUS
     )
     private val preferredStreamClient by enumPreference(
         this,

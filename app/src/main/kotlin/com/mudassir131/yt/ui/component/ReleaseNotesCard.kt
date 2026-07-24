@@ -8,7 +8,6 @@
 
 package com.mudassir131.yt.ui.component
 
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,9 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mudassir131.yt.R
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
+import com.mudassir131.yt.utils.Updater
 
 @Composable
 fun ReleaseNotesCard() {
@@ -71,24 +68,11 @@ fun ReleaseNotesCard() {
 }
 
 suspend fun fetchReleaseNotesText(): List<String> {
-    return withContext(Dispatchers.IO) {
-        try {
-            val document =
-                Jsoup.connect("https://github.com/mudassir131-dev/nocturne/releases/latest").get()
-            val changelogElement = document.selectFirst(".markdown-body")
-            val htmlContent = changelogElement?.html() ?: "No release notes found"
-
-            val textContent = htmlContent
-                .replace(Regex("<br.*?>|</p>"), "\n")
-                .replace(Regex("<.*?>"), "")
-
-            Log.d("ChangelogParser","Cleared text is:$textContent")
-
-            textContent.split("\n")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-        } catch (e: Exception) {
-            listOf("Error loading release notes")
-        }
-    }
+    val body = Updater.getLatestReleaseNotes().getOrNull().orEmpty()
+    return body
+        .lineSequence()
+        .map { it.trim().removePrefix("- ").removePrefix("* ") }
+        .filter { it.isNotBlank() && !it.startsWith("#") }
+        .toList()
+        .ifEmpty { listOf(Updater.GenericReleaseNotes) }
 }

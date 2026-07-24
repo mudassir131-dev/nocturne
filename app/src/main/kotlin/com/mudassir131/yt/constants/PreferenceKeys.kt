@@ -21,6 +21,10 @@ val CustomThemeColorKey = stringPreferencesKey("customThemeColor")
 val RandomThemeOnStartupKey = booleanPreferencesKey("randomThemeOnStartup")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val WelcomeShownKey = booleanPreferencesKey("welcome_shown_v2_4")
+val HasCompletedOnboardingKey = booleanPreferencesKey("hasCompletedOnboarding")
+val ProfileNameKey = stringPreferencesKey("profileName")
+val ProfileGenderKey = stringPreferencesKey("profileGender")
+val ProfileDateOfBirthKey = longPreferencesKey("profileDateOfBirth")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
 val UseSystemFontKey = booleanPreferencesKey("useSystemFont")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
@@ -33,12 +37,20 @@ val UseNewLibraryDesignKey = booleanPreferencesKey("useNewLibraryDesign")
 val UseNewMiniPlayerDesignKey = booleanPreferencesKey("useNewMiniPlayerDesign")
 val HidePlayerThumbnailKey = booleanPreferencesKey("hidePlayerThumbnail")
 val VeluneCanvasKey = booleanPreferencesKey("veluneCanvas")
+val ApplePlayerDataSaverKey = booleanPreferencesKey("applePlayerDataSaver")
+val AppleMusicInspiredKey = booleanPreferencesKey("appleMusicInspired")
+val AppleHideVolumeSliderKey = booleanPreferencesKey("appleHideVolumeSlider")
+val ApplePlayerBackgroundStyleKey = stringPreferencesKey("applePlayerBackgroundStyle")
+
+enum class ApplePlayerBackgroundStyle {
+    APPLE_MUSIC,
+    ARTWORK,
+    SOLID,
+}
 val ThumbnailCornerRadiusKey = floatPreferencesKey("thumbnailCornerRadius")
 val CropThumbnailToSquareKey = booleanPreferencesKey("cropThumbnailToSquare")
 val SeekExtraSeconds = booleanPreferencesKey("seekExtraSeconds")
 val DisableBlurKey = booleanPreferencesKey("disableBlur")
-val GlassNavigationBarKey = booleanPreferencesKey("glassNavigationBar")
-val GlassMiniPlayerKey = booleanPreferencesKey("glassMiniPlayer")
 
 enum class SliderStyle {
     Standard,
@@ -56,6 +68,9 @@ val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrclib")
 val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
 val EnableSimpMusicLyricsKey = booleanPreferencesKey("enableSimpMusicLyrics")
+val EnableYouLyPlusLyricsKey = booleanPreferencesKey("enableYouLyPlusLyrics")
+val EnablePaxSenixLyricsKey = booleanPreferencesKey("enablePaxSenixLyrics")
+val LyricsProviderPriorityKey = stringPreferencesKey("lyricsProviderPriorityV2")
 val HideExplicitKey = booleanPreferencesKey("hideExplicit")
 val HideVideoKey = booleanPreferencesKey("hideVideo")
 val ProxyEnabledKey = booleanPreferencesKey("proxyEnabled")
@@ -92,10 +107,8 @@ val AudioQualityKey = stringPreferencesKey("audioQuality")
 val NetworkMeteredKey = booleanPreferencesKey("networkMetered")
 
 enum class AudioQuality {
-    AUTO,
-    HIGH,
-    HIGHEST,
-    LOW,
+    SAAVN,
+    OPUS,
 }
 
 val PlayerStreamClientKey = stringPreferencesKey("playerStreamClient")
@@ -443,6 +456,17 @@ val UseLyricsV2Key = booleanPreferencesKey("useLyricsV2")
 val PreloadQueueLyricsEnabledKey = booleanPreferencesKey("preload_queue_lyrics_enabled")
 val QueueLyricsPreloadCountKey = intPreferencesKey("queue_lyrics_preload_count")
 
+// Content presentation preferences. Media is only rendered when the backing API returns it.
+val ShowArtistDescriptionKey = booleanPreferencesKey("showArtistDescription")
+val ShowArtistSubscriberCountKey = booleanPreferencesKey("showArtistSubscriberCount")
+val ShowArtistMonthlyListenersKey = booleanPreferencesKey("showArtistMonthlyListeners")
+val ShowArtistCanvasVideoKey = booleanPreferencesKey("showArtistCanvasVideo")
+val ShowArtistBackgroundVideoKey = booleanPreferencesKey("showArtistBackgroundVideo")
+val ShowAlbumCanvasKey = booleanPreferencesKey("showAlbumCanvas")
+
+val GlassPlayerKey = booleanPreferencesKey("glassPlayer")
+val GlassMiniPlayerKey = booleanPreferencesKey("glassMiniPlayer")
+
 val PlayerVolumeKey = floatPreferencesKey("playerVolume")
 val RepeatModeKey = intPreferencesKey("repeatMode")
 
@@ -620,4 +644,5 @@ val AppIconStyleKey = stringPreferencesKey("appIconStyle")
 val DismissedUpdateVersionKey = stringPreferencesKey("dismissed_update_version")
 val LastWelcomedVersionKey = stringPreferencesKey("last_welcomed_version")
 val LatestReleaseJsonKey = stringPreferencesKey("latest_release_json")
+val LatestReleaseTagKey = stringPreferencesKey("latest_release_tag")
 

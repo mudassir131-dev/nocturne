@@ -4,6 +4,7 @@ import com.mudassir131.yt.BuildConfig
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,6 +43,8 @@ class UpdateSystemTest {
         // Test varied segment counts and leading zeros
         assertEquals("2.2.3.4.01 should equal 2.2.3.4.1", 0, compare("2.2.3.4.01", "2.2.3.4.1"))
         assertTrue("2.2.3.4.01 should be newer than 2.2.3.4", compare("2.2.3.4.01", "2.2.3.4") > 0)
+        assertEquals("Uppercase V labels must compare normally", 0, compare("V2.22.03.19", "v2.22.3.19"))
+        assertTrue("New release label must remain monotonic", compare("Nocturne V2.22.03.19", "2.2.3.4.09") > 0)
     }
 
     @Test
@@ -74,7 +77,57 @@ class UpdateSystemTest {
         println("Diagnostic log - Parsed tagName: ${info.tagName}")
         println("Diagnostic log - Parsed downloadUrl: ${info.browserDownloadUrl}")
         assertEquals("v2.2.3.4.01", info.tagName)
+        assertEquals("â€¢ Dynamic release notes from GitHub", info.body)
         assertEquals("https://github.com/mudassir131-dev/nocturne/releases/download/v2.2.3.4.01/app-universal-release.apk", info.browserDownloadUrl)
+    }
+
+    @Test
+    fun arm64ReleaseIsPreferredRegardlessOfAssetOrder() {
+        val assets = listOf(
+            ReleaseAsset("Nocturne-V2.22.03.19-universal-release.apk", "https://example.com/universal.apk", "application/vnd.android.package-archive", 10),
+            ReleaseAsset("Nocturne-V2.22.03.19-arm64-v8a-release.apk", "https://example.com/arm64.apk", "application/vnd.android.package-archive", 8),
+        )
+
+        val selected = Updater.selectCompatibleApk(assets, listOf("arm64-v8a"), "universal")
+
+        assertEquals("https://example.com/arm64.apk", selected?.browserDownloadUrl)
+    }
+
+    @Test
+    fun universalIsUsedOnlyAsCompatibleFallback() {
+        val assets = listOf(
+            ReleaseAsset("Nocturne-V2.22.03.19-x86_64-release.apk", "https://example.com/x86.apk", "application/vnd.android.package-archive", 8),
+            ReleaseAsset("Nocturne-V2.22.03.19-universal-release.apk", "https://example.com/universal.apk", "application/vnd.android.package-archive", 10),
+        )
+
+        val selected = Updater.selectCompatibleApk(assets, listOf("arm64-v8a"), "universal")
+
+        assertEquals("https://example.com/universal.apk", selected?.browserDownloadUrl)
+    }
+
+    @Test
+    fun debugUnsignedAndNonApkAssetsAreNeverSelected() {
+        val assets = listOf(
+            ReleaseAsset("Nocturne-arm64-debug.apk", "https://example.com/debug.apk", "application/vnd.android.package-archive", 8),
+            ReleaseAsset("Nocturne-arm64-unsigned.apk", "https://example.com/unsigned.apk", "application/vnd.android.package-archive", 8),
+            ReleaseAsset("SHA256SUMS.txt", "https://example.com/checksums", "text/plain", 1),
+            ReleaseAsset("mapping.txt", "https://example.com/mapping", "text/plain", 1),
+        )
+
+        assertNull(Updater.selectCompatibleApk(assets, listOf("arm64-v8a"), "arm64"))
+    }
+
+    @Test
+    fun notificationSummaryComesFromCurrentReleaseBody() {
+        val body = """
+            ## What's New
+
+            ### Immersive UI Design
+            Experience a refined interface.
+        """.trimIndent()
+
+        assertEquals("Immersive UI Design", UpdateNotificationManager.releaseNotesSummary(body))
+        assertEquals(Updater.GenericReleaseNotes, UpdateNotificationManager.releaseNotesSummary(null))
     }
 
     @Test

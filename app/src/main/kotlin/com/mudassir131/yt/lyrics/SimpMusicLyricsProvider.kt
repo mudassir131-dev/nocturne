@@ -15,7 +15,8 @@ import com.mudassir131.yt.utils.dataStore
 import com.mudassir131.yt.utils.get
 
 object SimpMusicLyricsProvider : LyricsProvider {
-    override val name: String = "Nocturne"
+    override val id = LyricsProviderId.SIMPMUSIC
+    override val name: String = id.displayName
 
     override fun isEnabled(context: Context): Boolean =
         context.dataStore[EnableSimpMusicLyricsKey] ?: true

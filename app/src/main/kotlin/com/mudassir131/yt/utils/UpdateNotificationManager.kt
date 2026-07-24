@@ -89,12 +89,10 @@ object UpdateNotificationManager {
                 val dataStore = context.dataStore
 
                 // Always query the latest version first to see if they are running an older version
-                val latestResult = Updater.getLatestVersionName()
-                val latestVersion = latestResult.getOrNull()
-
-                if (latestVersion != null && latestVersion != BuildConfig.VERSION_NAME) {
+                val latestRelease = Updater.getLatestReleaseInfo().getOrNull()
+                if (latestRelease != null && compareSemanticVersions(latestRelease.tagName, BuildConfig.VERSION_NAME) > 0) {
                     // Persistent update notification bypasses user settings & intervals
-                    showUpdateNotification(context, latestVersion)
+                    showUpdateNotification(context, latestRelease)
                     return@launch
                 } else {
                     cancelUpdateNotification(context)
@@ -128,17 +126,17 @@ object UpdateNotificationManager {
         }
     }
 
-    suspend fun notifyIfNewVersion(context: Context, latestVersion: String) {
+    suspend fun notifyIfNewVersion(context: Context, release: ReleaseInfo) {
         try {
-            if (latestVersion != BuildConfig.VERSION_NAME) {
-                showUpdateNotification(context, latestVersion)
+            if (compareSemanticVersions(release.tagName, BuildConfig.VERSION_NAME) > 0) {
+                showUpdateNotification(context, release)
             }
         } catch (e: Exception) {
             // Silently fail
         }
     }
 
-    private fun showUpdateNotification(context: Context, newVersion: String) {
+    private fun showUpdateNotification(context: Context, release: ReleaseInfo) {
         createNotificationChannel(context)
 
         val openAppIntent = Intent(context, MainActivity::class.java).apply {
@@ -152,7 +150,7 @@ object UpdateNotificationManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val downloadIntent = Intent(Intent.ACTION_VIEW, Uri.parse(Updater.getLatestDownloadUrl()))
+        val downloadIntent = Intent(Intent.ACTION_VIEW, Uri.parse(release.browserDownloadUrl))
         val downloadPendingIntent = PendingIntent.getActivity(
             context,
             1,
@@ -163,10 +161,12 @@ object UpdateNotificationManager {
         val isDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         val notificationIcon = if (isDark) R.drawable.ic_nocturne_notification_dark else R.drawable.ic_nocturne_notification_light
 
+        val releaseSummary = releaseNotesSummary(release.body)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(notificationIcon)
-            .setContentTitle("Update Available: $newVersion")
-            .setContentText("Features: Content Filtration, Song Card Share, Playlist Import")
+            .setContentTitle("Update Available: ${release.tagName}")
+            .setContentText(releaseSummary)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(releaseSummary))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openAppPendingIntent)
             .setAutoCancel(true)
@@ -182,6 +182,23 @@ object UpdateNotificationManager {
         } catch (e: SecurityException) {
             // Missing POST_NOTIFICATIONS permission
         }
+    }
+
+    internal fun releaseNotesSummary(body: String?): String {
+        val summary = body
+            .orEmpty()
+            .lineSequence()
+            .map { line ->
+                line.trim()
+                    .removePrefix("### ")
+                    .removePrefix("## ")
+                    .removePrefix("# ")
+                    .removePrefix("- ")
+                    .removePrefix("* ")
+            }
+            .firstOrNull { it.isNotBlank() && !it.equals("What's New", ignoreCase = true) }
+            .orEmpty()
+        return summary.ifBlank { Updater.GenericReleaseNotes }
     }
 
     fun cancelUpdateNotification(context: Context) {

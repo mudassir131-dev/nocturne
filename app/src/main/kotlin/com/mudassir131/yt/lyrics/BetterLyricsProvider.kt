@@ -18,6 +18,12 @@ import com.mudassir131.yt.utils.GlobalLog
 import android.util.Log
 
 object BetterLyricsProvider : LyricsProvider {
+    override val id = LyricsProviderId.BETTER_LYRICS
+    override val timingCapabilities = setOf(
+        LyricsTimingCapability.PLAIN,
+        LyricsTimingCapability.LINE_SYNCED,
+        LyricsTimingCapability.WORD_SYNCED,
+    )
     init {
         BetterLyrics.logger = { message ->
             GlobalLog.append(Log.INFO, "BetterLyrics", message)

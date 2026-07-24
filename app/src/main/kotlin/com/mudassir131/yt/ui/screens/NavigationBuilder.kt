@@ -11,6 +11,8 @@ package com.mudassir131.yt.ui.screens
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -62,6 +64,7 @@ import com.mudassir131.yt.ui.screens.library.LibraryScreen
 import com.mudassir131.yt.ui.screens.playlist.AutoPlaylistScreen
 import com.mudassir131.yt.ui.screens.playlist.LocalPlaylistScreen
 import com.mudassir131.yt.ui.screens.playlist.OnlinePlaylistScreen
+import com.mudassir131.yt.ui.screens.playlist.CuratedDetailScreen
 import com.mudassir131.yt.ui.screens.playlist.TopPlaylistScreen
 import com.mudassir131.yt.ui.screens.playlist.CachePlaylistScreen
 import com.mudassir131.yt.ui.screens.search.OnlineSearchResult
@@ -73,6 +76,8 @@ import com.mudassir131.yt.ui.screens.settings.VeluneSettingsScreen
 import com.mudassir131.yt.ui.screens.settings.VeluneAccountSettingsScreen
 import com.mudassir131.yt.ui.screens.settings.ChangelogScreen
 import com.mudassir131.yt.ui.screens.settings.ContentSettings
+import com.mudassir131.yt.ui.screens.settings.LyricsProviderPriorityScreen
+import com.mudassir131.yt.ui.screens.settings.LyricsRomanizationSettingsScreen
 import com.mudassir131.yt.ui.screens.settings.DarkMode
 import com.mudassir131.yt.ui.screens.settings.DiscordLoginScreen
 import com.mudassir131.yt.ui.screens.settings.DiscordSettings
@@ -95,6 +100,7 @@ import com.mudassir131.yt.utils.rememberPreference
 fun NavGraphBuilder.navigationBuilder(
     navController: NavHostController,
     scrollBehavior: TopAppBarScrollBehavior,
+    searchContent: @Composable () -> Unit = { Box(modifier = Modifier.fillMaxSize()) },
 ) {
     composable(Screens.Home.route) {
         HomeScreen(navController)
@@ -111,7 +117,7 @@ fun NavGraphBuilder.navigationBuilder(
         StatsScreen(navController)
     }
     composable(Screens.Search.route) {
-        Box(modifier = Modifier.fillMaxSize())
+        searchContent()
     }
     composable("year_in_music") {
         YearInMusicScreen(navController)
@@ -148,26 +154,13 @@ fun NavGraphBuilder.navigationBuilder(
                 type = NavType.StringType
             },
         ),
-        enterTransition = {
-            fadeIn(tween(250))
-        },
-        exitTransition = {
-            if (targetState.destination.route?.startsWith("search/") == true) {
-                fadeOut(tween(200))
-            } else {
-                fadeOut(tween(200)) + slideOutHorizontally { -it / 2 }
-            }
-        },
-        popEnterTransition = {
-            if (initialState.destination.route?.startsWith("search/") == true) {
-                fadeIn(tween(250))
-            } else {
-                fadeIn(tween(250)) + slideInHorizontally { -it / 2 }
-            }
-        },
-        popExitTransition = {
-            fadeOut(tween(200))
-        },
+        // Search owns one authoritative header. Keeping the discovery destination composed during
+        // a cross-fade leaves its tabs visible behind the submitted-query field, so search state
+        // transitions are atomic while all other navigation transitions remain unchanged.
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None },
     ) {
         OnlineSearchResult(navController)
     }
@@ -232,6 +225,30 @@ fun NavGraphBuilder.navigationBuilder(
         ),
     ) {
         ArtistItemsScreen(navController, scrollBehavior)
+    }
+    composable(
+        route = "curated/{playlistId}?category={category}&title={title}&thumbnail={thumbnail}",
+        arguments = listOf(
+            navArgument("playlistId") { type = NavType.StringType },
+            navArgument("category") { type = NavType.StringType; nullable = true; defaultValue = null },
+            navArgument("title") { type = NavType.StringType; nullable = true; defaultValue = null },
+            navArgument("thumbnail") { type = NavType.StringType; nullable = true; defaultValue = null },
+        ),
+        enterTransition = {
+            fadeIn(tween(360)) + slideInHorizontally(tween(420)) { it / 4 }
+        },
+        exitTransition = { fadeOut(tween(220)) },
+        popEnterTransition = { fadeIn(tween(260)) },
+        popExitTransition = {
+            fadeOut(tween(260)) + slideOutHorizontally(tween(360)) { it / 4 }
+        },
+    ) { entry ->
+        CuratedDetailScreen(
+            navController = navController,
+            category = entry.arguments?.getString("category"),
+            fallbackTitle = entry.arguments?.getString("title"),
+            fallbackThumbnail = entry.arguments?.getString("thumbnail"),
+        )
     }
     composable(
         route = "online_playlist/{playlistId}",
@@ -321,6 +338,12 @@ fun NavGraphBuilder.navigationBuilder(
     }
     composable("settings/content") {
         ContentSettings(navController, scrollBehavior)
+    }
+    composable("settings/content/lyrics_priority") {
+        LyricsProviderPriorityScreen(navController)
+    }
+    composable("settings/content/lyrics_romanization") {
+        LyricsRomanizationSettingsScreen(navController)
     }
     composable("settings/player") {
         PlayerSettings(navController, scrollBehavior)

@@ -114,6 +114,7 @@ import com.mudassir131.yt.ui.component.LyricsV2
 import com.mudassir131.yt.constants.UseLyricsV2Key
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.BigSeekBar
+import com.mudassir131.yt.ui.component.SystemMediaVolumeSlider
 import androidx.navigation.NavController
 import com.mudassir131.yt.ui.menu.LyricsMenu
 import com.mudassir131.yt.ui.theme.PlayerColorExtractor
@@ -153,7 +154,6 @@ fun LyricsScreen(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
     val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
-    val playerVolume = playerConnection.service.playerVolume.collectAsState()
     
     // slider style preference
     val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.Standard)
@@ -579,38 +579,11 @@ fun LyricsScreen(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Volume Control
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 48.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.volume_off),
-                                    contentDescription = stringResource(R.string.minimum_volume),
-                                    modifier = Modifier.size(20.dp),
-                                    tint = textBackgroundColor
-                                )
-
-                                BigSeekBar(
-                                    progressProvider = playerVolume::value,
-                                    onProgressChange = { playerConnection.service.playerVolume.value = it },
-                                    color = textBackgroundColor,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(24.dp)
-                                        .padding(horizontal = 16.dp)
-                                )
-
-                                Icon(
-                                    painter = painterResource(R.drawable.volume_up),
-                                    contentDescription = stringResource(R.string.maximum_volume),
-                                    modifier = Modifier.size(20.dp),
-                                    tint = textBackgroundColor
-                                )
-                            }
+                            SystemMediaVolumeSlider(
+                                contentColor = textBackgroundColor,
+                                activeColor = textBackgroundColor,
+                                modifier = Modifier.padding(horizontal = 48.dp),
+                            )
                         }
                     }
                 }
@@ -869,38 +842,11 @@ fun LyricsScreen(
 
                         Spacer(modifier = Modifier.height(24.dp)) // Proper spacing
 
-                        // Volume Control
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 48.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.volume_off),
-                                contentDescription = stringResource(R.string.minimum_volume),
-                                modifier = Modifier.size(20.dp),
-                                tint = textBackgroundColor
-                            )
-
-                            BigSeekBar(
-                                progressProvider = playerVolume::value,
-                                onProgressChange = { playerConnection.service.playerVolume.value = it },
-                                color = textBackgroundColor,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(20.dp)
-                                    .padding(horizontal = 16.dp)
-                            )
-
-                            Icon(
-                                painter = painterResource(R.drawable.volume_up),
-                                contentDescription = stringResource(R.string.maximum_volume),
-                                modifier = Modifier.size(20.dp),
-                                tint = textBackgroundColor
-                            )
-                        }
+                        SystemMediaVolumeSlider(
+                            contentColor = textBackgroundColor,
+                            activeColor = textBackgroundColor,
+                            modifier = Modifier.padding(horizontal = 48.dp),
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
                     }

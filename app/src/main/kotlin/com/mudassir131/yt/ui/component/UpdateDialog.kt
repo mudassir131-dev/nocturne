@@ -93,7 +93,7 @@ fun UpdateDialog(
 
                 // Subtitle / Version
                 Text(
-                    text = "Version v$latestVersion",
+                    text = "Version ${latestVersion.trim().removePrefix("v").removePrefix("V")}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFFD2C795)
                 )
@@ -120,7 +120,7 @@ fun UpdateDialog(
                             .heightIn(max = 200.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        val notes = releaseNotes.ifBlank { "Enjoy the new updates in Nocturne!" }
+                        val notes = releaseNotes.ifBlank { com.mudassir131.yt.utils.Updater.GenericReleaseNotes }
                         MarkdownText(
                             markdown = notes,
                             color = Color.White.copy(alpha = 0.9f),
@@ -227,7 +227,7 @@ fun WelcomeUpdateDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Welcome to Nocturne v$versionName",
+                    text = "Welcome to Nocturne $versionName",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -262,7 +262,7 @@ fun WelcomeUpdateDialog(
                             .heightIn(max = 200.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        val notes = releaseNotes.ifBlank { "Enjoy the new updates in Nocturne!" }
+                        val notes = releaseNotes.ifBlank { com.mudassir131.yt.utils.Updater.GenericReleaseNotes }
                         MarkdownText(
                             markdown = notes,
                             color = Color.White.copy(alpha = 0.9f),

@@ -9,7 +9,7 @@
 package com.mudassir131.yt.ui.menu
 
 import com.mudassir131.yt.ui.component.VeluneLoader
-import com.mudassir131.yt.ui.component.PlayerSliderTrack
+import com.mudassir131.yt.ui.component.SystemMediaVolumeSlider
 import android.content.Intent
 import android.content.res.Configuration
 import android.media.audiofx.AudioEffect
@@ -144,6 +144,7 @@ fun PlayerMenu(
     navController: NavController,
     playerBottomSheetState: BottomSheetState,
     isQueueTrigger: Boolean? = false,
+    showVolumeControl: Boolean = true,
     onShowDetailsDialog: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -151,7 +152,6 @@ fun PlayerMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val playerVolume = playerConnection.service.playerVolume.collectAsState()
     val activityResultLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
@@ -396,12 +396,10 @@ fun PlayerMenu(
         }
     }
 
-    if (isQueueTrigger != true) {
+    if (isQueueTrigger != true && showVolumeControl) {
         Spacer(modifier = Modifier.height(12.dp))
 
         PlayerVolumeCard(
-            volume = playerVolume.value,
-            onVolumeChange = { playerConnection.service.playerVolume.value = it },
         )
     }
 
@@ -707,95 +705,17 @@ fun PlayerMenu(
 
 @Composable
 private fun PlayerVolumeCard(
-    volume: Float,
-    onVolumeChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val safeVolume = volume.coerceIn(0f, 1f)
-
     Surface(
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = stringResource(R.string.volume),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
-                )
-
-                Text(
-                    text = "${(safeVolume * 100).roundToInt()}%",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            VolumeSliderL(
-                value = safeVolume,
-                onValueChange = onVolumeChange,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-        }
-    }
-}
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun VolumeSliderL(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val safeValue = value.coerceIn(0f, 1f)
-    var sliderValue by remember { mutableFloatStateOf(safeValue) }
-    var isDragging by remember { mutableStateOf(false) }
-
-    LaunchedEffect(safeValue) {
-        if (!isDragging) sliderValue = safeValue
-    }
-
-    val insetIcon = if (sliderValue <= 0f) R.drawable.volume_off else R.drawable.volume_up
-
-        Slider(
-            value = sliderValue,
-            onValueChange = { updated ->
-                isDragging = true
-                val coerced = updated.coerceIn(0f, 1f)
-                sliderValue = coerced
-                onValueChange(coerced)
-            },
-            onValueChangeFinished = { isDragging = false },
-            valueRange = 0f..1f,
-            modifier = Modifier.height(56.dp),
-            thumb = {
-                Icon(
-                    painter = painterResource(insetIcon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            track = { sliderState ->
-                PlayerSliderTrack(
-                    sliderState = sliderState,
-                    colors = SliderDefaults.colors(
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    trackHeight = 8.dp
-                )
-            },
-            colors = SliderDefaults.colors(),
+        SystemMediaVolumeSlider(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
+    }
 }
 
 @Composable

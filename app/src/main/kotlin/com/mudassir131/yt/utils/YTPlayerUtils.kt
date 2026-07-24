@@ -156,12 +156,7 @@ object YTPlayerUtils {
         networkMetered: Boolean? = null,
         avoidCodecs: Set<String> = emptySet(),
     ): Result<PlaybackData> = runCatching {
-        val attempts =
-            when (audioQuality) {
-                AudioQuality.HIGHEST -> listOf(AudioQuality.HIGHEST, AudioQuality.HIGH)
-                AudioQuality.AUTO -> listOf(AudioQuality.AUTO, AudioQuality.HIGH)
-                else -> listOf(audioQuality)
-            }.distinct()
+        val attempts = listOf(audioQuality)
 
         var lastError: Throwable? = null
         for (attempt in attempts) {
@@ -454,30 +449,22 @@ object YTPlayerUtils {
 
         if (audioFormats.isEmpty()) return emptyList()
 
-        val effectiveQuality =
-            when (audioQuality) {
-                AudioQuality.AUTO -> if (networkMetered) AudioQuality.HIGH else AudioQuality.HIGHEST
-                else -> audioQuality
-            }
-
         val targetBitrateBps =
-            when (effectiveQuality) {
-                AudioQuality.LOW -> 70_000
-                AudioQuality.HIGH -> 160_000
-                AudioQuality.HIGHEST -> 320_000
-                AudioQuality.AUTO -> null
+            when (audioQuality) {
+                AudioQuality.SAAVN -> 160_000
+                AudioQuality.OPUS -> 320_000
             }
 
         val preferHigher =
             compareByDescending<PlayerResponse.StreamingData.Format> { it.url != null }
+                .thenByDescending { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
                 .thenByDescending { it.bitrate }
-                .thenByDescending { codecRank(extractCodec(it.mimeType)) }
                 .thenByDescending { it.audioSampleRate ?: 0 }
 
         val preferLowerAboveTarget =
             compareByDescending<PlayerResponse.StreamingData.Format> { it.url != null }
+                .thenByDescending { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
                 .thenBy { it.bitrate }
-                .thenByDescending { codecRank(extractCodec(it.mimeType)) }
                 .thenByDescending { it.audioSampleRate ?: 0 }
 
         val candidates =
@@ -519,6 +506,18 @@ object YTPlayerUtils {
             codec.contains("opus", ignoreCase = true) -> 3
             codec.contains("mp4a", ignoreCase = true) -> 2
             else -> 1
+        }
+
+    private fun modeCodecRank(audioQuality: AudioQuality, codec: String?): Int =
+        when (audioQuality) {
+            AudioQuality.OPUS -> when {
+                codec?.contains("opus", ignoreCase = true) == true -> 4
+                else -> codecRank(codec)
+            }
+            AudioQuality.SAAVN -> when {
+                codec?.contains("mp4a", ignoreCase = true) == true -> 4
+                else -> codecRank(codec)
+            }
         }
     private fun isLikelyPreview(
         format: PlayerResponse.StreamingData.Format,

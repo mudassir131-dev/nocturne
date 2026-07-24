@@ -74,10 +74,13 @@ import com.mudassir131.yt.LocalPlayerConnection
 import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.AppBarHeight
 import com.mudassir131.yt.constants.SearchFilterHeight
+import com.mudassir131.yt.constants.DisableBlurKey
 import com.mudassir131.yt.extensions.togglePlayPause
 import com.mudassir131.yt.models.toMediaMetadata
 import com.mudassir131.yt.playback.queues.YouTubeQueue
 import com.mudassir131.yt.ui.component.ChipsRow
+import com.mudassir131.yt.ui.component.AutoHidingRootScaffold
+import com.mudassir131.yt.ui.component.NocturneDynamicScreen
 import com.mudassir131.yt.ui.component.EmptyPlaceholder
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.YouTubeListItem
@@ -88,6 +91,8 @@ import com.mudassir131.yt.ui.menu.YouTubeArtistMenu
 import com.mudassir131.yt.ui.menu.YouTubePlaylistMenu
 import com.mudassir131.yt.ui.menu.YouTubeSongMenu
 import com.mudassir131.yt.viewmodels.OnlineSearchViewModel
+import com.mudassir131.yt.ui.screens.Screens
+import com.mudassir131.yt.utils.rememberPreference
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -104,6 +109,10 @@ fun OnlineSearchResult(
 
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
+    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val searchRootEntry = remember(navController) {
+        runCatching { navController.getBackStackEntry(Screens.Search.route) }.getOrNull()
+    }
 
     val searchFilter by viewModel.filter.collectAsState()
     val searchSummary = viewModel.summaryPage
@@ -206,13 +215,52 @@ fun OnlineSearchResult(
         )
     }
 
+    NocturneDynamicScreen(disableBlur = disableBlur) {
+        AutoHidingRootScaffold(
+            header = {
+                SearchResultShellHeader(
+                    query = viewModel.query,
+                    onEditQuery = {
+                        searchRootEntry?.savedStateHandle?.set("activateSearchQuery", viewModel.query)
+                        navController.popBackStack(Screens.Search.route, false)
+                    },
+                )
+            },
+        ) {
     LazyColumn(
         state = lazyListState,
         contentPadding =
         LocalPlayerAwareWindowInsets.current
-            .add(WindowInsets(top = SearchFilterHeight + 8.dp))
             .asPaddingValues(),
     ) {
+        item(key = "result_filters") {
+            ChipsRow(
+                chips =
+                listOf(
+                    null to stringResource(R.string.filter_all),
+                    FILTER_SONG to stringResource(R.string.filter_songs),
+                    FILTER_VIDEO to stringResource(R.string.filter_videos),
+                    FILTER_ALBUM to stringResource(R.string.filter_albums),
+                    FILTER_ARTIST to stringResource(R.string.filter_artists),
+                    FILTER_COMMUNITY_PLAYLIST to stringResource(R.string.filter_community_playlists),
+                    FILTER_FEATURED_PLAYLIST to stringResource(R.string.filter_featured_playlists),
+                ),
+                currentValue = searchFilter,
+                onValueUpdate = {
+                    if (viewModel.filter.value != it) viewModel.filter.value = it
+                    coroutineScope.launch { lazyListState.animateScrollToItem(0) }
+                },
+                icons = mapOf(
+                    null to R.drawable.search,
+                    FILTER_SONG to R.drawable.music_note,
+                    FILTER_VIDEO to R.drawable.slow_motion_video,
+                    FILTER_ALBUM to R.drawable.album,
+                    FILTER_ARTIST to R.drawable.person,
+                    FILTER_COMMUNITY_PLAYLIST to R.drawable.queue_music,
+                    FILTER_FEATURED_PLAYLIST to R.drawable.playlist_play,
+                ),
+            )
+        }
         if (searchFilter == null) {
             searchSummary?.summaries?.forEachIndexed { index, summary ->
                 if (index > 0) {
@@ -293,54 +341,10 @@ fun OnlineSearchResult(
             }
         }
 
-        if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
-            item {
-                ShimmerHost {
-                    repeat(8) {
-                        ListItemPlaceHolder()
-                    }
-                }
-            }
-        }
+        // A submitted query intentionally starts with a clean lower canvas. Discovery content is
+        // not reused here; actual result rows (or the empty state) appear when the request resolves.
     }
 
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        shadowElevation = 4.dp,
-        modifier = Modifier
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top).add(WindowInsets(top = AppBarHeight)))
-            .fillMaxWidth()
-    ) {
-        ChipsRow(
-            chips =
-            listOf(
-                null to stringResource(R.string.filter_all),
-                FILTER_SONG to stringResource(R.string.filter_songs),
-                FILTER_VIDEO to stringResource(R.string.filter_videos),
-                FILTER_ALBUM to stringResource(R.string.filter_albums),
-                FILTER_ARTIST to stringResource(R.string.filter_artists),
-                FILTER_COMMUNITY_PLAYLIST to stringResource(R.string.filter_community_playlists),
-                FILTER_FEATURED_PLAYLIST to stringResource(R.string.filter_featured_playlists),
-            ),
-            currentValue = searchFilter,
-            onValueUpdate = {
-                if (viewModel.filter.value != it) {
-                    viewModel.filter.value = it
-                }
-                coroutineScope.launch {
-                    lazyListState.animateScrollToItem(0)
-                }
-            },
-            icons = mapOf(
-                null to R.drawable.search,
-                FILTER_SONG to R.drawable.music_note,
-                FILTER_VIDEO to R.drawable.slow_motion_video,
-                FILTER_ALBUM to R.drawable.album,
-                FILTER_ARTIST to R.drawable.person,
-                FILTER_COMMUNITY_PLAYLIST to R.drawable.queue_music,
-                FILTER_FEATURED_PLAYLIST to R.drawable.playlist_play,
-            ),
-        )
+        }
     }
 }

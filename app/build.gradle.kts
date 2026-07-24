@@ -15,6 +15,21 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
+fun releaseSecret(name: String): String? =
+    System.getenv(name)?.takeIf { it.isNotBlank() }
+        ?: localProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+
+val releaseStorePath = releaseSecret("NOCTURNE_KEYSTORE_FILE")
+val releaseStorePassword = releaseSecret("NOCTURNE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = releaseSecret("NOCTURNE_KEY_ALIAS")
+val releaseKeyPassword = releaseSecret("NOCTURNE_KEY_PASSWORD")
+val hasReleaseSigning =
+    releaseStorePath != null &&
+        releaseStorePassword != null &&
+        releaseKeyAlias != null &&
+        releaseKeyPassword != null &&
+        file(releaseStorePath).isFile
+
 android {
     namespace = "com.mudassir131.yt"
     compileSdk = 36
@@ -29,8 +44,8 @@ android {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30
-        versionName = "2.2.3.4.09"
+        versionCode = 31
+        versionName = "V2.22.03.19"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -85,11 +100,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file("keystore/release.p12")
-            storePassword = "nocturnesecret"
-            keyAlias = "nocturne"
-            keyPassword = "nocturnesecret"
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(requireNotNull(releaseStorePath))
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
         }
     }
 
@@ -101,7 +118,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("release")
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -110,7 +127,7 @@ android {
     }
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = false
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
@@ -154,6 +171,18 @@ android {
     }
 }
 
+gradle.taskGraph.whenReady {
+    val requestedReleaseBuild = allTasks.any { task ->
+        task.project == project && task.name.contains("Release", ignoreCase = true)
+    }
+    if (requestedReleaseBuild && !hasReleaseSigning) {
+        throw GradleException(
+            "Release signing is not configured. Set NOCTURNE_KEYSTORE_FILE, " +
+                "NOCTURNE_KEYSTORE_PASSWORD, NOCTURNE_KEY_ALIAS, and NOCTURNE_KEY_PASSWORD."
+        )
+    }
+}
+
 kotlin {
     jvmToolchain(21)
 }
@@ -163,6 +192,9 @@ ksp {
 }
 
 dependencies {
+    implementation(project(":youlyplus"))
+    implementation(project(":paxsenixlyrics"))
+    implementation(project(":unison"))
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
     implementation(libs.concurrent.futures)
@@ -227,6 +259,8 @@ dependencies {
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.encoding)
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.client.websockets)
     implementation(libs.ktor.server.core)

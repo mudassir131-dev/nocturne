@@ -12,22 +12,20 @@ import android.content.Context
 import android.util.Log
 import android.util.LruCache
 import com.mudassir131.yt.utils.GlobalLog
-import com.mudassir131.yt.constants.PreferredLyricsProvider
-import com.mudassir131.yt.constants.PreferredLyricsProviderKey
 import com.mudassir131.yt.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
-import com.mudassir131.yt.extensions.toEnum
 import com.mudassir131.yt.models.MediaMetadata
-import com.mudassir131.yt.utils.dataStore
 import com.mudassir131.yt.utils.reportException
 import com.mudassir131.yt.utils.NetworkConnectivityObserver
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 class LyricsHelper
@@ -36,23 +34,24 @@ constructor(
     @ApplicationContext private val context: Context,
     private val networkConnectivity: NetworkConnectivityObserver,
 ) {
-    private val baseProviders =
-        listOf(
-            SimpMusicLyricsProvider,
-            BetterLyricsProvider,
-            LrcLibLyricsProvider,
-            KuGouLyricsProvider,
-            YouTubeSubtitleLyricsProvider,
-            YouTubeLyricsProvider,
-        )
+    private val systemFallbackProviders = listOf(
+        YouTubeSubtitleLyricsProvider,
+        YouTubeLyricsProvider,
+    )
 
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
     private var currentLyricsJob: Job? = null
 
     suspend fun getLyrics(mediaMetadata: MediaMetadata, preferredProviderOnly: Boolean = false): String {
-        currentLyricsJob?.cancel()
-
-        val cached = cache.get(mediaMetadata.id)?.firstOrNull()
+        val artists = mediaMetadata.artists.joinToString { it.name }
+        val cacheKey = cacheKey(
+            mediaMetadata.id,
+            mediaMetadata.title,
+            artists,
+            mediaMetadata.album?.title,
+            mediaMetadata.duration,
+        )
+        val cached = cache.get(cacheKey)?.firstOrNull()
         if (cached != null) {
             GlobalLog.append(Log.DEBUG, "LyricsHelper", "Found lyrics in cache for ${mediaMetadata.title}")
             return cached.lyrics
@@ -71,40 +70,35 @@ constructor(
             return LYRICS_NOT_FOUND
         }
 
-        val ordered = orderedProviders()
-        val providers = if (preferredProviderOnly) listOf(ordered.first()) else ordered
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val deferred = scope.async {
+        val enabledProviders = orderedProviders().filter { it.isEnabled(context) }
+        val providers = if (preferredProviderOnly) enabledProviders.take(1) else enabledProviders
+        return withContext(Dispatchers.IO) {
             for (provider in providers) {
-                val enabled = provider.isEnabled(context)
-                
-                if (enabled) {
-                    try {
-                        val result = provider.getLyrics(
+                try {
+                    val result = withTimeoutOrNull(PROVIDER_TIMEOUT_MS) {
+                        provider.getLyrics(
                             mediaMetadata.id,
                             mediaMetadata.title,
-                            mediaMetadata.artists.joinToString { it.name },
+                            artists,
                             mediaMetadata.album?.title,
                             mediaMetadata.duration,
                         )
-                        result.onSuccess { lyrics ->
-                            if (isMeaningfulLyrics(lyrics)) {
-                                return@async lyrics
-                            }
-                        }.onFailure {
-                            reportException(it)
-                        }
-                    } catch (e: Exception) {
-                        reportException(e)
+                    } ?: Result.failure(IllegalStateException("${provider.name} timed out"))
+
+                    val lyrics = result.getOrNull()
+                    if (lyrics != null && isMeaningfulLyrics(lyrics)) {
+                        cache.put(cacheKey, listOf(LyricsResult(provider.name, lyrics)))
+                        return@withContext lyrics
                     }
+                    result.exceptionOrNull()?.let(::reportException)
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (error: Exception) {
+                    reportException(error)
                 }
             }
-            return@async LYRICS_NOT_FOUND
+            LYRICS_NOT_FOUND
         }
-
-        val lyrics = deferred.await()
-        scope.cancel()
-        return lyrics
     }
 
     suspend fun getAllLyrics(
@@ -117,7 +111,7 @@ constructor(
     ) {
         currentLyricsJob?.cancel()
 
-        val cacheKey = "$songArtists-$songTitle".replace(" ", "")
+        val cacheKey = cacheKey(mediaId, songTitle, songArtists, songAlbum, duration)
         cache.get(cacheKey)?.let { results ->
             results.forEach {
                 callback(it)
@@ -141,14 +135,20 @@ constructor(
             providers.forEach { provider ->
                 if (provider.isEnabled(context)) {
                     try {
-                        provider.getAllLyrics(mediaId, songTitle, songArtists, songAlbum, duration) lyricsCallback@{ lyrics ->
-                            if (!isMeaningfulLyrics(lyrics)) return@lyricsCallback
-                            val result = LyricsResult(provider.name, lyrics)
-                            allResult += result
-                            callback(result)
+                        withTimeoutOrNull(PROVIDER_TIMEOUT_MS) {
+                            provider.getAllLyrics(mediaId, songTitle, songArtists, songAlbum, duration) lyricsCallback@{ lyrics ->
+                                if (!isMeaningfulLyrics(lyrics)) return@lyricsCallback
+                                val result = LyricsResult(provider.name, lyrics)
+                                if (allResult.none { it.providerName == result.providerName && it.lyrics == result.lyrics }) {
+                                    allResult += result
+                                    callback(result)
+                                }
+                            }
                         }
-                    } catch (e: Exception) {
-                        reportException(e)
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Exception) {
+                        reportException(error)
                     }
                 }
             }
@@ -159,21 +159,19 @@ constructor(
     }
 
     private suspend fun orderedProviders(): List<LyricsProvider> {
-        val preferred =
-            context.dataStore.data
-                .first()[PreferredLyricsProviderKey]
-                .toEnum(PreferredLyricsProvider.LRCLIB)
-
-        val first =
-            when (preferred) {
-                PreferredLyricsProvider.LRCLIB -> LrcLibLyricsProvider
-                PreferredLyricsProvider.KUGOU -> KuGouLyricsProvider
-                PreferredLyricsProvider.BETTER_LYRICS -> BetterLyricsProvider
-                PreferredLyricsProvider.SIMPMUSIC -> SimpMusicLyricsProvider
-            }
-
-        return listOf(first) + baseProviders.filterNot { provider -> provider == first }
+        return LyricsProviderRegistry.orderedProviders(context) + systemFallbackProviders
     }
+
+    private fun cacheKey(
+        id: String,
+        title: String,
+        artist: String,
+        album: String?,
+        duration: Int,
+    ): String =
+        id.takeIf { it.isNotBlank() }
+            ?: listOf(artist, title, album.orEmpty(), duration.toString())
+                .joinToString("|") { it.lowercase().trim() }
 
     private fun isMeaningfulLyrics(lyrics: String): Boolean {
         val normalized =
@@ -201,6 +199,7 @@ constructor(
 
     companion object {
         private const val MAX_CACHE_SIZE = 3
+        private const val PROVIDER_TIMEOUT_MS = 12_000L
         private val TIMESTAMP_REGEX = Regex("""\[[0-9]{1,2}:[0-9]{2}(?:\.[0-9]{1,3})?]""")
         private val INVISIBLE_CHARS_REGEX = Regex("""[\u200B\u200C\u200D\u2060\u00AD]""")
     }

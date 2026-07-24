@@ -176,7 +176,7 @@ fun Queue(
     val playerConnection = LocalPlayerConnection.current ?: return
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
     val isPlaying by playerConnection.isPlaying.collectAsState()
@@ -210,7 +210,7 @@ fun Queue(
 
     val playerDesignStyle by rememberEnumPreference(
         key = PlayerDesignStyleKey,
-        defaultValue = PlayerDesignStyle.V3
+        defaultValue = PlayerDesignStyle.V4
     )
 
     val snackbarHostState = remember { SnackbarHostState() }

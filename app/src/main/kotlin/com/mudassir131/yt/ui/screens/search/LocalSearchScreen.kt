@@ -29,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mudassir131.yt.LocalPlayerConnection
@@ -59,6 +60,7 @@ fun LocalSearchScreen(
     onDismiss: () -> Unit,
     isFromCache: Boolean = false,
     pureBlack: Boolean,
+    bottomContentPadding: Dp = 0.dp,
     viewModel: LocalSearchViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -68,7 +70,7 @@ fun LocalSearchScreen(
 
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
@@ -95,10 +97,10 @@ fun LocalSearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (isGlassActive) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+            .background(Color.Transparent)
     ) {
         Surface(
-            color = if (isGlassActive) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
+            color = Color.Transparent,
             tonalElevation = if (pureBlack || isGlassActive) 0.dp else 0.dp,
             shadowElevation = if (pureBlack || isGlassActive) 0.dp else 4.dp,
         ) {
@@ -124,7 +126,7 @@ fun LocalSearchScreen(
 
         LazyColumn(
             state = lazyListState,
-            contentPadding = PaddingValues(top = 8.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = bottomContentPadding),
             modifier = Modifier.weight(1f),
         ) {
             result.map.forEach { (filter, items) ->

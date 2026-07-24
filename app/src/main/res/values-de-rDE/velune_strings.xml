@@ -116,7 +116,6 @@
     <string name="lyrics_romanize_korean">Romanisieren Sie koreanische Texte</string>
     <string name="slim">Schlank</string>
     <string name="slim_navbar">Schlanke untere Navigationsleiste</string>
-    <string name="glass_navigation_bar">Glass Navigation Bar (Beta)</string>
     <string name="glass_mini_player">Glass MiniPlayer (Beta)</string>
     <string name="auto_playlists">Automatische Wiedergabelisten</string>
     <string name="show_liked_playlist">Playlist mit „Gefällt mir“ anzeigen</string>

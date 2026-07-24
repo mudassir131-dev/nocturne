@@ -11,7 +11,10 @@ package com.mudassir131.yt.lyrics
 import android.content.Context
 
 interface LyricsProvider {
+    val id: LyricsProviderId
     val name: String
+    val timingCapabilities: Set<LyricsTimingCapability>
+        get() = setOf(LyricsTimingCapability.PLAIN, LyricsTimingCapability.LINE_SYNCED)
 
     fun isEnabled(context: Context): Boolean
 

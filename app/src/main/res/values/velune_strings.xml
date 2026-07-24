@@ -92,11 +92,6 @@
     <string name="follow_theme">Follow theme</string>
     <string name="gradient">Gradient</string>
     <string name="player_design_style">Player design style</string>
-    <string name="player_design_v1">Classic</string>
-    <string name="player_design_v2">Modern</string>
-    <string name="player_design_v3">Minimal</string>
-    <string name="player_design_v4">Cinematic</string>
-    <string name="player_design_v5">Metro</string>
     <string name="new_mini_player_design">New mini player design</string>
     <string name="player_background_blur">Blur</string>
     <string name="coloring">Coloring</string>
@@ -116,7 +111,6 @@
     <string name="lyrics_romanize_korean">Romanize korean lyrics</string>
     <string name="slim">Slim</string>
     <string name="slim_navbar">Slim bottom navigation bar</string>
-    <string name="glass_navigation_bar">Glass Navigation Bar (Beta)</string>
     <string name="glass_mini_player">Glass MiniPlayer (Beta)</string>
     <string name="auto_playlists">Auto playlists</string>
     <string name="show_liked_playlist">Show \"Liked\" playlist</string>
@@ -281,11 +275,6 @@
     <string name="restore_step_restarting">Restarting app</string>
 
     <!-- Glassmorphism settings strings -->
-    <string name="player_design_v1_glass">Classic Glass</string>
-    <string name="player_design_v2_glass">Modern Glass</string>
-    <string name="player_design_v3_glass">Minimal Glass</string>
-    <string name="player_design_v4_glass">Cinematic Glass</string>
-    <string name="player_design_v5_glass">Metro Glass</string>
     <string name="glass_effects">Glass effects ( experimental )</string>
     <string name="glass_effects_disabled">Disabled</string>
     <string name="glass_effects_adaptive">Adaptive</string>

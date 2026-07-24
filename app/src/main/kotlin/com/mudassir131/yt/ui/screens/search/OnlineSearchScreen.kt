@@ -32,6 +32,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -63,6 +64,7 @@ fun OnlineSearchScreen(
     onSearch: (String) -> Unit,
     onDismiss: () -> Unit,
     pureBlack: Boolean,
+    bottomContentPadding: Dp = 0.dp,
     viewModel: OnlineSearchSuggestionViewModel = hiltViewModel(),
 ) {
     val database = LocalDatabase.current
@@ -72,7 +74,7 @@ fun OnlineSearchScreen(
 
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
@@ -103,12 +105,35 @@ fun OnlineSearchScreen(
         state = lazyListState,
         contentPadding = PaddingValues(
             top = 8.dp,
-            bottom = WindowInsets.systemBars.only(WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding()
+            bottom = bottomContentPadding
         ),
         modifier = Modifier
             .fillMaxSize()
-            .background(if (isGlassActive) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+            .background(Color.Transparent)
     ) {
+        if (query.isBlank() && viewState.history.isNotEmpty()) {
+            item(key = "recent_searches_header") {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, top = 12.dp, end = 12.dp, bottom = 8.dp),
+                ) {
+                    Text(
+                        text = "Recent searches",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = { database.query { clearSearchHistory() } },
+                    ) {
+                        Text("Clear all")
+                    }
+                }
+            }
+        }
+
         items(viewState.history, key = { "history_${it.query}" }) { history ->
             SuggestionItem(
                 query = history.query,

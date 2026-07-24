@@ -99,7 +99,7 @@ fun VeluneSettingsScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "v${BuildConfig.VERSION_NAME}",
+                            text = BuildConfig.VERSION_NAME,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

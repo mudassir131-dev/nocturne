@@ -26,10 +26,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -108,6 +110,11 @@ import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.AppBarHeight
 import com.mudassir131.yt.constants.DisableBlurKey
 import com.mudassir131.yt.constants.HideExplicitKey
+import com.mudassir131.yt.constants.ShowArtistBackgroundVideoKey
+import com.mudassir131.yt.constants.ShowArtistCanvasVideoKey
+import com.mudassir131.yt.constants.ShowArtistDescriptionKey
+import com.mudassir131.yt.constants.ShowArtistMonthlyListenersKey
+import com.mudassir131.yt.constants.ShowArtistSubscriberCountKey
 import com.mudassir131.yt.db.entities.ArtistEntity
 import com.mudassir131.yt.extensions.togglePlayPause
 import com.mudassir131.yt.extensions.toMediaItem
@@ -131,6 +138,8 @@ import com.mudassir131.yt.ui.component.shimmer.ButtonPlaceholder
 import com.mudassir131.yt.ui.component.shimmer.ListItemPlaceHolder
 import com.mudassir131.yt.ui.component.shimmer.ShimmerHost
 import com.mudassir131.yt.ui.component.shimmer.TextPlaceholder
+import com.mudassir131.yt.ui.appleplayer.liveart.AppleLiveArtworkResolver
+import com.mudassir131.yt.ui.appleplayer.liveart.CanvasArtwork
 import com.mudassir131.yt.ui.menu.AlbumMenu
 import com.mudassir131.yt.ui.menu.SongMenu
 import com.mudassir131.yt.ui.menu.YouTubeAlbumMenu
@@ -138,6 +147,7 @@ import com.mudassir131.yt.ui.menu.YouTubeArtistMenu
 import com.mudassir131.yt.ui.menu.YouTubePlaylistMenu
 import com.mudassir131.yt.ui.menu.YouTubeSongMenu
 import com.mudassir131.yt.ui.theme.PlayerColorExtractor
+import com.mudassir131.yt.ui.theme.ArtworkPaletteCache
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.ui.utils.resize
 import com.mudassir131.yt.utils.rememberPreference
@@ -165,6 +175,21 @@ fun ArtistScreen(
     val libraryAlbums by viewModel.libraryAlbums.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val (disableBlur) = rememberPreference(DisableBlurKey, false)
+    val (showArtistDescription) = rememberPreference(ShowArtistDescriptionKey, true)
+    val (showArtistCanvasVideo) = rememberPreference(ShowArtistCanvasVideoKey, true)
+    val (showArtistBackgroundVideo) = rememberPreference(ShowArtistBackgroundVideoKey, true)
+
+    val firstRemoteSong = remember(artistPage) {
+        artistPage?.sections.orEmpty().flatMap { it.items }.filterIsInstance<SongItem>().firstOrNull()
+    }
+    var artistCanvas by remember { mutableStateOf<CanvasArtwork?>(null) }
+    LaunchedEffect(firstRemoteSong, showArtistCanvasVideo, showArtistBackgroundVideo) {
+        artistCanvas = if ((showArtistCanvasVideo || showArtistBackgroundVideo) && firstRemoteSong != null) {
+            AppleLiveArtworkResolver.resolve(firstRemoteSong.toMediaMetadata())
+        } else {
+            null
+        }
+    }
 
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -185,6 +210,10 @@ fun ArtistScreen(
     // Extract gradient colors from artist image
     LaunchedEffect(thumbnail) {
         if (thumbnail != null) {
+            ArtworkPaletteCache[thumbnail]?.let {
+                gradientColors = it
+                return@LaunchedEffect
+            }
             val request = ImageRequest.Builder(context)
                 .data(thumbnail)
                 .size(Size(PlayerColorExtractor.Config.IMAGE_SIZE, PlayerColorExtractor.Config.IMAGE_SIZE))
@@ -209,6 +238,7 @@ fun ArtistScreen(
                         palette = palette,
                         fallbackColor = fallbackColor
                     )
+                    ArtworkPaletteCache[thumbnail] = extractedColors
                     gradientColors = extractedColors
                 }
             }
@@ -357,7 +387,9 @@ fun ArtistScreen(
 
         LazyColumn(
             state = lazyListState,
-            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+            contentPadding = LocalPlayerAwareWindowInsets.current
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                .asPaddingValues(),
         ) {
             if (artistPage == null && !showLocal) {
                 // Shimmer loading state
@@ -447,6 +479,91 @@ fun ArtistScreen(
                     }
                 }
             } else {
+                item(key = "immersive_artist_header") {
+                    val artistName = artistPage?.artist?.title
+                        ?: libraryArtist?.artist?.name
+                        ?: stringResource(R.string.unknown_artist)
+                    val songSections = artistPage?.sections?.filter { section ->
+                        section.items.any { it is SongItem }
+                    }
+                    val albumSections = artistPage?.sections?.filter { section ->
+                        section.items.any { it is AlbumItem }
+                    }
+                    val songCount = if (showLocal) librarySongs.size else {
+                        songSections.orEmpty().flatMap { it.items }
+                            .filterIsInstance<SongItem>().distinctBy { it.id }.size
+                    }
+                    val albumCount = if (showLocal) libraryAlbums.size else {
+                        albumSections.orEmpty().flatMap { it.items }
+                            .filterIsInstance<AlbumItem>().distinctBy { it.id }.size
+                    }
+                    val isSubscribed = libraryArtist?.artist?.bookmarkedAt != null
+
+                    ImmersiveArtistHeader(
+                        artistName = artistName,
+                        thumbnail = thumbnail,
+                        description = artistPage?.description.takeIf { showArtistDescription },
+                        // The current artist endpoint does not expose either metric. Keep them
+                        // absent rather than manufacturing values; these slots are ready for real
+                        // backend data when it becomes available.
+                        subscriberCount = null,
+                        monthlyListeners = null,
+                        inlineCanvasArtwork = artistCanvas.takeIf {
+                            showArtistCanvasVideo && !showArtistBackgroundVideo
+                        },
+                        backgroundCanvasArtwork = artistCanvas.takeIf { showArtistBackgroundVideo },
+                        palette = gradientColors,
+                        scrollOffsetPx = if (lazyListState.firstVisibleItemIndex == 0) {
+                            lazyListState.firstVisibleItemScrollOffset
+                        } else 390,
+                        isSubscribed = isSubscribed,
+                        songCount = songCount,
+                        albumCount = albumCount,
+                        canShuffle = if (showLocal) librarySongs.isNotEmpty()
+                            else artistPage?.artist?.shuffleEndpoint != null,
+                        canRadio = !showLocal && artistPage?.artist?.radioEndpoint != null,
+                        onSubscribe = {
+                            database.transaction {
+                                val artist = libraryArtist?.artist
+                                if (artist != null) {
+                                    update(artist.toggleLike())
+                                } else {
+                                    artistPage?.artist?.let {
+                                        insert(
+                                            ArtistEntity(
+                                                id = it.id,
+                                                name = it.title,
+                                                channelId = it.channelId,
+                                                thumbnailUrl = it.thumbnail,
+                                            ).toggleLike(),
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onShuffle = {
+                            if (showLocal && librarySongs.isNotEmpty()) {
+                                playerConnection.playQueue(
+                                    ListQueue(
+                                        title = artistName,
+                                        items = librarySongs.shuffled().map { it.toMediaItem() },
+                                    ),
+                                )
+                            } else {
+                                artistPage?.artist?.shuffleEndpoint?.let {
+                                    playerConnection.playQueue(YouTubeQueue(it))
+                                }
+                            }
+                        },
+                        onRadio = {
+                            artistPage?.artist?.radioEndpoint?.let {
+                                playerConnection.playQueue(YouTubeQueue(it))
+                            }
+                        },
+                    )
+                }
+
+                if (false) {
                 // Hero Header
                 item(key = "header") {
                     val artistName = artistPage?.artist?.title ?: libraryArtist?.artist?.name
@@ -719,6 +836,7 @@ fun ArtistScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
                     }
+                }
                 }
 
                 // Content sections

@@ -8,15 +8,17 @@
 
 package com.mudassir131.yt.utils
 
+import android.os.Build
+import android.util.Log
 import androidx.datastore.preferences.core.edit
-import com.mudassir131.yt.BuildConfig
 import com.mudassir131.yt.App
+import com.mudassir131.yt.BuildConfig
 import com.mudassir131.yt.constants.GitHubReleasesEtagKey
 import com.mudassir131.yt.constants.GitHubReleasesFingerprintKey
 import com.mudassir131.yt.constants.GitHubReleasesJsonKey
 import com.mudassir131.yt.constants.GitHubReleasesLastCheckedAtKey
 import com.mudassir131.yt.constants.LatestReleaseJsonKey
-import android.util.Log
+import com.mudassir131.yt.constants.LatestReleaseTagKey
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -40,7 +42,15 @@ data class ReleaseInfo(
     val body: String?,
     val publishedAt: String,
     val htmlUrl: String,
-    val browserDownloadUrl: String
+    val browserDownloadUrl: String,
+    val assets: List<ReleaseAsset> = emptyList(),
+)
+
+data class ReleaseAsset(
+    val name: String,
+    val browserDownloadUrl: String,
+    val contentType: String,
+    val size: Long,
 )
 
 private data class ReleasesNetworkResult(
@@ -50,6 +60,8 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
+    const val GenericReleaseNotes = "Performance improvements, bug fixes, and stability enhancements."
+
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
     private var hasCheckedThisSession = false
@@ -64,38 +76,9 @@ object Updater {
         val releases = ArrayList<ReleaseInfo>(jsonArray.length())
         for (i in 0 until jsonArray.length()) {
             val item = jsonArray.getJSONObject(i)
-            val assets = item.optJSONArray("assets")
-            var downloadUrl = ""
-            if (assets != null && assets.length() > 0) {
-                val arch = BuildConfig.ARCHITECTURE
-                var foundUrl: String? = null
-                for (j in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(j)
-                    val assetName = asset.optString("name", "").lowercase()
-                    val assetUrl = asset.optString("browser_download_url", "")
-                    if (assetName.contains(arch.lowercase())) {
-                        foundUrl = assetUrl
-                        break
-                    }
-                }
-                if (foundUrl == null) {
-                    foundUrl = assets.getJSONObject(0).optString("browser_download_url", "")
-                }
-                downloadUrl = foundUrl ?: ""
+            if (!item.optBoolean("draft", false) && !item.optBoolean("prerelease", false)) {
+                releases.add(parseReleaseJson(item, requireCompatibleApk = false))
             }
-            if (downloadUrl.isEmpty()) {
-                downloadUrl = getLatestDownloadUrl()
-            }
-            releases.add(
-                ReleaseInfo(
-                    tagName = item.optString("tag_name", ""),
-                    name = item.optString("name", ""),
-                    body = if (item.has("body")) item.optString("body") else null,
-                    publishedAt = item.optString("published_at", ""),
-                    htmlUrl = item.optString("html_url", ""),
-                    browserDownloadUrl = downloadUrl
-                )
-            )
         }
         return releases
     }
@@ -151,7 +134,69 @@ object Updater {
             ?: emptyList()
     }
 
-    private fun parseSingleReleaseJson(item: JSONObject): ReleaseInfo {
+    private fun parseReleaseAssets(item: JSONObject): List<ReleaseAsset> {
+        val jsonAssets = item.optJSONArray("assets") ?: return emptyList()
+        return buildList {
+            for (index in 0 until jsonAssets.length()) {
+                val asset = jsonAssets.optJSONObject(index) ?: continue
+                val name = asset.optString("name", "").trim()
+                val url = asset.optString("browser_download_url", "").trim()
+                if (name.isNotBlank() && url.startsWith("https://")) {
+                    add(
+                        ReleaseAsset(
+                            name = name,
+                            browserDownloadUrl = url,
+                            contentType = asset.optString("content_type", ""),
+                            size = asset.optLong("size", 0L),
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    internal fun selectCompatibleApk(
+        assets: List<ReleaseAsset>,
+        supportedAbis: List<String> = runCatching { Build.SUPPORTED_ABIS?.toList().orEmpty() }.getOrDefault(emptyList()),
+        packagedArchitecture: String = BuildConfig.ARCHITECTURE,
+    ): ReleaseAsset? {
+        val releaseApks = assets.filter { asset ->
+            val name = asset.name.lowercase()
+            name.endsWith(".apk") &&
+                !name.contains("debug") &&
+                !name.contains("unsigned") &&
+                (name.contains("release") || name.startsWith("nocturne-"))
+        }
+        if (releaseApks.isEmpty()) return null
+
+        val requestedAbis = buildList {
+            addAll(supportedAbis.map(String::lowercase))
+            when (packagedArchitecture.lowercase()) {
+                "arm64" -> add("arm64-v8a")
+                "armeabi" -> add("armeabi-v7a")
+                "x86_64" -> add("x86_64")
+                "x86" -> add("x86")
+            }
+        }.distinct()
+
+        fun matchesAbi(name: String, abi: String): Boolean = when (abi) {
+            "arm64-v8a" -> name.contains("arm64-v8a") || name.contains("arm64")
+            "armeabi-v7a" -> name.contains("armeabi-v7a") || name.contains("armeabi")
+            "x86_64" -> name.contains("x86_64")
+            "x86" -> name.contains("x86") && !name.contains("x86_64")
+            else -> false
+        }
+
+        requestedAbis.forEach { abi ->
+            releaseApks.firstOrNull { matchesAbi(it.name.lowercase(), abi) }?.let { return it }
+        }
+        return releaseApks.firstOrNull { it.name.contains("universal", ignoreCase = true) }
+    }
+
+    private fun parseReleaseJson(
+        item: JSONObject,
+        requireCompatibleApk: Boolean,
+    ): ReleaseInfo {
         val tagName = item.optString("tag_name", "")
         if (tagName.isBlank()) {
             throw IllegalArgumentException("Missing tag_name")
@@ -165,35 +210,9 @@ object Updater {
         val publishedAt = item.optString("published_at", "")
         val htmlUrl = item.optString("html_url", "")
         
-        val assets = item.optJSONArray("assets")
-        var downloadUrl = ""
-        if (assets != null && assets.length() > 0) {
-            val arch = BuildConfig.ARCHITECTURE.lowercase()
-            var fallbackUniversalUrl: String? = null
-            var firstApkUrl: String? = null
-            var archMatchUrl: String? = null
-            
-            for (j in 0 until assets.length()) {
-                val asset = assets.getJSONObject(j)
-                val assetName = asset.optString("name", "").lowercase()
-                val assetUrl = asset.optString("browser_download_url", "")
-                
-                if (assetName.endsWith(".apk")) {
-                    if (firstApkUrl == null) {
-                        firstApkUrl = assetUrl
-                    }
-                    if (assetName.contains("universal")) {
-                        fallbackUniversalUrl = assetUrl
-                    }
-                    if (assetName.contains(arch)) {
-                        archMatchUrl = assetUrl
-                    }
-                }
-            }
-            downloadUrl = archMatchUrl ?: fallbackUniversalUrl ?: firstApkUrl ?: ""
-        }
-        
-        if (downloadUrl.isBlank()) {
+        val assets = parseReleaseAssets(item)
+        val selectedAsset = selectCompatibleApk(assets)
+        if (requireCompatibleApk && selectedAsset == null) {
             throw IllegalArgumentException("No valid APK assets found in release")
         }
         
@@ -203,14 +222,16 @@ object Updater {
             body = body,
             publishedAt = publishedAt,
             htmlUrl = htmlUrl,
-            browserDownloadUrl = downloadUrl
+            browserDownloadUrl = selectedAsset?.browserDownloadUrl.orEmpty(),
+            assets = assets,
         )
     }
 
+    private fun parseSingleReleaseJson(item: JSONObject): ReleaseInfo =
+        parseReleaseJson(item, requireCompatibleApk = true)
+
     suspend fun getLatestVersionName(): Result<String> =
-        getLatestReleaseInfo().map { latest ->
-            latest.name.ifBlank { latest.tagName }
-        }
+        getLatestReleaseInfo().map { latest -> latest.tagName }
 
     suspend fun getLatestReleaseNotes(): Result<String?> =
         getLatestReleaseInfo().map { it.body }
@@ -243,6 +264,7 @@ object Updater {
             runCatching {
                 App.instance.dataStore.edit { prefs ->
                     prefs[LatestReleaseJsonKey] = bodyText
+                    prefs[LatestReleaseTagKey] = parsedInfo.tagName
                 }
                 Log.d("NocturneUpdater", "Latest release payload cached to DataStore.")
             }.onFailure { e ->
@@ -263,6 +285,15 @@ object Updater {
             if (!cachedJson.isNullOrBlank()) {
                 val item = JSONObject(cachedJson)
                 val parsedInfo = parseSingleReleaseJson(item)
+                val cachedTag = App.instance.dataStore.getAsync(LatestReleaseTagKey)
+                if (!cachedTag.isNullOrBlank() && cachedTag != parsedInfo.tagName) {
+                    throw IllegalStateException("Cached release tag does not match cached payload")
+                }
+
+                // Migrates the legacy JSON-only cache without introducing a reset loop.
+                if (cachedTag.isNullOrBlank()) {
+                    App.instance.dataStore.edit { it[LatestReleaseTagKey] = parsedInfo.tagName }
+                }
                 
                 // Cache locally in memory for this session as well
                 cachedReleaseInfo = parsedInfo
@@ -300,16 +331,6 @@ object Updater {
             }
             commits
         }
-
-    fun getLatestDownloadUrl(): String {
-        val baseUrl = "https://github.com/mudassir131-dev/nocturne/releases/latest/download/"
-        val architecture = BuildConfig.ARCHITECTURE
-        return if (architecture == "universal") {
-            baseUrl + "Nocturne.apk"
-        } else {
-            baseUrl + "app-${architecture}-release.apk"
-        }
-    }
 
     suspend fun getAllReleases(
         perPage: Int = 30,

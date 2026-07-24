@@ -12,6 +12,7 @@ import android.content.Context
 import com.mudassir131.yt.innertube.YouTube
 
 object YouTubeSubtitleLyricsProvider : LyricsProvider {
+    override val id = LyricsProviderId.SIMPMUSIC
     override val name = "YouTube Subtitle"
 
     override fun isEnabled(context: Context) = true

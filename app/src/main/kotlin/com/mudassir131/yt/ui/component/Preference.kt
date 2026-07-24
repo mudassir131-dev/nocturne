@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -123,7 +124,7 @@ fun <T> ListPreference(
     onValueSelected: (T) -> Unit,
     isEnabled: Boolean = true,
 ) {
-    var showDialog by remember {
+    var showDialog by rememberSaveable {
         mutableStateOf(false)
     }
     if (showDialog) {
@@ -206,7 +207,7 @@ fun SwitchPreference(
         trailingContent = {
             Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange,
+                onCheckedChange = null,
                 enabled = isEnabled,
                 thumbContent = {
                     Icon(
@@ -235,7 +236,7 @@ fun EditTextPreference(
     isInputValid: (String) -> Boolean = { it.isNotEmpty() },
     isEnabled: Boolean = true,
 ) {
-    var showDialog by remember {
+    var showDialog by rememberSaveable {
         mutableStateOf(false)
     }
 

@@ -13,6 +13,7 @@ import com.mudassir131.yt.innertube.YouTube
 import com.mudassir131.yt.innertube.models.WatchEndpoint
 
 object YouTubeLyricsProvider : LyricsProvider {
+    override val id = LyricsProviderId.SIMPMUSIC
     override val name = "YouTube Music"
 
     override fun isEnabled(context: Context) = true

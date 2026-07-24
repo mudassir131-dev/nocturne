@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
@@ -119,7 +120,7 @@ fun DefaultDialog(
         ) {
             val glassEffectsMode by rememberEnumPreference(
                 key = GlassEffectsKey,
-                defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
             )
             val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 
@@ -225,6 +226,8 @@ fun ActionPromptDialog(
         Surface(
             modifier = Modifier
                 .padding(24.dp)
+                .fillMaxWidth()
+                .widthIn(max = 560.dp)
                 .then(
                     if (isGlassActive) {
                         Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
@@ -308,6 +311,8 @@ fun ListDialog(
         Surface(
             modifier = Modifier
                 .padding(24.dp)
+                .fillMaxWidth()
+                .widthIn(max = 560.dp)
                 .then(
                     if (isGlassActive) {
                         Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
@@ -319,9 +324,14 @@ fun ListDialog(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = modifier.padding(vertical = 24.dp),
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
             ) {
-                LazyColumn(content = content)
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    content = content,
+                )
             }
         }
     }

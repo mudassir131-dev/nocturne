@@ -96,7 +96,7 @@ fun BottomSheetPage(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val glassEffectsMode by rememberEnumPreference(
         key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.ADAPTIVE
+        defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
 

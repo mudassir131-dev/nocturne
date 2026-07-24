@@ -36,6 +36,7 @@ import com.mudassir131.yt.innertube.YouTube
 import com.mudassir131.yt.innertube.models.YouTubeLocale
 import com.mudassir131.yt.kugou.KuGou
 import com.mudassir131.yt.lastfm.LastFM
+import com.music.paxsenix.Paxsenix
 import com.mudassir131.yt.ui.player.CanvasArtworkPlaybackCache
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -100,6 +101,7 @@ class App : Application(), SingletonImageLoader.Factory {
 
     private fun initializeCriticalSync() {
         CanvasArtworkPlaybackCache.init(this)
+        Paxsenix.init(this)
 
         val locale = Locale.getDefault()
         val languageTag = locale.toLanguageTag().replace("-Hant", "")
