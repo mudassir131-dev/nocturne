@@ -1,10 +1,6 @@
 # Nocturne
 
 <p align="center">
-  <img src="docs/dev_card.svg" alt="Nocturne by M Labs" width="100%">
-</p>
-
-<p align="center">
   <strong>A premium, open-source music experience built natively for Android.</strong>
 </p>
 
