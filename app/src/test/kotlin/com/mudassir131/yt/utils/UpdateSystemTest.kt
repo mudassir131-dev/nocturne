@@ -43,8 +43,8 @@ class UpdateSystemTest {
         // Test varied segment counts and leading zeros
         assertEquals("2.2.3.4.01 should equal 2.2.3.4.1", 0, compare("2.2.3.4.01", "2.2.3.4.1"))
         assertTrue("2.2.3.4.01 should be newer than 2.2.3.4", compare("2.2.3.4.01", "2.2.3.4") > 0)
-        assertEquals("Uppercase V labels must compare normally", 0, compare("V2.22.03.19", "v2.22.3.19"))
-        assertTrue("New release label must remain monotonic", compare("Nocturne V2.22.03.19", "2.2.3.4.09") > 0)
+        assertEquals("Uppercase V labels must compare normally", 0, compare("V2.22.03.21", "v2.22.3.19"))
+        assertTrue("New release label must remain monotonic", compare("Nocturne V2.22.03.21", "2.2.3.4.09") > 0)
     }
 
     @Test
@@ -84,8 +84,8 @@ class UpdateSystemTest {
     @Test
     fun arm64ReleaseIsPreferredRegardlessOfAssetOrder() {
         val assets = listOf(
-            ReleaseAsset("Nocturne-V2.22.03.19-universal-release.apk", "https://example.com/universal.apk", "application/vnd.android.package-archive", 10),
-            ReleaseAsset("Nocturne-V2.22.03.19-arm64-v8a-release.apk", "https://example.com/arm64.apk", "application/vnd.android.package-archive", 8),
+            ReleaseAsset("Nocturne-V2.22.03.21-universal-release.apk", "https://example.com/universal.apk", "application/vnd.android.package-archive", 10),
+            ReleaseAsset("Nocturne-V2.22.03.21-arm64-v8a-release.apk", "https://example.com/arm64.apk", "application/vnd.android.package-archive", 8),
         )
 
         val selected = Updater.selectCompatibleApk(assets, listOf("arm64-v8a"), "universal")
@@ -96,8 +96,8 @@ class UpdateSystemTest {
     @Test
     fun universalIsUsedOnlyAsCompatibleFallback() {
         val assets = listOf(
-            ReleaseAsset("Nocturne-V2.22.03.19-x86_64-release.apk", "https://example.com/x86.apk", "application/vnd.android.package-archive", 8),
-            ReleaseAsset("Nocturne-V2.22.03.19-universal-release.apk", "https://example.com/universal.apk", "application/vnd.android.package-archive", 10),
+            ReleaseAsset("Nocturne-V2.22.03.21-x86_64-release.apk", "https://example.com/x86.apk", "application/vnd.android.package-archive", 8),
+            ReleaseAsset("Nocturne-V2.22.03.21-universal-release.apk", "https://example.com/universal.apk", "application/vnd.android.package-archive", 10),
         )
 
         val selected = Updater.selectCompatibleApk(assets, listOf("arm64-v8a"), "universal")
