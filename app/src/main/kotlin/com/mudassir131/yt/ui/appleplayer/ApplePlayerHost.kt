@@ -11,6 +11,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -45,6 +47,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -92,6 +95,7 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.core.view.WindowCompat
 import androidx.media3.common.C
+import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
@@ -117,7 +121,6 @@ import com.mudassir131.yt.ui.component.BottomSheetState
 import com.mudassir131.yt.ui.component.LocalBottomSheetPageState
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.PlayerSliderTrack
-import com.mudassir131.yt.ui.component.actualPlaybackQualityLabel
 import com.mudassir131.yt.ui.component.rememberBottomSheetState
 import com.mudassir131.yt.ui.menu.LyricsMenu
 import com.mudassir131.yt.ui.menu.PlayerMenu
@@ -156,6 +159,7 @@ fun ApplePlayerHost(
     val currentSong by adapter.currentSong.collectAsState(initial = null)
     val currentLyrics by adapter.currentLyrics.collectAsState(initial = null)
     val currentFormat by adapter.currentFormat.collectAsState(initial = null)
+    val playbackState by adapter.playbackState.collectAsState()
     val isPlaying by adapter.isPlaying.collectAsState()
     val canSkipPrevious by adapter.canSkipPrevious.collectAsState()
     val canSkipNext by adapter.canSkipNext.collectAsState()
@@ -164,6 +168,10 @@ fun ApplePlayerHost(
         ApplePlayerBackgroundStyleKey,
         defaultValue = ApplePlayerBackgroundStyle.APPLE_MUSIC.name,
     )
+    val availableOutputs = rememberAppleAudioOutputs()
+    val connectedOutputName = availableOutputs.firstOrNull { it.isExternal }?.name
+    val formatLoading = playbackState == Player.STATE_BUFFERING ||
+        (metadata != null && currentFormat == null)
 
     var position by rememberSaveable(metadata?.id) {
         mutableLongStateOf(connection.player.currentPosition.coerceAtLeast(0L))
@@ -322,6 +330,8 @@ fun ApplePlayerHost(
             lyricsResult = lyricsResult,
             lyricsLoading = lyricsLoading,
             currentFormat = currentFormat,
+            formatLoading = formatLoading,
+            connectedOutputName = connectedOutputName,
             playerBackgroundStyle = playerBackgroundStyle.toApplePlayerBackgroundStyle(),
             liked = currentSong?.song?.liked == true,
             isPlaying = isPlaying,
@@ -334,6 +344,12 @@ fun ApplePlayerHost(
             onSeekFinished = {
                 draggedPosition?.let(connection.player::seekTo)
                 draggedPosition = null
+            },
+            onArtistClick = {
+                metadata?.artists?.firstOrNull()?.id?.takeIf(String::isNotBlank)?.let { artistId ->
+                    state.collapseSoft()
+                    navController.navigate("artist/$artistId")
+                }
             },
             onLyricsSeek = adapter::seekTo,
             onPrevious = adapter::previous,
@@ -408,6 +424,8 @@ private fun AppleExpandedPlayer(
     lyricsResult: AppleLyricsResult?,
     lyricsLoading: Boolean,
     currentFormat: FormatEntity?,
+    formatLoading: Boolean,
+    connectedOutputName: String?,
     playerBackgroundStyle: ApplePlayerBackgroundStyle,
     liked: Boolean,
     isPlaying: Boolean,
@@ -417,6 +435,7 @@ private fun AppleExpandedPlayer(
     onPlayerActions: () -> Unit,
     onLyricsActions: () -> Unit,
     onSeek: (Long) -> Unit,
+    onArtistClick: () -> Unit,
     onSeekFinished: () -> Unit,
     onLyricsSeek: (Long) -> Unit,
     onPrevious: () -> Unit,
@@ -512,6 +531,12 @@ private fun AppleExpandedPlayer(
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.clickable(
+                            enabled = metadata?.artists?.firstOrNull()?.id?.isNotBlank() == true,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onArtistClick,
+                        ),
                     )
                 }
 
@@ -595,6 +620,7 @@ private fun AppleExpandedPlayer(
 
                 AppleQualityBadge(
                     format = currentFormat,
+                    isLoading = formatLoading,
                     sleepTimerActive = sleepTimerActive,
                     sleepTimerTimeLeft = sleepTimerTimeLeft,
                 )
@@ -618,9 +644,16 @@ private fun AppleExpandedPlayer(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                 ) {
                     Box(Modifier.weight(1f)) {
-                        IconButton(
-                            onClick = onPrevious,
-                            modifier = Modifier.size(48.dp).align(Alignment.Center),
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .align(Alignment.Center)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onPrevious,
+                                ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.apple_skip_previous),
@@ -637,7 +670,11 @@ private fun AppleExpandedPlayer(
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(playPauseRoundness))
-                            .clickable(onClick = onTogglePlayback),
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onTogglePlayback,
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
@@ -651,9 +688,16 @@ private fun AppleExpandedPlayer(
                     Spacer(Modifier.width(8.dp))
 
                     Box(Modifier.weight(1f)) {
-                        IconButton(
-                            onClick = onNext,
-                            modifier = Modifier.size(48.dp).align(Alignment.Center),
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .align(Alignment.Center)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onNext,
+                                ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.apple_skip_next),
@@ -663,6 +707,33 @@ private fun AppleExpandedPlayer(
                             )
                         }
                     }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = !lyricsFullScreen && !connectedOutputName.isNullOrBlank(),
+                enter = slideInVertically(animationSpec = tween(260)) { it } + fadeIn(tween(180)),
+                exit = slideOutVertically(animationSpec = tween(200)) { it } + fadeOut(tween(140)),
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.bluetooth),
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        text = connectedOutputName.orEmpty(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
 
@@ -689,13 +760,13 @@ private fun AppleMusicBackdrop(
     backgroundStyle: ApplePlayerBackgroundStyle,
 ) {
     val context = LocalContext.current
-    val preferredArtworkUrl = remember(metadata?.thumbnailUrl) {
+    val preferredArtworkUrl = remember(metadata?.id, metadata?.thumbnailUrl) {
         metadata?.thumbnailUrl?.toAppleExpandedArtworkUrl()
     }
-    var resolvedArtworkUrl by remember(preferredArtworkUrl) {
+    var resolvedArtworkUrl by remember(metadata?.id, preferredArtworkUrl) {
         mutableStateOf(preferredArtworkUrl)
     }
-    val artworkRequest = remember(context, resolvedArtworkUrl) {
+    val artworkRequest = remember(context, metadata?.id, resolvedArtworkUrl) {
         ImageRequest.Builder(context)
             .data(resolvedArtworkUrl)
             .memoryCachePolicy(CachePolicy.ENABLED)
@@ -703,6 +774,24 @@ private fun AppleMusicBackdrop(
             .networkCachePolicy(CachePolicy.ENABLED)
             .build()
     }
+    // A blurred RenderEffect layer can be created before AsyncImage has a painter.
+    // On some devices that empty layer stays cached until the player is reopened.
+    // Wait for Coil success before creating the blur layer. The source thumbnail is
+    // normally already cached by the list or mini-player, so its artwork-derived
+    // colour appears immediately while the high-resolution foreground loads.
+    val blurArtworkUrl = metadata?.thumbnailUrl ?: resolvedArtworkUrl
+    val blurArtworkRequest = remember(context, metadata?.id, blurArtworkUrl) {
+        ImageRequest.Builder(context)
+            .data(blurArtworkUrl)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .networkCachePolicy(CachePolicy.ENABLED)
+            .build()
+    }
+    var blurArtworkReady by remember(metadata?.id, blurArtworkUrl) {
+        mutableStateOf(false)
+    }
+
     val useFallbackArtwork = {
         resolvedArtworkUrl?.appleExpandedArtworkFallback()?.let { fallback ->
             resolvedArtworkUrl = fallback
@@ -720,11 +809,16 @@ private fun AppleMusicBackdrop(
             Box(Modifier.fillMaxSize().background(Color(0xFF202023)))
         } else if (backgroundStyle == ApplePlayerBackgroundStyle.APPLE_MUSIC) {
             AsyncImage(
-                model = artworkRequest,
+                model = blurArtworkRequest,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                onError = { useFallbackArtwork() },
-                modifier = Modifier.fillMaxSize().blur(150.dp),
+                onSuccess = { blurArtworkReady = true },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (blurArtworkReady) Modifier.blur(150.dp)
+                        else Modifier.alpha(0f),
+                    ),
             )
         }
 
@@ -812,6 +906,7 @@ private fun AppleRoundActionButton(
 @Composable
 private fun AppleQualityBadge(
     format: FormatEntity?,
+    isLoading: Boolean,
     sleepTimerActive: Boolean,
     sleepTimerTimeLeft: Long,
 ) {
@@ -823,7 +918,7 @@ private fun AppleQualityBadge(
             listOfNotNull(codec.takeIf(String::isNotBlank), bitrate).joinToString(" • ")
         }.orEmpty()
     }
-    if (!sleepTimerActive && format == null) return
+    if (!sleepTimerActive && formatText.isBlank() && !isLoading) return
 
     Box(
         modifier = Modifier
@@ -854,9 +949,30 @@ private fun AppleQualityBadge(
                     maxLines = 1,
                 )
             }
+        } else if (isLoading) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(11.dp),
+                    color = Color.White.copy(alpha = 0.82f),
+                    strokeWidth = 1.4.dp,
+                )
+                Text(
+                    text = "Loading",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        fontSize = 10.sp,
+                    ),
+                    color = Color.White.copy(alpha = 0.8f),
+                    maxLines = 1,
+                )
+            }
         } else {
             Text(
-                text = format?.actualPlaybackQualityLabel().orEmpty(),
+                text = formatText,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,

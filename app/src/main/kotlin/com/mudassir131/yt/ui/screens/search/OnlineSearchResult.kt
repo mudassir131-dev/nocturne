@@ -123,6 +123,11 @@ fun OnlineSearchResult(
             }
         }
     }
+    val initialResultsLoading = if (searchFilter == null) {
+        searchSummary == null
+    } else {
+        itemsPage == null
+    }
 
     LaunchedEffect(lazyListState) {
         snapshotFlow {
@@ -260,6 +265,15 @@ fun OnlineSearchResult(
                     FILTER_FEATURED_PLAYLIST to R.drawable.playlist_play,
                 ),
             )
+        }
+        if (initialResultsLoading) {
+            item(key = "initial_results_loading") {
+                ShimmerHost {
+                    repeat(6) {
+                        ListItemPlaceHolder()
+                    }
+                }
+            }
         }
         if (searchFilter == null) {
             searchSummary?.summaries?.forEachIndexed { index, summary ->

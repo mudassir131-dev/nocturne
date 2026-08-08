@@ -71,7 +71,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -90,10 +89,6 @@ import com.mudassir131.yt.R
 
 import kotlinx.coroutines.delay
 import androidx.compose.ui.platform.LocalContext
-import com.mudassir131.yt.constants.GlassEffectsKey
-import com.mudassir131.yt.constants.GlassEffectsMode
-import com.mudassir131.yt.utils.rememberEnumPreference
-import com.mudassir131.yt.ui.theme.glassmorphic
 
 @Composable
 fun DefaultDialog(
@@ -118,23 +113,12 @@ fun DefaultDialog(
                 .navigationBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
-            val glassEffectsMode by rememberEnumPreference(
-                key = GlassEffectsKey,
-        defaultValue = GlassEffectsMode.DISABLED
-            )
-            val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
-
             Surface(
                 modifier = Modifier
-                    .heightIn(max = maxHeight)
-                    .then(
-                        if (isGlassActive) {
-                            Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
-                        } else Modifier
-                    ),
+                    .heightIn(max = maxHeight),
                 shape = AlertDialogDefaults.shape,
-                color = if (isGlassActive) Color.Transparent else AlertDialogDefaults.containerColor,
-                tonalElevation = if (isGlassActive) 0.dp else AlertDialogDefaults.TonalElevation,
+                color = AlertDialogDefaults.containerColor,
+                tonalElevation = AlertDialogDefaults.TonalElevation,
             ) {
                 Column(
                     modifier = modifier.padding(24.dp),
@@ -217,25 +201,14 @@ fun ActionPromptDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        val glassEffectsMode by rememberEnumPreference(
-            key = GlassEffectsKey,
-            defaultValue = GlassEffectsMode.ADAPTIVE
-        )
-        val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
-
         Surface(
             modifier = Modifier
                 .padding(24.dp)
                 .fillMaxWidth()
-                .widthIn(max = 560.dp)
-                .then(
-                    if (isGlassActive) {
-                        Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
-                    } else Modifier
-                ),
+                .widthIn(max = 560.dp),
             shape = AlertDialogDefaults.shape,
-            color = if (isGlassActive) Color.Transparent else AlertDialogDefaults.containerColor,
-            tonalElevation = if (isGlassActive) 0.dp else AlertDialogDefaults.TonalElevation,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
         ) {
             Column(
                 modifier = Modifier.padding(24.dp)
@@ -302,25 +275,14 @@ fun ListDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        val glassEffectsMode by rememberEnumPreference(
-            key = GlassEffectsKey,
-            defaultValue = GlassEffectsMode.ADAPTIVE
-        )
-        val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
-
         Surface(
             modifier = Modifier
                 .padding(24.dp)
                 .fillMaxWidth()
-                .widthIn(max = 560.dp)
-                .then(
-                    if (isGlassActive) {
-                        Modifier.glassmorphic(AlertDialogDefaults.shape, AlertDialogDefaults.containerColor)
-                    } else Modifier
-                ),
+                .widthIn(max = 560.dp),
             shape = AlertDialogDefaults.shape,
-            color = if (isGlassActive) Color.Transparent else AlertDialogDefaults.containerColor,
-            tonalElevation = if (isGlassActive) 0.dp else AlertDialogDefaults.TonalElevation,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

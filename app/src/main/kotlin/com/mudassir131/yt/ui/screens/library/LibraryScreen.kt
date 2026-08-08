@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -47,7 +48,11 @@ import com.mudassir131.yt.utils.rememberPreference
 
 @Composable
 fun LibraryScreen(navController: NavController) {
-    var filterType by rememberEnumPreference(ChipSortTypeKey, LibraryFilter.LIBRARY)
+    var filterType by rememberEnumPreference(ChipSortTypeKey, LibraryFilter.PLAYLISTS)
+    LaunchedEffect(filterType) {
+        if (filterType == LibraryFilter.LIBRARY) filterType = LibraryFilter.PLAYLISTS
+    }
+
     val (disableBlur) = rememberPreference(DisableBlurKey, true)
 
     val database = LocalDatabase.current
@@ -114,15 +119,15 @@ fun LibraryScreen(navController: NavController) {
                     LibraryFilter.PLAYLISTS -> LibraryPlaylistsScreen(navController, filterContent)
                     LibraryFilter.SONGS -> LibrarySongsScreen(
                         navController,
-                        { filterType = LibraryFilter.LIBRARY })
+                        { filterType = LibraryFilter.PLAYLISTS })
 
                     LibraryFilter.ALBUMS -> LibraryAlbumsScreen(
                         navController,
-                        { filterType = LibraryFilter.LIBRARY })
+                        { filterType = LibraryFilter.PLAYLISTS })
 
                     LibraryFilter.ARTISTS -> LibraryArtistsScreen(
                         navController,
-                        { filterType = LibraryFilter.LIBRARY })
+                        { filterType = LibraryFilter.PLAYLISTS })
                 }
             }
         }

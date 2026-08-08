@@ -196,6 +196,50 @@ fun PlayerMenu(
         mutableStateOf(false)
     }
 
+    var showShareOptionsDialog by rememberSaveable { mutableStateOf(false) }
+    var isSharingLoading by rememberSaveable { mutableStateOf(false) }
+
+    ShareOptionsDialog(
+        isVisible = showShareOptionsDialog,
+        onDismiss = { showShareOptionsDialog = false },
+        onShareLink = {
+            val intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${mediaMetadata.id}")
+            }
+            context.startActivity(Intent.createChooser(intent, null))
+        },
+        onInstagramStories = {
+            com.mudassir131.yt.utils.StoryShareHelper.shareToInstagram(
+                context = context,
+                songTitle = mediaMetadata.title,
+                artistName = mediaMetadata.artists.joinToString { it.name },
+                thumbnailUrl = mediaMetadata.thumbnailUrl,
+                fallbackUrl = "https://music.youtube.com/watch?v=${mediaMetadata.id}",
+                coroutineScope = coroutineScope,
+                onLoading = { isSharingLoading = it },
+            )
+        },
+        onSnapchat = {
+            com.mudassir131.yt.utils.StoryShareHelper.shareToSnapchat(
+                context = context,
+                songTitle = mediaMetadata.title,
+                artistName = mediaMetadata.artists.joinToString { it.name },
+                thumbnailUrl = mediaMetadata.thumbnailUrl,
+                fallbackUrl = "https://music.youtube.com/watch?v=${mediaMetadata.id}",
+                coroutineScope = coroutineScope,
+                onLoading = { isSharingLoading = it },
+            )
+        },
+    )
+    LoadingScreen(
+        isVisible = isSharingLoading,
+        value = 0,
+        title = "Creating Story...",
+        indeterminate = true,
+    )
+
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
         onGetSong = { playlist ->
@@ -451,25 +495,14 @@ fun PlayerMenu(
                     NewAction(
                         icon = {
                             Icon(
-                                painter = painterResource(R.drawable.link),
+                                painter = painterResource(R.drawable.share),
                                 contentDescription = null,
                                 modifier = Modifier.size(28.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
-                        text = stringResource(R.string.copy_link),
-                        onClick = {
-                            val clipboard =
-                                context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                            val clip =
-                                android.content.ClipData.newPlainText(
-                                    context.getString(R.string.copy_link),
-                                    "https://music.youtube.com/watch?v=${mediaMetadata.id}",
-                                )
-                            clipboard.setPrimaryClip(clip)
-                            android.widget.Toast.makeText(context, R.string.link_copied, android.widget.Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                        }
+                        text = stringResource(R.string.share),
+                        onClick = { showShareOptionsDialog = true }
                     ),
                     NewAction(
                         icon = {

@@ -156,11 +156,11 @@ fun NavGraphBuilder.navigationBuilder(
         ),
         // Search owns one authoritative header. Keeping the discovery destination composed during
         // a cross-fade leaves its tabs visible behind the submitted-query field, so search state
-        // transitions are atomic while all other navigation transitions remain unchanged.
-        enterTransition = { EnterTransition.None },
-        exitTransition = { ExitTransition.None },
-        popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None },
+        // transitions now use one lightweight horizontal motion instead of an abrupt swap.
+        enterTransition = { slideInHorizontally(tween(280)) { it / 3 } + fadeIn(tween(160)) },
+        exitTransition = { fadeOut(tween(120)) },
+        popEnterTransition = { fadeIn(tween(140)) },
+        popExitTransition = { slideOutHorizontally(tween(260)) { it / 3 } + fadeOut(tween(160)) },
     ) {
         OnlineSearchResult(navController)
     }

@@ -267,7 +267,7 @@ fun AppearanceSettings(
 
     val (defaultChip, onDefaultChipChange) = rememberEnumPreference(
         key = ChipSortTypeKey,
-        defaultValue = LibraryFilter.LIBRARY
+        defaultValue = LibraryFilter.PLAYLISTS
     )
 
     var showSliderOptionDialog by rememberSaveable {

@@ -1,12 +1,17 @@
 package com.mudassir131.yt.ui.appleplayer.lyrics
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -17,23 +22,30 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mudassir131.yt.LocalPlayerConnection
+import com.mudassir131.yt.ui.component.VeluneLoader
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlin.math.abs
 
 private const val ManualFollowDelayMs = 3_500L
 private const val LargeSeekDistance = 8
+private val AppleLyricsEasing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)
 
 @Composable
 fun AppleLyricsView(
@@ -45,13 +57,48 @@ fun AppleLyricsView(
 ) {
     if (loading || result == null) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(if (loading) "Loading lyrics…" else "Lyrics unavailable", color = Color.White.copy(alpha = .7f))
+            if (loading) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    VeluneLoader(size = 52.dp, color = Color.White)
+                    Spacer(Modifier.height(18.dp))
+                    Text(
+                        text = "Loading lyrics…",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = .82f),
+                    )
+                }
+            } else {
+                Text("Lyrics unavailable", color = Color.White.copy(alpha = .7f))
+            }
         }
         return
     }
 
     val lines = result.lines
-    val activeIndex = remember(lines, positionMs) { lines.activeLineIndex(positionMs) }
+    val playerConnection = LocalPlayerConnection.current
+    val latestExternalPosition by rememberUpdatedState(positionMs)
+    var fluidPositionMs by remember(result.raw) { mutableLongStateOf(positionMs) }
+
+    // Keep lyric animation frame-accurate without recomposing the whole Apple player per frame.
+    // A large difference indicates that the user is actively scrubbing.
+    LaunchedEffect(result.raw, result.isLineSynced, playerConnection) {
+        if (!result.isLineSynced) return@LaunchedEffect
+        while (isActive) {
+            val external = latestExternalPosition
+            val playerPosition = playerConnection?.player?.currentPosition
+            fluidPositionMs = if (playerPosition != null && abs(external - playerPosition) < 1_000L) {
+                playerPosition + 150L
+            } else {
+                external
+            }
+            delay(16L)
+        }
+    }
+
+    val renderedPositionMs = if (result.isLineSynced) fluidPositionMs else positionMs
+    val activeIndex = remember(lines, renderedPositionMs) {
+        lines.activeLineIndex(renderedPositionMs)
+    }
     val listState = rememberLazyListState()
     val isUserDragging by listState.interactionSource.collectIsDraggedAsState()
     val focusOffsetPx = with(LocalDensity.current) { 120.dp.roundToPx() }
@@ -94,7 +141,7 @@ fun AppleLyricsView(
                 AppleLyricLine(
                     line = line,
                     active = active,
-                    activePositionMs = positionMs.takeIf { active },
+                    activePositionMs = renderedPositionMs.takeIf { active },
                     onClick = line.startMs?.let { start ->
                         {
                             autoFollow = true
@@ -129,9 +176,15 @@ private fun AppleLyricLine(
 ) {
     val color by animateColorAsState(
         targetValue = if (active) Color.White else Color.White.copy(alpha = .38f),
-        animationSpec = tween(220),
+        animationSpec = tween(260, easing = AppleLyricsEasing),
         label = "lyric-emphasis",
     )
+    val emphasis by animateFloatAsState(
+        targetValue = if (active) 1f else .985f,
+        animationSpec = tween(280, easing = AppleLyricsEasing),
+        label = "lyric-scale",
+    )
+
     Text(
         text = remember(line, activePositionMs) {
             buildAnnotatedString {
@@ -162,7 +215,12 @@ private fun AppleLyricLine(
         fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
         modifier = Modifier
             .padding(vertical = 12.dp)
-            .let { base -> if (onClick != null) base.clickable(onClick = onClick) else base },
+            .let { base -> if (onClick != null) base.clickable(onClick = onClick) else base }
+            .graphicsLayer {
+                scaleX = emphasis
+                scaleY = emphasis
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, .5f)
+            }
     )
 }
 
