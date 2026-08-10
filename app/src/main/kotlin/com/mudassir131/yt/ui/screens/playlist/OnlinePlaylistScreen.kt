@@ -19,11 +19,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -457,8 +459,15 @@ fun OnlinePlaylistScreen(
 
         LazyColumn(
             state = lazyListState,
-            contentPadding =
-                LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime).asPaddingValues(),
+            contentPadding = (
+                if (!isSearching) {
+                    LocalPlayerAwareWindowInsets.current.only(
+                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+                    )
+                } else {
+                    LocalPlayerAwareWindowInsets.current
+                }
+            ).union(WindowInsets.ime).asPaddingValues(),
         ) {
             playlist.let { playlist ->
                 if (isLoading) {
@@ -467,15 +476,14 @@ fun OnlinePlaylistScreen(
                         ShimmerHost {
                             Column(
                                 modifier =
-                                    Modifier.fillMaxWidth()
-                                        .padding(top = systemBarsTopPadding + AppBarHeight),
+                                    Modifier.fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 // Playlist art placeholder
                                 Box(
                                     modifier =
-                                        Modifier.padding(top = 8.dp, bottom = 20.dp)
-                                            .size(240.dp)
+                                        Modifier.fillMaxWidth()
+                                            .height(340.dp)
                                             .shimmer()
                                             .clip(RoundedCornerShape(16.dp))
                                             .background(MaterialTheme.colorScheme.onSurface)
@@ -550,45 +558,45 @@ fun OnlinePlaylistScreen(
                             Column(
                                 modifier =
                                     Modifier.fillMaxWidth()
-                                        .padding(top = systemBarsTopPadding + AppBarHeight)
                                         .animateItem(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // Playlist Thumbnail - Large centered with shadow
-                                Box(modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)) {
-                                    Surface(
-                                        modifier =
-                                            Modifier.size(240.dp)
-                                                .shadow(
-                                                    elevation = 24.dp,
-                                                    shape = RoundedCornerShape(16.dp),
-                                                    spotColor =
-                                                        gradientColors
-                                                            .getOrNull(0)
-                                                            ?.copy(alpha = 0.5f)
-                                                            ?: MaterialTheme.colorScheme.primary
-                                                                .copy(alpha = 0.3f)
-                                                ),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ) {
-                                        AsyncImage(
-                                            model = playlist.thumbnail,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    }
+                                // Full-width artwork hero shared by all synced/public playlists.
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(360.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = playlist.thumbnail,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        Color.Transparent,
+                                                        surfaceColor.copy(alpha = 0.12f),
+                                                        surfaceColor
+                                                    ),
+                                                    startY = 150f
+                                                )
+                                            )
+                                    )
                                 }
-
                                 // Playlist Title
                                 Text(
                                     text = playlist.title,
-                                    style = MaterialTheme.typography.headlineSmall,
+                                    style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center,
+                                    textAlign = TextAlign.Start,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 32.dp)
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
                                 )
 
                                 // Author (Clickable)
@@ -621,8 +629,8 @@ fun OnlinePlaylistScreen(
                                                     }
                                                 }
                                             },
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(horizontal = 32.dp)
+                                        textAlign = TextAlign.Start,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
                                     )
                                 }
 
@@ -746,9 +754,14 @@ fun OnlinePlaylistScreen(
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.shuffle),
-                                                contentDescription =
-                                                    stringResource(R.string.shuffle),
-                                                modifier = Modifier.size(24.dp)
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(Modifier.width(7.dp))
+                                            Text(
+                                                text = stringResource(R.string.shuffle),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
                                             )
                                         }
                                     }
@@ -766,8 +779,14 @@ fun OnlinePlaylistScreen(
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.radio),
-                                                contentDescription = stringResource(R.string.radio),
-                                                modifier = Modifier.size(24.dp)
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(Modifier.width(7.dp))
+                                            Text(
+                                                text = stringResource(R.string.radio),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
                                             )
                                         }
                                     }
@@ -825,8 +844,14 @@ fun OnlinePlaylistScreen(
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.mix),
-                                            contentDescription = "Start Mix",
-                                            modifier = Modifier.size(24.dp)
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = "Start Mix",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
                                         )
                                     }
                                 }
@@ -853,6 +878,20 @@ fun OnlinePlaylistScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                        }
+                    }
+
+                    if (!isSearching && wrappedSongs.isNotEmpty()) {
+                        item(key = "top_songs_heading") {
+                            Text(
+                                text = stringResource(R.string.top_songs),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                            )
                         }
                     }
 

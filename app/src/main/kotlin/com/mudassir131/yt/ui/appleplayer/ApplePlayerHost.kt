@@ -64,6 +64,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -393,7 +394,11 @@ fun ApplePlayerHost(
     }
 
     if (showAudioOutput) {
-        AppleAudioOutputSheet(onDismiss = { showAudioOutput = false })
+        AppleAudioOutputSheet(
+            artworkId = metadata?.id,
+            artworkUrl = metadata?.thumbnailUrl,
+            onDismiss = { showAudioOutput = false },
+        )
     }
 
     if (showSleepTimer) {
@@ -808,18 +813,20 @@ private fun AppleMusicBackdrop(
         if (backgroundStyle == ApplePlayerBackgroundStyle.SOLID) {
             Box(Modifier.fillMaxSize().background(Color(0xFF202023)))
         } else if (backgroundStyle == ApplePlayerBackgroundStyle.APPLE_MUSIC) {
-            AsyncImage(
-                model = blurArtworkRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                onSuccess = { blurArtworkReady = true },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (blurArtworkReady) Modifier.blur(150.dp)
-                        else Modifier.alpha(0f),
-                    ),
-            )
+            key(metadata?.id, blurArtworkUrl, blurArtworkReady) {
+                AsyncImage(
+                    model = blurArtworkRequest,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    onSuccess = { blurArtworkReady = true },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (blurArtworkReady) Modifier.blur(150.dp)
+                            else Modifier.alpha(0f),
+                        ),
+                )
+            }
         }
 
         if (backgroundStyle != ApplePlayerBackgroundStyle.SOLID) {

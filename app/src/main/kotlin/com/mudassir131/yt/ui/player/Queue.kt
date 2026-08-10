@@ -730,8 +730,16 @@ fun Queue(
                                     modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .then(
-                                            if (isGlassActive) Modifier else Modifier.background(backgroundColor)
+                                        .padding(horizontal = 12.dp, vertical = 3.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(
+                                            if (isActive) {
+                                                MaterialTheme.colorScheme.secondaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(
+                                                    alpha = if (isGlassActive) 0.78f else 1f
+                                                )
+                                            }
                                         )
                                         .combinedClickable(
                                             onClick = {
@@ -856,6 +864,9 @@ fun Queue(
                                 modifier =
                                 Modifier
                                     .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 3.dp)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                     .combinedClickable(
                                         onClick = {},
                                         onLongClick = {

@@ -1,35 +1,54 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
  * Licensed Under GPL-3.0
  */
-
 package com.mudassir131.yt.ui.screens.settings
 
-import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.mudassir131.yt.BuildConfig
@@ -48,6 +67,12 @@ fun AboutScreen(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val installDate = try {
+        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(packageInfo.firstInstallTime))
+    } catch (_: Exception) {
+        "Unknown"
+    }
 
     Scaffold(
         topBar = {
@@ -59,332 +84,473 @@ fun AboutScreen(
                         onLongClick = navController::backToMain,
                     ) {
                         Icon(
-                            painterResource(R.drawable.arrow_back),
-                            contentDescription = null,
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = "Back",
                         )
                     }
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
                 .windowInsetsPadding(
                     LocalPlayerAwareWindowInsets.current.only(
-                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
-                    )
+                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                    ),
                 ),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            item { AboutAppCard() }
+
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f))
-                        .padding(vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    // Title
-                    Text(
-                        text = "NOCTURNE",
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp,
-                    )
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // Version Badge
-                    Row(
-                        modifier = Modifier
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                                shape = CircleShape
-                            )
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.info),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "${BuildConfig.VERSION_NAME} • ${if (BuildConfig.DEBUG) "DEBUG" else "STABLE"}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(24.dp))
+                DeveloperCard(
+                    onGitHub = { uriHandler.openUri("https://github.com/mudassir131-dev") },
+                    onWebsite = { uriHandler.openUri("https://nocturne-music.vercel.app") },
+                    onTelegram = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
+                    onSupport = { launchUpiPayment(context, "touseefparay7-1@okicici", "Mudassir") },
+                )
             }
 
-            // --- DEVELOPER SECTION ---
+            item { AboutSectionTitle("Contributors") }
             item {
-                SectionTitle("DEVELOPER")
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
-                    iconUrl = "https://github.com/mudassir131-dev.png",
-                    title = "Mudassir",
-                    subtitle = "App Developer",
-                    onClick = { uriHandler.openUri("https://github.com/mudassir131-dev") }
+                ContributorCard(
+                    imageUrl = "https://avatars.githubusercontent.com/u/107134739?v=4",
+                    title = "Archivetune — by koiverse",
+                    subtitle = "Base framework",
+                    onClick = { uriHandler.openUri("https://github.com/koiverse/ArchiveTune") },
                 )
-                Spacer(Modifier.height(24.dp))
             }
-
-            // --- INSPIRATION SECTION ---
             item {
-                SectionTitle("INSPIRATION")
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
-                    iconUrl = "https://avatars.githubusercontent.com/u/107134739?v=4", 
-                    title = "Archivetune   -by koiverse",
-                    subtitle = "Base Framework",
-                    onClick = { uriHandler.openUri("https://github.com/koiverse/ArchiveTune") }
-                )
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
-                    iconUrl = "https://avatars.githubusercontent.com/u/80542861?v=4",
+                ContributorCard(
+                    imageUrl = "https://avatars.githubusercontent.com/u/80542861?v=4",
                     title = "MO AGAMY",
-                    subtitle = "Metrolist Dev",
-                    onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") }
+                    subtitle = "Metrolist developer",
+                    onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") },
                 )
-                Spacer(Modifier.height(24.dp))
             }
 
-            // --- COMMUNITY SECTION ---
+            item { AboutSectionTitle("Community & Info") }
             item {
-                SectionTitle("COMMUNITY")
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
+                AboutLinkCard(
                     iconRes = R.drawable.github,
                     title = "GitHub Repository",
                     subtitle = "View source code",
-                    onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") }
+                    onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") },
                 )
-                Spacer(Modifier.height(24.dp))
-
-                AboutItemCard(
+            }
+            item {
+                AboutLinkCard(
                     iconRes = R.drawable.telegram,
                     title = "Telegram Server",
-                    subtitle = "Join the community to chat and report bugs",
-                    onClick = { uriHandler.openUri("https://t.me/NocturneOfficial7")}
+                    subtitle = "Chat with the community and report bugs",
+                    onClick = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
                 )
-                Spacer(Modifier.height(24.dp))
-
-                SupportDeveloperCard()
-
-                Spacer(Modifier.height(24.dp))
+            }
+            item {
+                AboutLinkCard(
+                    iconRes = R.drawable.website,
+                    title = "Nocturne Website",
+                    subtitle = "Visit the official website",
+                    onClick = { uriHandler.openUri("https://nocturne-music.vercel.app") },
+                )
             }
 
-
-            // --- APP INFO SECTION ---
+            item { AboutSectionTitle("App Info") }
             item {
-                SectionTitle("APP INFO")
-                Spacer(Modifier.height(8.dp))
-                val installDate = try {
-                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(packageInfo.firstInstallTime))
-                } catch (e: Exception) {
-                    "Unknown"
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column {
+                        AppInfoRow("Installed", installDate)
+                        AppInfoRow("Version code", BuildConfig.VERSION_CODE.toString())
+                        AppInfoRow(
+                            title = "License",
+                            value = "GNU GPL v3.0",
+                            onClick = { uriHandler.openUri("https://www.gnu.org/licenses/gpl-3.0.html") },
+                        )
+                    }
                 }
+            }
 
-                AboutItemCard(
-                    iconRes = R.drawable.storage,
-                    title = "Installed Date",
-                    subtitle = installDate,
-                    onClick = null
+            item { SolidarityFooter() }
+            item { Spacer(Modifier.height(20.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun AboutAppCard() {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    Surface(
+        shape = RoundedCornerShape(30.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.size(76.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(
+                            if (isDark) R.drawable.ic_nocturne_logo_dark_trans
+                            else R.drawable.ic_nocturne_logo_light_trans,
+                        ),
+                        contentDescription = "Nocturne",
+                        modifier = Modifier.size(54.dp),
+                    )
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Nocturne",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
                 )
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
-                    iconRes = R.drawable.info, 
-                    title = "Version code",
-                    subtitle = "${BuildConfig.VERSION_CODE}",
-                    onClick = null
-                )
-                Spacer(Modifier.height(8.dp))
-                AboutItemCard(
-                    iconRes = R.drawable.security, 
-                    title = "GNU General Public License v3.0",
-                    subtitle = "GPL-3.0 • Free Open Source Software",
-                    onClick = { uriHandler.openUri("https://www.gnu.org/licenses/gpl-3.0.html") }
-                )
-                
-                Spacer(Modifier.height(32.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AboutBadge(BuildConfig.VERSION_NAME)
+                    AboutBadge(if (BuildConfig.DEBUG) "DEBUG" else "STABLE")
+                }
             }
         }
     }
 }
 
 @Composable
-fun SectionTitle(title: String) {
+private fun AboutBadge(text: String) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}
+
+@Composable
+private fun DeveloperCard(
+    onGitHub: () -> Unit,
+    onWebsite: () -> Unit,
+    onTelegram: () -> Unit,
+    onSupport: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(30.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.developer_mudassir),
+                    contentDescription = "Mudassir",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(92.dp)
+                        .clip(RoundedCornerShape(28.dp)),
+                )
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = "Mudassir",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Lead developer",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                AboutIconAction(R.drawable.website, "Website", onWebsite, Modifier.weight(1f))
+                AboutIconAction(R.drawable.github, "GitHub", onGitHub, Modifier.weight(1f))
+                AboutIconAction(R.drawable.telegram, "Telegram", onTelegram, Modifier.weight(1f))
+            }
+
+            Button(
+                onClick = onSupport,
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.favorite),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text("Support the developer", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AboutIconAction(
+    iconRes: Int,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(52.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = label,
+                modifier = Modifier.size(21.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AboutSectionTitle(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        letterSpacing = 1.sp
+        modifier = Modifier.padding(top = 10.dp, start = 4.dp),
     )
 }
 
 @Composable
-fun AboutItemCard(
-    iconUrl: String? = null,
-    iconRes: Int? = null,
+private fun ContributorCard(
+    imageUrl: String,
     title: String,
     subtitle: String,
-    onClick: (() -> Unit)?
+    onClick: () -> Unit,
 ) {
-    val modifier = if (onClick != null) {
-        Modifier.clickable(onClick = onClick)
-    } else {
-        Modifier
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier)
-            .padding(vertical = 12.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        if (iconUrl != null) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             AsyncImage(
-                model = iconUrl,
+                model = imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
-        } else if (iconRes != null) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+            Icon(
+                painter = painterResource(R.drawable.github),
+                contentDescription = "GitHub",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
             )
         }
-    }
-}
-fun launchUpiPayment(context: android.content.Context, upiId: String, payeeName: String) {
-    val note = "Support for Nocturne"
-    val uriString = "upi://pay?pa=$upiId&pn=${android.net.Uri.encode(payeeName)}&tn=${android.net.Uri.encode(note)}&cu=INR"
-    val uri = android.net.Uri.parse(uriString)
-    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
-
-    val chooser = android.content.Intent.createChooser(intent, "Pay with...")
-
-    try {
-        context.startActivity(chooser)
-    } catch (e: android.content.ActivityNotFoundException) {
-        android.widget.Toast.makeText(context, "No UPI app found on this device.", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
 
 @Composable
-fun SupportDeveloperCard(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val myUpiId = "touseefparay7-1@okicici"
-    val myName = "Mudassir"
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
-        ),
-        shape = RoundedCornerShape(16.dp)
+private fun AboutLinkCard(
+    iconRes: Int,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(52.dp),
             ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "Support the Developer",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "If you enjoy Nocturne, consider buying me a chai!",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Icon(
+                painter = painterResource(R.drawable.navigate_next),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.width(16.dp))
+@Composable
+private fun AppInfoRow(
+    title: String,
+    value: String,
+    onClick: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null, onClick = onClick ?: {})
+            .padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+        )
+    }
+}
 
-            Button(
-                onClick = { launchUpiPayment(context, myUpiId, myName) },
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(36.dp)
+@Composable
+private fun SolidarityFooter() {
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "This Project stands with",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
             ) {
-                Icon(
-                    painter = painterResource(id = android.R.drawable.ic_menu_send),
-                    contentDescription = "UPI",
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
+                FlagLabel(R.drawable.ic_flag_palestine, "Palestine")
                 Text(
-                    text = "UPI",
-                    style = MaterialTheme.typography.labelLarge
+                    text = "and",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 10.dp),
                 )
+                FlagLabel(R.drawable.ic_flag_kashmir, "Kashmir")
             }
         }
     }
 }
 
+@Composable
+private fun FlagLabel(flagRes: Int, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Image(
+            painter = painterResource(flagRes),
+            contentDescription = "$label flag",
+            modifier = Modifier
+                .size(width = 36.dp, height = 24.dp)
+                .clip(RoundedCornerShape(4.dp)),
+        )
+        Spacer(Modifier.width(7.dp))
+        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+fun launchUpiPayment(context: android.content.Context, upiId: String, payeeName: String) {
+    val note = "Support for Nocturne"
+    val uriString =
+        "upi://pay?pa=$upiId&pn=${android.net.Uri.encode(payeeName)}&tn=${android.net.Uri.encode(note)}&cu=INR"
+    val intent = android.content.Intent(
+        android.content.Intent.ACTION_VIEW,
+        android.net.Uri.parse(uriString),
+    )
+    val chooser = android.content.Intent.createChooser(intent, "Pay with...")
+    try {
+        context.startActivity(chooser)
+    } catch (_: android.content.ActivityNotFoundException) {
+        android.widget.Toast.makeText(
+            context,
+            "No UPI app found on this device.",
+            android.widget.Toast.LENGTH_SHORT,
+        ).show()
+    }
+}

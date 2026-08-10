@@ -508,7 +508,6 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            var showSplashScreen by remember { mutableStateOf(true) }
             var latestReleaseInfo by remember { mutableStateOf<com.mudassir131.yt.utils.ReleaseInfo?>(null) }
             var showUpdateDialog by remember { mutableStateOf(false) }
             var showWelcomeUpdateDialog by remember { mutableStateOf(false) }
@@ -521,7 +520,6 @@ class MainActivity : ComponentActivity() {
             var onboardingCompletedThisSession by rememberSaveable { mutableStateOf(false) }
             val hasCompletedOnboarding =
                 persistedOnboardingComplete == true || onboardingCompletedThisSession
-
             val notificationPermissionLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                     if (isGranted) {
@@ -757,7 +755,6 @@ class MainActivity : ComponentActivity() {
                                         prefs[HasCompletedOnboardingKey] = true
                                     }
                                 }
-                                showSplashScreen = false
                                 onboardingCompletedThisSession = true
                             },
                         )
@@ -1686,9 +1683,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        if (showSplashScreen) {
-                            SplashScreen(onDismiss = { showSplashScreen = false })
-                        }
                     }
 
                     LaunchedEffect(shouldShowSearchBar, openSearchImmediately) {
@@ -1889,135 +1883,6 @@ val LocalPlayerAwareWindowInsets =
     compositionLocalOf<WindowInsets> { error("No WindowInsets provided") }
 val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No DownloadUtil provided") }
 val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }
-
-@Composable
-fun SplashScreen(
-    onDismiss: () -> Unit
-) {
-    val duration = 2200L
-    LaunchedEffect(Unit) {
-        delay(duration)
-        onDismiss()
-    }
-
-    val scale = remember { Animatable(0.3f) }
-    val alpha = remember { Animatable(0f) }
-    val textAlpha = remember { Animatable(0f) }
-    val textOffsetY = remember { Animatable(20f) }
-
-    LaunchedEffect(Unit) {
-        // Premium staggered animations
-        launch {
-            scale.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            )
-        }
-        launch {
-            alpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = 800,
-                    easing = androidx.compose.animation.core.FastOutSlowInEasing
-                )
-            )
-        }
-        launch {
-            delay(300)
-            textAlpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 1000)
-            )
-        }
-        launch {
-            delay(300)
-            textOffsetY.animateTo(
-                targetValue = 0f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            )
-        }
-    }
-
-    val isSystemInDarkTheme = isSystemInDarkTheme()
-    val backgroundColor = if (isSystemInDarkTheme) Color.Black else Color.White
-    val tintColor = if (isSystemInDarkTheme) Color.White else Color.Black
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
-        ) {
-            Image(
-                painter = painterResource(id = if (isSystemInDarkTheme) R.drawable.ic_nocturne_logo_dark_trans else R.drawable.ic_nocturne_logo_light_trans),
-                contentDescription = "Nocturne Logo",
-                modifier = Modifier
-                    .size(130.dp)
-                    .graphicsLayer(
-                        scaleX = scale.value,
-                        scaleY = scale.value,
-                        alpha = alpha.value
-                    )
-            )
-            
-            Spacer(modifier = Modifier.height(28.dp))
-            
-            // App Name
-            Text(
-                text = "NOCTURNE",
-                color = tintColor,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 4.sp,
-                modifier = Modifier
-                    .graphicsLayer(
-                        alpha = textAlpha.value,
-                        translationY = textOffsetY.value
-                    )
-            )
-        }
-        
-        // Footer: M Labs Logo & Name
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 60.dp)
-                .graphicsLayer(
-                    alpha = textAlpha.value,
-                    translationY = textOffsetY.value
-                )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_m_labs),
-                    contentDescription = "M Labs Logo",
-                    colorFilter = ColorFilter.tint(tintColor),
-                    modifier = Modifier.size(28.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "M Labs",
-                    color = tintColor,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 1.sp
-                )
-            }
-        }
-    }
-}
 
 private fun compareVersion(version1: String, version2: String): Int {
     return com.mudassir131.yt.utils.compareSemanticVersions(version1, version2)

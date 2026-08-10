@@ -119,6 +119,7 @@ fun VeluneAccountSettingsScreen(
                             AccountSettingsItem(
                                 icon = painterResource(R.drawable.logout),
                                 title = "Logout",
+                                subtitle = "Sign out of the current account",
                                 onClick = { showLogoutDialog = true }
                             )
                         }
@@ -126,6 +127,7 @@ fun VeluneAccountSettingsScreen(
                             AccountSettingsItem(
                                 icon = painterResource(R.drawable.login),
                                 title = "Login",
+                                subtitle = "Sign in to YouTube Music",
                                 onClick = { navController.navigate("login") }
                             )
                         }
@@ -143,6 +145,7 @@ fun VeluneAccountSettingsScreen(
                 AccountSettingsItem(
                     icon = painterResource(R.drawable.token),
                     title = "Login with token",
+                    subtitle = "Use an advanced login token",
                     onClick = { showTokenEditor = true }
                 )
             }
@@ -150,6 +153,7 @@ fun VeluneAccountSettingsScreen(
                 AccountSettingsItem(
                     icon = painterResource(R.drawable.security),
                     title = "PO Token Generation",
+                    subtitle = "Generate playback tokens",
                     onClick = { navController.navigate("settings/po_token") }
                 )
             }
@@ -162,6 +166,7 @@ fun VeluneAccountSettingsScreen(
                 AccountSettingsItem(
                     icon = painterResource(R.drawable.integration),
                     title = "Integrations",
+                    subtitle = "Manage connected services",
                     onClick = { navController.navigate("settings/integration") }
                 )
             }
@@ -169,6 +174,7 @@ fun VeluneAccountSettingsScreen(
                 AccountSettingsItem(
                     icon = painterResource(R.drawable.sync),
                     title = "Select playlist to sync",
+                    subtitle = "Choose playlists for library sync",
                     onClick = { showPlaylistDialog = true }
                 )
             }
@@ -231,11 +237,10 @@ fun VeluneAccountSettingsScreen(
 private fun AccountSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.Normal,
-        letterSpacing = 0.5.sp,
-        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp, top = 24.dp)
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp, top = 22.dp),
     )
 }
 
@@ -243,31 +248,53 @@ private fun AccountSectionHeader(title: String) {
 private fun AccountSettingsItem(
     icon: Painter,
     title: String,
-    onClick: () -> Unit
+    subtitle: String? = null,
+    onClick: () -> Unit,
 ) {
-    Row(
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 20.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp),
     ) {
-        Icon(
-            painter = icon,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.width(20.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(52.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(25.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
-
 @Composable
 private fun TokenEditorDialog(
     innerTubeCookie: String,

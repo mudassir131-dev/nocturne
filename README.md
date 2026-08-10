@@ -164,8 +164,8 @@ Download signed production builds from the official [GitHub Releases](https://gi
 
 | APK | Recommended for |
 | --- | --- |
-| `Nocturne-V2.22.03.21-arm64-v8a-release.apk` | Most modern Android phones and tablets. Smaller download. |
-| `Nocturne-V2.22.03.21-universal-release.apk` | Unknown CPU architecture or broader compatibility. |
+| `Nocturne-V2.22.21-arm64-v8a-release.apk` | Most modern Android phones and tablets. Smaller download. |
+| `Nocturne-V2.22.21-universal-release.apk` | Unknown CPU architecture or broader compatibility. |
 
 Current package ID: `com.mudassir131.nocturne`
 
@@ -181,11 +181,11 @@ Current package ID: `com.mudassir131.nocturne`
 Production releases include `SHA256SUMS.txt`. Compare the downloaded APK against that file when integrity verification is required.
 
 ```powershell
-Get-FileHash .\Nocturne-V2.22.03.21-universal-release.apk -Algorithm SHA256
+Get-FileHash .\Nocturne-V2.22.21-universal-release.apk -Algorithm SHA256
 ```
 
 ```bash
-sha256sum Nocturne-V2.22.03.21-universal-release.apk
+sha256sum Nocturne-V2.22.21-universal-release.apk
 ```
 
 > [!NOTE]

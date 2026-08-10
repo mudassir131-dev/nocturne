@@ -41,7 +41,6 @@ import com.mudassir131.yt.ui.component.ChipsRow
 import com.mudassir131.yt.ui.component.TagsFilterChips
 import com.mudassir131.yt.ui.component.RootScreenHeader
 import com.mudassir131.yt.ui.component.AnimatedHeaderAction
-import com.mudassir131.yt.ui.component.AutoHidingRootScaffold
 import com.mudassir131.yt.ui.component.NocturneDynamicScreen
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
@@ -96,24 +95,29 @@ fun LibraryScreen(navController: NavController) {
     }
 
     NocturneDynamicScreen(disableBlur = disableBlur) {
-        AutoHidingRootScaffold(
-            header = {
-                Column(Modifier.fillMaxWidth()) {
-                    RootScreenHeader(
-                        title = stringResource(R.string.filter_library),
-                        action = {
-                            AnimatedHeaderAction(
-                                icon = R.drawable.settings,
-                                contentDescription = "Settings",
-                                onClick = { navController.navigate("settings") },
-                            )
-                        },
-                    )
-                    primaryFilters()
-                }
-            },
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxWidth()) {
+                RootScreenHeader(
+                    title = stringResource(R.string.filter_library),
+                    action = {
+                        AnimatedHeaderAction(
+                            icon = R.drawable.settings,
+                            contentDescription = "Settings",
+                            onClick = { navController.navigate("settings") },
+                        )
+                    },
+                )
+                primaryFilters()
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
                 when (filterType) {
                     LibraryFilter.LIBRARY -> LibraryMixScreen(navController, filterContent)
                     LibraryFilter.PLAYLISTS -> LibraryPlaylistsScreen(navController, filterContent)

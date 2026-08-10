@@ -209,16 +209,17 @@ fun AutoHidingRootScaffold(
         val visibleHeaderHeight =
             (headerPlaceable.height + state.offsetPx.roundToInt())
                 .coerceIn(0, headerPlaceable.height)
+        val safeContentTop = maxOf(visibleHeaderHeight, with(density) { statusBarHeight.roundToPx() })
         val contentPlaceable = measurables[1].measure(
             constraints.copy(
                 minHeight = 0,
-                maxHeight = (constraints.maxHeight - visibleHeaderHeight).coerceAtLeast(0),
+                maxHeight = (constraints.maxHeight - safeContentTop).coerceAtLeast(0),
             ),
         )
 
         layout(constraints.maxWidth, constraints.maxHeight) {
             headerPlaceable.placeRelative(0, state.offsetPx.roundToInt())
-            contentPlaceable.placeRelative(0, visibleHeaderHeight)
+            contentPlaceable.placeRelative(0, safeContentTop)
         }
     }
 }

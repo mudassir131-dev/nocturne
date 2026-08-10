@@ -8,6 +8,8 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,25 +44,101 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.AudioQuality
 import com.mudassir131.yt.constants.AudioQualityKey
 import com.mudassir131.yt.ui.component.SystemMediaVolumeSlider
+import com.mudassir131.yt.ui.theme.extractThemeColor
 import com.mudassir131.yt.utils.rememberEnumPreference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.math.max
 
 private val AudioSheetBackground = Color(0xFF101318)
 private val AudioSheetSurface = Color(0xFF1A1E25)
 private val AudioSheetAccent = Color(0xFFAAC7F5)
 private val AudioSheetAccentContainer = Color(0xFF405E83)
 
+private data class AppleAudioSheetPalette(
+    val background: Color = AudioSheetBackground,
+    val surface: Color = AudioSheetSurface,
+    val accent: Color = AudioSheetAccent,
+    val accentContainer: Color = AudioSheetAccentContainer,
+    val onAccent: Color = Color(0xFF1B2F4A),
+)
+
+private fun Color.toAppleAudioSheetPalette(): AppleAudioSheetPalette {
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(toArgb(), hsv)
+    val sourceSaturation = max(hsv[1], 0.38f)
+
+    fun tone(saturation: Float, value: Float): Color {
+        val toned = hsv.copyOf()
+        toned[1] = saturation.coerceIn(0f, 1f)
+        toned[2] = value.coerceIn(0f, 1f)
+        return Color(android.graphics.Color.HSVToColor(toned))
+    }
+
+    val accent = tone(max(sourceSaturation, 0.58f), 0.88f)
+    return AppleAudioSheetPalette(
+        background = tone(sourceSaturation * 0.72f, 0.10f),
+        surface = tone(sourceSaturation * 0.62f, 0.18f),
+        accent = accent,
+        accentContainer = tone(sourceSaturation * 0.84f, 0.40f),
+        onAccent = if (accent.luminance() > 0.46f) Color(0xFF111820) else Color.White,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
+fun AppleAudioOutputSheet(
+    artworkId: String?,
+    artworkUrl: String?,
+    onDismiss: () -> Unit,
+) {
     val context = LocalContext.current
+    var palette by remember(artworkId) { mutableStateOf(AppleAudioSheetPalette()) }
+
+    LaunchedEffect(artworkId, artworkUrl) {
+        palette = AppleAudioSheetPalette()
+        if (!artworkUrl.isNullOrBlank()) {
+            val request = ImageRequest.Builder(context)
+                .data(artworkUrl)
+                .size(200, 200)
+                .allowHardware(false)
+                .build()
+            val bitmap = runCatching {
+                withContext(Dispatchers.IO) {
+                    context.imageLoader.execute(request).image?.toBitmap()
+                }
+            }.getOrNull()
+            palette = bitmap?.extractThemeColor()?.toAppleAudioSheetPalette()
+                ?: AppleAudioSheetPalette()
+        }
+    }
+
+    val themedBackground = MaterialTheme.colorScheme.surface
+    val themedSurface = MaterialTheme.colorScheme.surfaceContainerHighest
+    val themedContent = MaterialTheme.colorScheme.onSurface
+    val backgroundColor by animateColorAsState(themedBackground, tween(280), label = "audioSheetBackground")
+    val surfaceColor by animateColorAsState(themedSurface, tween(280), label = "audioSheetSurface")
+    val accentColor by animateColorAsState(palette.accent, tween(280), label = "audioSheetAccent")
+    val accentContainerColor by animateColorAsState(
+        palette.accentContainer,
+        tween(280),
+        label = "audioSheetAccentContainer",
+    )
+    val onAccentColor by animateColorAsState(palette.onAccent, tween(280), label = "audioSheetOnAccent")
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var outputs by remember { mutableStateOf(audioManager.currentOutputs()) }
     var audioQuality by rememberEnumPreference(AudioQualityKey, AudioQuality.OPUS)
@@ -93,15 +172,15 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = AudioSheetBackground,
-        contentColor = Color.White,
+        containerColor = backgroundColor,
+        contentColor = themedContent,
         dragHandle = {
             Box(
                 Modifier
                     .padding(top = 14.dp, bottom = 20.dp)
                     .size(width = 40.dp, height = 4.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = .52f)),
+                    .background(themedContent.copy(alpha = .52f)),
             )
         },
     ) {
@@ -120,7 +199,7 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
 
             Surface(
                 shape = RoundedCornerShape(30.dp),
-                color = AudioSheetAccentContainer,
+                color = accentContainerColor,
                 contentColor = Color.White,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -157,7 +236,7 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
                         Text(
                             text = "Connected",
                             style = MaterialTheme.typography.labelMedium,
-                            color = AudioSheetAccent,
+                            color = accentColor,
                         )
                     }
                 }
@@ -165,7 +244,7 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
 
             Surface(
                 shape = RoundedCornerShape(30.dp),
-                color = AudioSheetAccentContainer,
+                color = accentContainerColor,
                 contentColor = Color.White,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -185,7 +264,7 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
                     }
                     SystemMediaVolumeSlider(
                         contentColor = Color.White,
-                        activeColor = AudioSheetAccent,
+                        activeColor = accentColor,
                         modifier = Modifier.padding(top = 10.dp),
                     )
                 }
@@ -199,6 +278,9 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
             AppleQualitySelector(
                 selected = audioQuality,
                 onSelected = { audioQuality = it },
+                accentColor = accentColor,
+                surfaceColor = surfaceColor,
+                onAccentColor = onAccentColor,
             )
 
             Text(
@@ -209,6 +291,9 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
             AppleQualitySelector(
                 selected = audioQuality,
                 onSelected = { audioQuality = it },
+                accentColor = accentColor,
+                surfaceColor = surfaceColor,
+                onAccentColor = onAccentColor,
             )
 
             Row(
@@ -218,14 +303,14 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
                 Text(
                     text = if (audioQuality == AudioQuality.OPUS) "Opus enabled" else "Saavn enabled",
                     style = MaterialTheme.typography.labelLarge,
-                    color = AudioSheetAccent,
+                    color = accentColor,
                 )
                 Spacer(Modifier.weight(1f))
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AudioSheetAccent,
-                        contentColor = Color(0xFF1B2F4A),
+                        containerColor = accentColor,
+                        contentColor = onAccentColor,
                     ),
                     shape = RoundedCornerShape(24.dp),
                 ) {
@@ -245,25 +330,32 @@ fun AppleAudioOutputSheet(onDismiss: () -> Unit) {
 private fun AppleQualitySelector(
     selected: AudioQuality,
     onSelected: (AudioQuality) -> Unit,
+    accentColor: Color,
+    surfaceColor: Color,
+    onAccentColor: Color,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(AudioSheetSurface),
+            .background(surfaceColor),
     ) {
         QualityOption(
             text = "Opus",
             selected = selected == AudioQuality.OPUS,
             onClick = { onSelected(AudioQuality.OPUS) },
             modifier = Modifier.weight(1f),
+            accentColor = accentColor,
+            onAccentColor = onAccentColor,
         )
         QualityOption(
             text = "Saavn",
             selected = selected == AudioQuality.SAAVN,
             onClick = { onSelected(AudioQuality.SAAVN) },
             modifier = Modifier.weight(1f),
+            accentColor = accentColor,
+            onAccentColor = onAccentColor,
         )
     }
 }
@@ -274,6 +366,8 @@ private fun QualityOption(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    accentColor: Color,
+    onAccentColor: Color,
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -281,13 +375,13 @@ private fun QualityOption(
             .fillMaxHeight()
             .padding(4.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(if (selected) AudioSheetAccent else Color.Transparent)
+            .background(if (selected) accentColor else Color.Transparent)
             .clickable(onClick = onClick),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.titleLarge,
-            color = if (selected) Color(0xFF1B2F4A) else Color.White.copy(alpha = .68f),
+            color = if (selected) onAccentColor else MaterialTheme.colorScheme.onSurface.copy(alpha = .72f),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }

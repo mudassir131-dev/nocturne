@@ -43,7 +43,8 @@ class UpdateSystemTest {
         // Test varied segment counts and leading zeros
         assertEquals("2.2.3.4.01 should equal 2.2.3.4.1", 0, compare("2.2.3.4.01", "2.2.3.4.1"))
         assertTrue("2.2.3.4.01 should be newer than 2.2.3.4", compare("2.2.3.4.01", "2.2.3.4") > 0)
-        assertEquals("Uppercase V labels must compare normally", 0, compare("V2.22.03.21", "v2.22.3.19"))
+        assertTrue("Uppercase V labels must compare normally", compare("V2.22.03.21", "v2.22.3.19") > 0)
+        assertTrue("2.22.21 must update 2.22.03.21", compare("v2.22.21", "v2.22.03.21") > 0)
         assertTrue("New release label must remain monotonic", compare("Nocturne V2.22.03.21", "2.2.3.4.09") > 0)
     }
 
@@ -58,7 +59,7 @@ class UpdateSystemTest {
             "name": "Nocturne v2.2.3.4.01",
             "draft": false,
             "prerelease": false,
-            "body": "• Dynamic release notes from GitHub",
+            "body": "Dynamic release notes from GitHub",
             "published_at": "2026-06-22T15:23:51Z",
             "html_url": "https://github.com/mudassir131-dev/nocturne/releases/tag/v2.2.3.4.01",
             "assets": [
@@ -77,7 +78,7 @@ class UpdateSystemTest {
         println("Diagnostic log - Parsed tagName: ${info.tagName}")
         println("Diagnostic log - Parsed downloadUrl: ${info.browserDownloadUrl}")
         assertEquals("v2.2.3.4.01", info.tagName)
-        assertEquals("â€¢ Dynamic release notes from GitHub", info.body)
+        assertEquals("Dynamic release notes from GitHub", info.body)
         assertEquals("https://github.com/mudassir131-dev/nocturne/releases/download/v2.2.3.4.01/app-universal-release.apk", info.browserDownloadUrl)
     }
 

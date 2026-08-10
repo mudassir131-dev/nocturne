@@ -4284,10 +4284,10 @@ class MusicService :
     private fun createLoadControl() =
         DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                50_000, // minBufferMs
-                120_000, // maxBufferMs
-                1_500, // bufferForPlaybackMs
-                3_000 // bufferForPlaybackAfterRebufferMs
+                30_000, // minBufferMs
+                90_000, // maxBufferMs
+                500, // bufferForPlaybackMs - start quickly after a tap
+                1_500 // bufferForPlaybackAfterRebufferMs
             )
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
