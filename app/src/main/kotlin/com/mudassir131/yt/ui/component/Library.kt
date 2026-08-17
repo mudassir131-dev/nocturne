@@ -240,9 +240,10 @@ fun LibraryPlaylistListItem(
         }
     }
 
+    val localShape = com.mudassir131.yt.ui.utils.LocalListItemShape.current
     val baseMod = modifier
         .fillMaxWidth()
-        .padding(bottom = 8.dp)
+        .padding(bottom = if (localShape != null) 0.dp else 8.dp)
 
     val openPlaylist: () -> Unit = {
         if (

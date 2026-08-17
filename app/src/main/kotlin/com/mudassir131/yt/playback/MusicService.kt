@@ -178,6 +178,10 @@ import com.mudassir131.yt.constants.ContentFilterMode
 import com.mudassir131.yt.extensions.toEnum
 import com.mudassir131.yt.ui.screens.settings.DiscordPresenceManager
 import com.mudassir131.yt.ui.screens.settings.ListenBrainzManager
+import com.mudassir131.yt.canvas.VeluneCanvas
+import com.mudassir131.yt.ui.player.CanvasArtworkPlaybackCache
+import com.mudassir131.yt.utils.normalizeCanvasSongTitle
+import com.mudassir131.yt.utils.normalizeCanvasArtistName
 import com.mudassir131.yt.utils.CoilBitmapLoader
 import com.mudassir131.yt.utils.DiscordRPC
 import com.mudassir131.yt.utils.NetworkConnectivityObserver
@@ -3398,6 +3402,9 @@ class MusicService :
         lyricsPreloadManager?.onSongChanged(currentIndex, queue)
     }
 
+    prefetchNextTracks(currentIndex)
+
+
     val joined = togetherSessionState.value as? com.mudassir131.yt.together.TogetherSessionState.Joined
     if (joined?.role is com.mudassir131.yt.together.TogetherRole.Guest &&
         reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
@@ -3526,6 +3533,77 @@ class MusicService :
     }
     ensurePresenceManager()
 }
+
+    private fun prefetchNextTracks(currentIndex: Int) {
+        val count = player.mediaItemCount
+        for (i in 1..2) {
+            val nextIndex = currentIndex + i
+            if (nextIndex >= count) break
+            val nextItem = player.getMediaItemAt(nextIndex)
+            val nextMediaId = nextItem.mediaId.trim()
+            if (nextMediaId.isBlank()) continue
+
+            // 1. Prefetch Audio Stream URL
+            if (!playbackUrlCache.containsKey(nextMediaId)) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        YTPlayerUtils.playerResponseForPlayback(
+                            nextMediaId,
+                            audioQuality = audioQuality,
+                            connectivityManager = connectivityManager,
+                            preferredStreamClient = preferredStreamClient,
+                            avoidCodecs = avoidStreamCodecs,
+                        ).onSuccess { nonNullPlayback ->
+                            playbackUrlCache[nextMediaId] =
+                                nonNullPlayback.streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)
+                            Timber.tag("MusicService").i("Prefetched audio stream URL for next track: $nextMediaId")
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag("MusicService").w("Failed to prefetch stream URL for $nextMediaId: ${e.message}")
+                    }
+                }
+            }
+
+            // 2. Prefetch Canvas Animation (only for the immediate next song)
+            if (i == 1 && CanvasArtworkPlaybackCache.get(nextMediaId) == null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val songTitleRaw = nextItem.mediaMetadata.title?.toString()
+                        val artistNameRaw = nextItem.mediaMetadata.artist?.toString()
+                            ?: nextItem.mediaMetadata.subtitle?.toString()
+                            ?: ""
+                        if (!songTitleRaw.isNullOrBlank()) {
+                            val storefront = java.util.Locale.getDefault().country.let { country ->
+                                if (country.length == 2) country.lowercase(java.util.Locale.ROOT) else "us"
+                            }
+                            val songTitle = normalizeCanvasSongTitle(songTitleRaw)
+                            val artistName = normalizeCanvasArtistName(artistNameRaw)
+                            val candidates = linkedSetOf(
+                                songTitle to artistName,
+                                songTitleRaw to artistName,
+                                songTitle to artistNameRaw,
+                                songTitleRaw to artistNameRaw,
+                            ).filter { (song, artist) -> song.isNotBlank() && artist.isNotBlank() }
+
+                            val fetched = candidates.firstNotNullOfOrNull { (song, artist) ->
+                                VeluneCanvas.getBySongArtist(
+                                    song = song,
+                                    artist = artist,
+                                    storefront = storefront,
+                                )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
+                            }
+                            if (fetched != null) {
+                                CanvasArtworkPlaybackCache.put(nextMediaId, fetched)
+                                Timber.tag("MusicService").i("Prefetched Canvas artwork for next track: $nextMediaId")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag("MusicService").w("Failed to prefetch Canvas for $nextMediaId: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
 
     override fun onPlaybackStateChanged(@Player.State playbackState: Int) {
     super.onPlaybackStateChanged(playbackState)

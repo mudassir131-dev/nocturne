@@ -105,6 +105,8 @@ import com.mudassir131.yt.innertube.YouTube
 import com.mudassir131.yt.innertube.models.YouTubeClient
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
+import com.mudassir131.yt.utils.normalizeCanvasSongTitle
+import com.mudassir131.yt.utils.normalizeCanvasArtistName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -771,7 +773,7 @@ private fun CanvasArtworkPlayer(
             )
         }
     val exoPlayer =
-        remember(initial) {
+        remember {
             ExoPlayer.Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
@@ -871,53 +873,11 @@ private fun CanvasArtworkPlayer(
     )
 }
 
-private fun normalizeCanvasSongTitle(raw: String): String {
-    val stripped =
-        raw
-            .replace(Regex("\\s*\\[[^]]*]"), "")
-            .replace(
-                Regex(
-                    "\\s*\\((?:feat\\.?|ft\\.?|featuring|with)\\b[^)]*\\)",
-                    RegexOption.IGNORE_CASE,
-                ),
-                "",
-            )
-            .replace(
-                Regex(
-                    "\\s*\\((?:official\\s*)?(?:music\\s*)?(?:video|mv|lyrics?|audio|visualizer|live|remaster(?:ed)?|version|edit|mix|remix)[^)]*\\)",
-                    RegexOption.IGNORE_CASE,
-                ),
-                "",
-            )
-            .replace(
-                Regex(
-                    "\\s*-\\s*(?:official\\s*)?(?:music\\s*)?(?:video|mv|lyrics?|audio|visualizer|live|remaster(?:ed)?|version|edit|mix|remix)\\b.*$",
-                    RegexOption.IGNORE_CASE,
-                ),
-                "",
-            )
-            .replace(Regex("\\s+"), " ")
-            .trim()
+private fun normalizeCanvasSongTitle(raw: String): String =
+    com.mudassir131.yt.utils.normalizeCanvasSongTitle(raw)
 
-    return stripped
-        .trim('-')
-        .replace(Regex("\\s+"), " ")
-        .trim()
-}
-
-private fun normalizeCanvasArtistName(raw: String): String {
-    val first =
-        raw
-            .split(
-                Regex(
-                    "(?:\\s*,\\s*|\\s*&\\s*|\\s+×\\s+|\\s+x\\s+|\\bfeat\\.?\\b|\\bft\\.?\\b|\\bfeaturing\\b|\\bwith\\b)",
-                    RegexOption.IGNORE_CASE,
-                ),
-                limit = 2,
-            ).firstOrNull().orEmpty()
-
-    return first.replace(Regex("\\s+"), " ").trim()
-}
+private fun normalizeCanvasArtistName(raw: String): String =
+    com.mudassir131.yt.utils.normalizeCanvasArtistName(raw)
 
 /*
  * Copyright (C) OuterTune Project

@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -87,6 +88,8 @@ import com.mudassir131.yt.ui.component.LibraryPlaylistListItem
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.PlaylistGridItem
 import com.mudassir131.yt.ui.component.PlaylistListItem
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.component.SortHeader
 import com.mudassir131.yt.ui.menu.AlbumMenu
 import com.mudassir131.yt.ui.menu.ArtistMenu
@@ -518,10 +521,35 @@ fun LibraryMixScreen(
                                 items = mutableVisiblePlaylists,
                                 key = { _, item -> item.id },
                                 contentType = { _, _ -> CONTENT_TYPE_PLAYLIST },
-                            ) { _, item ->
+                            ) { index, item ->
                                 ReorderableItem(
                                     state = reorderableState,
                                     key = item.id,
+                                ) {
+                                    CompositionLocalProvider(
+                                        LocalListItemShape provides getGroupShape(index, mutableVisiblePlaylists.size)
+                                    ) {
+                                        LibraryPlaylistListItem(
+                                            navController = navController,
+                                            menuState = menuState,
+                                            coroutineScope = coroutineScope,
+                                            playlist = item,
+                                            useNewDesign = useNewLibraryDesign,
+                                            showDragHandle = true,
+                                            dragHandleModifier = Modifier.draggableHandle(),
+                                            modifier = Modifier.animateItem(),
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            itemsIndexed(
+                                items = visiblePlaylists,
+                                key = { _, it -> it.id },
+                                contentType = { _, _ -> CONTENT_TYPE_PLAYLIST },
+                            ) { index, item ->
+                                CompositionLocalProvider(
+                                    LocalListItemShape provides getGroupShape(index, visiblePlaylists.size)
                                 ) {
                                     LibraryPlaylistListItem(
                                         navController = navController,
@@ -529,233 +557,225 @@ fun LibraryMixScreen(
                                         coroutineScope = coroutineScope,
                                         playlist = item,
                                         useNewDesign = useNewLibraryDesign,
-                                        showDragHandle = true,
-                                        dragHandleModifier = Modifier.draggableHandle(),
                                         modifier = Modifier.animateItem(),
                                     )
                                 }
                             }
-                        } else {
-                            items(
-                                items = visiblePlaylists,
-                                key = { it.id },
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) { item ->
-                                LibraryPlaylistListItem(
-                                    navController = navController,
-                                    menuState = menuState,
-                                    coroutineScope = coroutineScope,
-                                    playlist = item,
-                                    useNewDesign = useNewLibraryDesign,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
                         }
 
-                        items(
-                            items = sortedOtherItems.distinctBy { it.id },
-                            key = { it.id },
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) { item ->
-                            when (item) {
-                                is Artist -> {
-                                    ArtistListItem(
-                                        artist = item,
-                                        trailingContent = {
-                                            IconButton(
-                                                onClick = {
-                                                    menuState.show {
-                                                        ArtistMenu(
-                                                            originalArtist = item,
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.more_vert),
-                                                    contentDescription = null,
+                        val distinctOtherItems = sortedOtherItems.distinctBy { it.id }
+                        itemsIndexed(
+                            items = distinctOtherItems,
+                            key = { _, it -> it.id },
+                            contentType = { _, _ -> CONTENT_TYPE_PLAYLIST },
+                        ) { index, item ->
+                            CompositionLocalProvider(
+                                LocalListItemShape provides getGroupShape(index, distinctOtherItems.size)
+                            ) {
+                                when (item) {
+                                    is Artist -> {
+                                        ArtistListItem(
+                                            artist = item,
+                                            trailingContent = {
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            ArtistMenu(
+                                                                originalArtist = item,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.more_vert),
+                                                        contentDescription = null,
+                                                    )
+                                                }
+                                            },
+                                            modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        navController.navigate("artist/${item.id}")
+                                                    },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            ArtistMenu(
+                                                                originalArtist = item,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
                                                 )
-                                            }
-                                        },
-                                        modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .combinedClickable(
-                                                onClick = {
-                                                    navController.navigate("artist/${item.id}")
-                                                },
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    menuState.show {
-                                                        ArtistMenu(
-                                                            originalArtist = item,
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            )
-                                            .animateItem(),
-                                    )
-                                }
+                                                .animateItem(),
+                                        )
+                                    }
 
-                                is Album -> {
-                                    AlbumListItem(
-                                        album = item,
-                                        isActive = item.id == mediaMetadata?.album?.id,
-                                        isPlaying = isPlaying,
-                                        trailingContent = {
-                                            IconButton(
-                                                onClick = {
-                                                    menuState.show {
-                                                        AlbumMenu(
-                                                            originalAlbum = item,
-                                                            navController = navController,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.more_vert),
-                                                    contentDescription = null,
+                                    is Album -> {
+                                        AlbumListItem(
+                                            album = item,
+                                            isActive = item.id == mediaMetadata?.album?.id,
+                                            isPlaying = isPlaying,
+                                            trailingContent = {
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            AlbumMenu(
+                                                                originalAlbum = item,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.more_vert),
+                                                        contentDescription = null,
+                                                    )
+                                                }
+                                            },
+                                            modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        navController.navigate("album/${item.id}")
+                                                    },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            AlbumMenu(
+                                                                originalAlbum = item,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
                                                 )
-                                            }
-                                        },
-                                        modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .combinedClickable(
-                                                onClick = {
-                                                    navController.navigate("album/${item.id}")
-                                                },
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    menuState.show {
-                                                        AlbumMenu(
-                                                            originalAlbum = item,
-                                                            navController = navController,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            )
-                                            .animateItem(),
-                                    )
-                                }
+                                                .animateItem(),
+                                        )
+                                    }
 
-                                else -> {}
+                                    else -> {}
+                                }
                             }
                         }
                     } else {
-                        items(
+                        itemsIndexed(
                             items = allItems,
-                            key = { it.id },
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) { item ->
-                            when (item) {
-                                is Playlist -> {
-                                    LibraryPlaylistListItem(
-                                        navController = navController,
-                                        menuState = menuState,
-                                        coroutineScope = coroutineScope,
-                                        playlist = item,
-                                        useNewDesign = useNewLibraryDesign,
-                                        modifier = Modifier.animateItem(),
-                                    )
-                                }
+                            key = { _, it -> it.id },
+                            contentType = { _, _ -> CONTENT_TYPE_PLAYLIST },
+                        ) { index, item ->
+                            CompositionLocalProvider(
+                                LocalListItemShape provides getGroupShape(index, allItems.size)
+                            ) {
+                                when (item) {
+                                    is Playlist -> {
+                                        LibraryPlaylistListItem(
+                                            navController = navController,
+                                            menuState = menuState,
+                                            coroutineScope = coroutineScope,
+                                            playlist = item,
+                                            useNewDesign = useNewLibraryDesign,
+                                            modifier = Modifier.animateItem(),
+                                        )
+                                    }
 
-                                is Artist -> {
-                                    ArtistListItem(
-                                        artist = item,
-                                        trailingContent = {
-                                            IconButton(
-                                                onClick = {
-                                                    menuState.show {
-                                                        ArtistMenu(
-                                                            originalArtist = item,
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.more_vert),
-                                                    contentDescription = null,
+                                    is Artist -> {
+                                        ArtistListItem(
+                                            artist = item,
+                                            trailingContent = {
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            ArtistMenu(
+                                                                originalArtist = item,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.more_vert),
+                                                        contentDescription = null,
+                                                    )
+                                                }
+                                            },
+                                            modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        navController.navigate("artist/${item.id}")
+                                                    },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            ArtistMenu(
+                                                                originalArtist = item,
+                                                                coroutineScope = coroutineScope,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
                                                 )
-                                            }
-                                        },
-                                        modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .combinedClickable(
-                                                onClick = {
-                                                    navController.navigate("artist/${item.id}")
-                                                },
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    menuState.show {
-                                                        ArtistMenu(
-                                                            originalArtist = item,
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            )
-                                            .animateItem(),
-                                    )
-                                }
+                                                .animateItem(),
+                                        )
+                                    }
 
-                                is Album -> {
-                                    AlbumListItem(
-                                        album = item,
-                                        isActive = item.id == mediaMetadata?.album?.id,
-                                        isPlaying = isPlaying,
-                                        trailingContent = {
-                                            IconButton(
-                                                onClick = {
-                                                    menuState.show {
-                                                        AlbumMenu(
-                                                            originalAlbum = item,
-                                                            navController = navController,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.more_vert),
-                                                    contentDescription = null,
+                                    is Album -> {
+                                        AlbumListItem(
+                                            album = item,
+                                            isActive = item.id == mediaMetadata?.album?.id,
+                                            isPlaying = isPlaying,
+                                            trailingContent = {
+                                                IconButton(
+                                                    onClick = {
+                                                        menuState.show {
+                                                            AlbumMenu(
+                                                                originalAlbum = item,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.more_vert),
+                                                        contentDescription = null,
+                                                    )
+                                                }
+                                            },
+                                            modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        navController.navigate("album/${item.id}")
+                                                    },
+                                                    onLongClick = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        menuState.show {
+                                                            AlbumMenu(
+                                                                originalAlbum = item,
+                                                                navController = navController,
+                                                                onDismiss = menuState::dismiss,
+                                                            )
+                                                        }
+                                                    },
                                                 )
-                                            }
-                                        },
-                                        modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .combinedClickable(
-                                                onClick = {
-                                                    navController.navigate("album/${item.id}")
-                                                },
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    menuState.show {
-                                                        AlbumMenu(
-                                                            originalAlbum = item,
-                                                            navController = navController,
-                                                            onDismiss = menuState::dismiss,
-                                                        )
-                                                    }
-                                                },
-                                            )
-                                            .animateItem(),
-                                    )
-                                }
+                                                .animateItem(),
+                                        )
+                                    }
 
-                                else -> {}
+                                    else -> {}
+                                }
                             }
                         }
                     }

@@ -45,6 +45,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -107,6 +108,8 @@ import com.mudassir131.yt.ui.component.EmptyPlaceholder
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.SongListItem
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.component.SortHeader
 import com.mudassir131.yt.ui.menu.SelectionSongMenu
 import com.mudassir131.yt.ui.menu.SongMenu
@@ -576,60 +579,64 @@ fun CachePlaylistScreen(
 
                 // Song items
                 itemsIndexed(filteredSongs, key = { _, song -> song.item.id }) { index, songWrapper ->
-                    SongListItem(
-                        song = songWrapper.item,
-                        isActive = songWrapper.item.id == mediaMetadata?.id,
-                        isPlaying = isPlaying,
-                        isSelected = songWrapper.isSelected && selection,
-                        showInLibraryIcon = true,
-                        trailingContent = {
-                            androidx.compose.material3.IconButton(onClick = {
-                                menuState.show {
-                                    SongMenu(
-                                        originalSong = songWrapper.item,
-                                        navController = navController,
-                                        onDismiss = menuState::dismiss,
-                                        isFromCache = true,
+                    CompositionLocalProvider(
+                        LocalListItemShape provides getGroupShape(index, filteredSongs.size)
+                    ) {
+                        SongListItem(
+                            song = songWrapper.item,
+                            isActive = songWrapper.item.id == mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                            isSelected = songWrapper.isSelected && selection,
+                            showInLibraryIcon = true,
+                            trailingContent = {
+                                androidx.compose.material3.IconButton(onClick = {
+                                    menuState.show {
+                                        SongMenu(
+                                            originalSong = songWrapper.item,
+                                            navController = navController,
+                                            onDismiss = menuState::dismiss,
+                                            isFromCache = true,
+                                        )
+                                    }
+                                }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.more_vert),
+                                        contentDescription = null
                                     )
                                 }
-                            }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.more_vert),
-                                    contentDescription = null
-                                )
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .combinedClickable(
-                                onClick = {
-                                    if (!selection) {
-                                        if (songWrapper.item.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(
-                                                ListQueue(
-                                                    title = "Cache Songs",
-                                                    items = cachedSongs.map { it.toMediaItem() },
-                                                    startIndex = cachedSongs.indexOfFirst { it.id == songWrapper.item.id }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {
+                                        if (!selection) {
+                                            if (songWrapper.item.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = "Cache Songs",
+                                                        items = cachedSongs.map { it.toMediaItem() },
+                                                        startIndex = cachedSongs.indexOfFirst { it.id == songWrapper.item.id }
+                                                    )
                                                 )
-                                            )
+                                            }
+                                        } else {
+                                            songWrapper.isSelected = !songWrapper.isSelected
                                         }
-                                    } else {
-                                        songWrapper.isSelected = !songWrapper.isSelected
+                                    },
+                                    onLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (!selection) {
+                                            selection = true
+                                            wrappedSongs.forEach { it.isSelected = false }
+                                            songWrapper.isSelected = true
+                                        }
                                     }
-                                },
-                                onLongClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    if (!selection) {
-                                        selection = true
-                                        wrappedSongs.forEach { it.isSelected = false }
-                                        songWrapper.isSelected = true
-                                    }
-                                }
-                            )
-                            .animateItem()
-                    )
+                                )
+                                .animateItem()
+                        )
+                    }
                 }
             }
         }

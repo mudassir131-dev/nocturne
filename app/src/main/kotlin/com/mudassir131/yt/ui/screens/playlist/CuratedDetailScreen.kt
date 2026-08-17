@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -81,6 +83,8 @@ import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.YouTubeListItem
 import com.mudassir131.yt.ui.menu.AddToPlaylistDialog
 import com.mudassir131.yt.ui.menu.YouTubeSongMenu
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.theme.PlayerColorExtractor
 import com.mudassir131.yt.ui.theme.ArtworkPaletteCache
 import com.mudassir131.yt.ui.utils.backToMain
@@ -290,40 +294,44 @@ fun CuratedDetailScreen(
             if (isLoading && songs.isEmpty()) {
                 item { Text("Loading collection…", modifier = Modifier.padding(24.dp)) }
             }
-            items(songs, key = { it.id }) { song ->
-                YouTubeListItem(
-                    item = song,
-                    isActive = mediaMetadata?.id == song.id,
-                    isPlaying = isPlaying,
-                    trailingContent = {
-                        IconButton(
-                            onClick = {
-                                menuState.show {
-                                    YouTubeSongMenu(song, navController, menuState::dismiss)
-                                }
-                            },
-                            onLongClick = {},
-                        ) {
-                            Icon(painterResource(R.drawable.more_vert), contentDescription = "More")
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = {
-                                if (mediaMetadata?.id == song.id) {
-                                    playerConnection.player.togglePlayPause()
-                                } else {
-                                    playerConnection.playQueue(
-                                        YouTubeQueue(WatchEndpoint(videoId = song.id), song.toMediaMetadata()),
-                                    )
-                                }
-                            },
-                            onLongClick = {
-                                menuState.show { YouTubeSongMenu(song, navController, menuState::dismiss) }
-                            },
-                        ),
-                )
+            itemsIndexed(songs, key = { _, it -> it.id }) { index, song ->
+                CompositionLocalProvider(
+                    LocalListItemShape provides getGroupShape(index, songs.size)
+                ) {
+                    YouTubeListItem(
+                        item = song,
+                        isActive = mediaMetadata?.id == song.id,
+                        isPlaying = isPlaying,
+                        trailingContent = {
+                            IconButton(
+                                onClick = {
+                                    menuState.show {
+                                        YouTubeSongMenu(song, navController, menuState::dismiss)
+                                    }
+                                },
+                                onLongClick = {},
+                            ) {
+                                Icon(painterResource(R.drawable.more_vert), contentDescription = "More")
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = {
+                                    if (mediaMetadata?.id == song.id) {
+                                        playerConnection.player.togglePlayPause()
+                                    } else {
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(WatchEndpoint(videoId = song.id), song.toMediaMetadata()),
+                                        )
+                                    }
+                                },
+                                onLongClick = {
+                                    menuState.show { YouTubeSongMenu(song, navController, menuState::dismiss) }
+                                },
+                            ),
+                    )
+                }
             }
             item { Spacer(Modifier.height(16.dp)) }
         }

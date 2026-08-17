@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +53,8 @@ import com.mudassir131.yt.ui.component.shimmer.GridItemPlaceHolder
 import com.mudassir131.yt.ui.component.shimmer.ShimmerHost
 import com.mudassir131.yt.ui.component.shimmer.TextPlaceholder
 import com.mudassir131.yt.ui.menu.YouTubeSongMenu
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.ui.utils.SnapLayoutInfoProvider
 import com.mudassir131.yt.viewmodels.ChartsViewModel
@@ -208,6 +211,8 @@ fun ChartsScreen(
                                     )
                                 }
 
+                                 val songItems = remember(section.items) { section.items.filterIsInstance<SongItem>().distinctBy { it.id } }
+
                                 LazyHorizontalGrid(
                                     state = lazyGridState,
                                     rows = GridCells.Fixed(4),
@@ -220,60 +225,72 @@ fun ChartsScreen(
                                         .height(ListItemHeight * 4)
                                         .animateItem(),
                                 ) {
-                                    items(
-                                        items = section.items.filterIsInstance<SongItem>().distinctBy { it.id },
-                                        key = { it.id },
-                                    ) { song ->
-                                        YouTubeListItem(
-                                            item = song,
-                                            isActive = song.id == mediaMetadata?.id,
-                                            isPlaying = isPlaying,
-                                            isSwipeable = false,
-                                            trailingContent = {
-                                                IconButton(
-                                                    onClick = {
-                                                        menuState.show {
-                                                            YouTubeSongMenu(
-                                                                song = song,
-                                                                navController = navController,
-                                                                onDismiss = menuState::dismiss,
-                                                            )
-                                                        }
-                                                    },
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.more_vert),
-                                                        contentDescription = null,
-                                                    )
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .width(horizontalLazyGridItemWidth)
-                                                .combinedClickable(
-                                                    onClick = {
-                                                        if (song.id == mediaMetadata?.id) {
-                                                            playerConnection.player.togglePlayPause()
-                                                        } else {
-                                                            playerConnection.playQueue(
-                                                                YouTubeQueue(
-                                                                    endpoint = WatchEndpoint(videoId = song.id),
-                                                                    preloadItem = song.toMediaMetadata(),
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                    onLongClick = {
-                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                        menuState.show {
-                                                            YouTubeSongMenu(
-                                                                song = song,
-                                                                navController = navController,
-                                                                onDismiss = menuState::dismiss,
-                                                            )
-                                                        }
-                                                    },
-                                                ),
-                                        )
+                                    itemsIndexed(
+                                        items = songItems,
+                                        key = { _, it -> it.id },
+                                    ) { index, song ->
+                                        val columnIndex = index / 4
+                                        val lastColumnIndex = (songItems.size - 1) / 4
+                                        val columnSize = if (columnIndex == lastColumnIndex) {
+                                            val rem = songItems.size % 4
+                                            if (rem == 0) 4 else rem
+                                        } else 4
+                                        val itemIndexInColumn = index % 4
+
+                                        CompositionLocalProvider(
+                                            LocalListItemShape provides getGroupShape(itemIndexInColumn, columnSize)
+                                        ) {
+                                            YouTubeListItem(
+                                                item = song,
+                                                isActive = song.id == mediaMetadata?.id,
+                                                isPlaying = isPlaying,
+                                                isSwipeable = false,
+                                                trailingContent = {
+                                                    IconButton(
+                                                        onClick = {
+                                                            menuState.show {
+                                                                YouTubeSongMenu(
+                                                                    song = song,
+                                                                    navController = navController,
+                                                                    onDismiss = menuState::dismiss,
+                                                                )
+                                                            }
+                                                        },
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.more_vert),
+                                                            contentDescription = null,
+                                                        )
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .width(horizontalLazyGridItemWidth)
+                                                    .combinedClickable(
+                                                        onClick = {
+                                                            if (song.id == mediaMetadata?.id) {
+                                                                playerConnection.player.togglePlayPause()
+                                                            } else {
+                                                                playerConnection.playQueue(
+                                                                    YouTubeQueue(
+                                                                        endpoint = WatchEndpoint(videoId = song.id),
+                                                                        preloadItem = song.toMediaMetadata(),
+                                                                    ),
+                                                                )
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                            menuState.show {
+                                                                YouTubeSongMenu(
+                                                                    song = song,
+                                                                    navController = navController,
+                                                                    onDismiss = menuState::dismiss,
+                                                                )
+                                                            }
+                                                        },
+                                                    ),
+                                            )
+                                        }
                                     }
                                 }
                             }

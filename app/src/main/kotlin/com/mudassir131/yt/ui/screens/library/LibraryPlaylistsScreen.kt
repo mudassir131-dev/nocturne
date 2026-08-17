@@ -40,6 +40,7 @@ import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -105,6 +106,8 @@ import com.mudassir131.yt.ui.component.CreatePlaylistDialog
 import com.mudassir131.yt.ui.component.HideOnScrollFAB
 import com.mudassir131.yt.ui.component.LibraryPlaylistGridItem
 import com.mudassir131.yt.ui.component.LibraryPlaylistListItem
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.PlaylistGridItem
 import com.mudassir131.yt.ui.component.PlaylistListItem
@@ -522,10 +525,35 @@ fun LibraryPlaylistsScreen(
                             items = mutableVisiblePlaylists,
                             key = { _, item -> item.id },
                             contentType = { _, _ -> CONTENT_TYPE_PLAYLIST },
-                        ) { _, playlist ->
+                        ) { index, playlist ->
                             ReorderableItem(
                                 state = reorderableState,
                                 key = playlist.id,
+                            ) {
+                                CompositionLocalProvider(
+                                    LocalListItemShape provides getGroupShape(index, mutableVisiblePlaylists.size)
+                                ) {
+                                    LibraryPlaylistListItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        coroutineScope = coroutineScope,
+                                        playlist = playlist,
+                                        useNewDesign = useNewLibraryDesign,
+                                        showDragHandle = true,
+                                        dragHandleModifier = Modifier.draggableHandle(),
+                                        modifier = Modifier.animateItem(),
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        itemsIndexed(
+                            items = visiblePlaylists,
+                            key = { _, it -> it.id },
+                            contentType = { _, _ -> CONTENT_TYPE_PLAYLIST },
+                        ) { index, playlist ->
+                            CompositionLocalProvider(
+                                LocalListItemShape provides getGroupShape(index, visiblePlaylists.size)
                             ) {
                                 LibraryPlaylistListItem(
                                     navController = navController,
@@ -533,26 +561,9 @@ fun LibraryPlaylistsScreen(
                                     coroutineScope = coroutineScope,
                                     playlist = playlist,
                                     useNewDesign = useNewLibraryDesign,
-                                    showDragHandle = true,
-                                    dragHandleModifier = Modifier.draggableHandle(),
                                     modifier = Modifier.animateItem(),
                                 )
                             }
-                        }
-                    } else {
-                        items(
-                            items = visiblePlaylists,
-                            key = { it.id },
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) { playlist ->
-                            LibraryPlaylistListItem(
-                                navController = navController,
-                                menuState = menuState,
-                                coroutineScope = coroutineScope,
-                                playlist = playlist,
-                                useNewDesign = useNewLibraryDesign,
-                                modifier = Modifier.animateItem(),
-                            )
                         }
                     }
                 }

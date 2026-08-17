@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -72,6 +74,8 @@ import com.mudassir131.yt.ui.component.ChipsRow
 import com.mudassir131.yt.ui.component.EmptyPlaceholder
 import com.mudassir131.yt.ui.component.LibraryAlbumGridItem
 import com.mudassir131.yt.ui.component.LibraryAlbumListItem
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.SortHeader
 import com.mudassir131.yt.utils.rememberEnumPreference
@@ -261,20 +265,25 @@ fun LibraryAlbumsScreen(
                         } else {
                             albums
                         }
-                        items(
-                            items = filteredAlbumsForList.distinctBy { it.id },
-                            key = { it.id },
-                            contentType = { CONTENT_TYPE_ALBUM },
-                        ) { album ->
-                            LibraryAlbumListItem(
-                                navController = navController,
-                                menuState = menuState,
-                                album = album,
-                                isActive = album.id == mediaMetadata?.album?.id,
-                                isPlaying = isPlaying,
-                                modifier = Modifier
-                                    .animateItem()
-                            )
+                        val distinctAlbums = filteredAlbumsForList.distinctBy { it.id }
+                        itemsIndexed(
+                            items = distinctAlbums,
+                            key = { _, it -> it.id },
+                            contentType = { _, _ -> CONTENT_TYPE_ALBUM },
+                        ) { index, album ->
+                            CompositionLocalProvider(
+                                LocalListItemShape provides getGroupShape(index, distinctAlbums.size)
+                            ) {
+                                LibraryAlbumListItem(
+                                    navController = navController,
+                                    menuState = menuState,
+                                    album = album,
+                                    isActive = album.id == mediaMetadata?.album?.id,
+                                    isPlaying = isPlaying,
+                                    modifier = Modifier
+                                        .animateItem()
+                                )
+                            }
                         }
                     }
                 }

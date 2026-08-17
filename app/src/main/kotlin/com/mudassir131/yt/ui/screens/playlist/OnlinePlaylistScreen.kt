@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,6 +56,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -134,6 +136,8 @@ import com.mudassir131.yt.ui.component.shimmer.TextPlaceholder
 import com.mudassir131.yt.ui.menu.SelectionMediaMetadataMenu
 import com.mudassir131.yt.ui.menu.YouTubePlaylistMenu
 import com.mudassir131.yt.ui.menu.YouTubeSongMenu
+import com.mudassir131.yt.ui.utils.LocalListItemShape
+import com.mudassir131.yt.ui.utils.getGroupShape
 import com.mudassir131.yt.ui.theme.PlayerColorExtractor
 import com.mudassir131.yt.ui.utils.ItemWrapper
 import com.mudassir131.yt.ui.utils.backToMain
@@ -896,73 +900,77 @@ fun OnlinePlaylistScreen(
                     }
 
                     // Songs List
-                    items(items = wrappedSongs, key = { it.item.second.id }) { song ->
-                        YouTubeListItem(
-                            item = song.item.second,
-                            viewCountText =
-                                viewCounts[song.item.second.id]?.let { count ->
-                                    formatCompactCount(count.toLong())
-                                },
-                            isActive = mediaMetadata?.id == song.item.second.id,
-                            isPlaying = isPlaying,
-                            isSelected = song.isSelected && selection,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            YouTubeSongMenu(
-                                                song = song.item.second,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss,
-                                            )
-                                        }
+                    itemsIndexed(items = wrappedSongs, key = { _, song -> song.item.second.id }) { index, song ->
+                        CompositionLocalProvider(
+                            LocalListItemShape provides getGroupShape(index, wrappedSongs.size)
+                        ) {
+                            YouTubeListItem(
+                                item = song.item.second,
+                                viewCountText =
+                                    viewCounts[song.item.second.id]?.let { count ->
+                                        formatCompactCount(count.toLong())
                                     },
-                                    onLongClick = {}
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null,
-                                    )
-                                }
-                            },
-                            modifier =
-                                Modifier.combinedClickable(
-                                        enabled = !hideExplicit || !song.item.second.explicit,
+                                isActive = mediaMetadata?.id == song.item.second.id,
+                                isPlaying = isPlaying,
+                                isSelected = song.isSelected && selection,
+                                trailingContent = {
+                                    IconButton(
                                         onClick = {
-                                            if (!selection) {
-                                                if (song.item.second.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
+                                            menuState.show {
+                                                YouTubeSongMenu(
+                                                    song = song.item.second,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss,
+                                                )
+                                            }
+                                        },
+                                        onLongClick = {}
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.more_vert),
+                                            contentDescription = null,
+                                        )
+                                    }
+                                },
+                                modifier =
+                                    Modifier.combinedClickable(
+                                            enabled = !hideExplicit || !song.item.second.explicit,
+                                            onClick = {
+                                                if (!selection) {
+                                                    if (song.item.second.id == mediaMetadata?.id) {
+                                                        playerConnection.player.togglePlayPause()
+                                                    } else {
+                                                        playerConnection.service.getAutomix(
+                                                            playlistId = playlist.id
+                                                        )
+                                                        playerConnection.playQueue(
+                                                            YouTubeQueue(
+                                                                song.item.second.endpoint
+                                                                    ?: WatchEndpoint(
+                                                                        videoId = song.item.second.id
+                                                                    ),
+                                                                song.item.second.toMediaMetadata(),
+                                                            ),
+                                                        )
+                                                    }
                                                 } else {
-                                                    playerConnection.service.getAutomix(
-                                                        playlistId = playlist.id
-                                                    )
-                                                    playerConnection.playQueue(
-                                                        YouTubeQueue(
-                                                            song.item.second.endpoint
-                                                                ?: WatchEndpoint(
-                                                                    videoId = song.item.second.id
-                                                                ),
-                                                            song.item.second.toMediaMetadata(),
-                                                        ),
-                                                    )
+                                                    song.isSelected = !song.isSelected
                                                 }
-                                            } else {
-                                                song.isSelected = !song.isSelected
-                                            }
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(
-                                                HapticFeedbackType.LongPress
-                                            )
-                                            if (!selection) {
-                                                selection = true
-                                            }
-                                            wrappedSongs.forEach { it.isSelected = false }
-                                            song.isSelected = true
-                                        },
-                                    )
-                                    .animateItem(),
-                        )
+                                            },
+                                            onLongClick = {
+                                                haptic.performHapticFeedback(
+                                                    HapticFeedbackType.LongPress
+                                                )
+                                                if (!selection) {
+                                                    selection = true
+                                                }
+                                                wrappedSongs.forEach { it.isSelected = false }
+                                                song.isSelected = true
+                                            },
+                                        )
+                                        .animateItem(),
+                            )
+                        }
                     }
 
                     if (viewModel.continuation != null && songs.isNotEmpty() && isLoadingMore) {

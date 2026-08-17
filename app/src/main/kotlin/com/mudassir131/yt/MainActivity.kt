@@ -1150,7 +1150,7 @@ class MainActivity : ComponentActivity() {
 
                         val shouldShow = withContext(Dispatchers.IO) {
                             val hasPressed = dataStore[HasPressedStarKey] ?: false
-                            val remindAfter = dataStore[RemindAfterKey] ?: 3
+                            val remindAfter = dataStore[RemindAfterKey] ?: 15
                             !hasPressed && (dataStore[LaunchCountKey] ?: 0) >= remindAfter
                         }
 
@@ -1167,8 +1167,24 @@ class MainActivity : ComponentActivity() {
                     }
 
                     if (showStarDialog) {
+                        val deferDismiss = {
+                            coroutineScope.launch {
+                                try {
+                                    val launch = withContext(Dispatchers.IO) { dataStore[LaunchCountKey] ?: 0 }
+                                    withContext(Dispatchers.IO) {
+                                        dataStore.edit { prefs ->
+                                            prefs[RemindAfterKey] = launch + 10
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    reportException(e)
+                                } finally {
+                                    showStarDialog = false
+                                }
+                            }
+                        }
                         StarDialog(
-                            onDismissRequest = { showStarDialog = false },
+                            onDismissRequest = { deferDismiss() },
                             onStar = {
                                 coroutineScope.launch {
                                     try {
@@ -1185,22 +1201,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             },
-                            onLater = {
-                                coroutineScope.launch {
-                                    try {
-                                        val launch = withContext(Dispatchers.IO) { dataStore[LaunchCountKey] ?: 0 }
-                                        withContext(Dispatchers.IO) {
-                                            dataStore.edit { prefs ->
-                                                prefs[RemindAfterKey] = launch + 10
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        reportException(e)
-                                    } finally {
-                                        showStarDialog = false
-                                    }
-                                }
-                            }
+                            onLater = { deferDismiss() }
                         )
                     }
 
