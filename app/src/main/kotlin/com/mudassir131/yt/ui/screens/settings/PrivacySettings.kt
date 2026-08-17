@@ -42,6 +42,7 @@ import com.mudassir131.yt.constants.PauseSearchHistoryKey
 import com.mudassir131.yt.ui.component.DefaultDialog
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.PreferenceEntry
+import com.mudassir131.yt.ui.component.PreferenceGroup
 import com.mudassir131.yt.ui.component.PreferenceGroupTitle
 import com.mudassir131.yt.ui.component.SwitchPreference
 import com.mudassir131.yt.ui.utils.backToMain
@@ -150,48 +151,61 @@ fun PrivacySettings(
             )
         )
 
-        PreferenceGroupTitle(
-            title = stringResource(R.string.listen_history)
+        PreferenceGroup(
+            title = stringResource(R.string.listen_history),
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.pause_listen_history)) },
+                        icon = { Icon(painterResource(R.drawable.history), null) },
+                        checked = pauseListenHistory,
+                        onCheckedChange = onPauseListenHistoryChange,
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.clear_listen_history)) },
+                        icon = { Icon(painterResource(R.drawable.delete_history), null) },
+                        onClick = { showClearListenHistoryDialog = true },
+                    )
+                }
+            )
         )
 
-        SwitchPreference(
-            title = { Text(stringResource(R.string.pause_listen_history)) },
-            icon = { Icon(painterResource(R.drawable.history), null) },
-            checked = pauseListenHistory,
-            onCheckedChange = onPauseListenHistoryChange,
-        )
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.clear_listen_history)) },
-            icon = { Icon(painterResource(R.drawable.delete_history), null) },
-            onClick = { showClearListenHistoryDialog = true },
-        )
-
-        PreferenceGroupTitle(
-            title = stringResource(R.string.search_history)
-        )
-
-        SwitchPreference(
-            title = { Text(stringResource(R.string.pause_search_history)) },
-            icon = { Icon(painterResource(R.drawable.search_off), null) },
-            checked = pauseSearchHistory,
-            onCheckedChange = onPauseSearchHistoryChange,
-        )
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.clear_search_history)) },
-            icon = { Icon(painterResource(R.drawable.clear_all), null) },
-            onClick = { showClearSearchHistoryDialog = true },
+        PreferenceGroup(
+            title = stringResource(R.string.search_history),
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.pause_search_history)) },
+                        icon = { Icon(painterResource(R.drawable.search_off), null) },
+                        checked = pauseSearchHistory,
+                        onCheckedChange = onPauseSearchHistoryChange,
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.clear_search_history)) },
+                        icon = { Icon(painterResource(R.drawable.clear_all), null) },
+                        onClick = { showClearSearchHistoryDialog = true },
+                    )
+                }
+            )
         )
 
-        PreferenceGroupTitle(
+        PreferenceGroup(
             title = stringResource(R.string.misc),
-        )
-
-        SwitchPreference(
-            title = { Text(stringResource(R.string.disable_screenshot)) },
-            description = stringResource(R.string.disable_screenshot_desc),
-            icon = { Icon(painterResource(R.drawable.screenshot), null) },
-            checked = disableScreenshot,
-            onCheckedChange = onDisableScreenshotChange,
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.disable_screenshot)) },
+                        description = stringResource(R.string.disable_screenshot_desc),
+                        icon = { Icon(painterResource(R.drawable.screenshot), null) },
+                        checked = disableScreenshot,
+                        onCheckedChange = onDisableScreenshotChange,
+                    )
+                }
+            )
         )
     }
 

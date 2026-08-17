@@ -109,6 +109,7 @@ val NetworkMeteredKey = booleanPreferencesKey("networkMetered")
 enum class AudioQuality {
     SAAVN,
     OPUS,
+    LOSSLESS,
 }
 
 val PlayerStreamClientKey = stringPreferencesKey("playerStreamClient")

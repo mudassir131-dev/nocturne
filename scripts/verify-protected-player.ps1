@@ -26,7 +26,12 @@ function Get-ProtectedHashes {
             throw "Protected player file is missing: $relativePath"
         }
 
-        $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $absolutePath).Hash.ToLowerInvariant()
+        $content = [System.IO.File]::ReadAllText($absolutePath)
+        $normalized = $content -replace "\r\n", "`n" -replace "\r", "`n"
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalized)
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        $hashBytes = $sha.ComputeHash($bytes)
+        $hash = ($hashBytes | ForEach-Object { '{0:x2}' -f $_ }) -join ''
         "$hash  $relativePath"
     }
 }

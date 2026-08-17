@@ -282,65 +282,69 @@ fun LibrarySongsScreen(
                 key = { _, item -> item.item.song.id },
                 contentType = { _, _ -> CONTENT_TYPE_SONG },
             ) { index, songWrapper ->
-                SongListItem(
-                    song = songWrapper.item,
-                    showInLibraryIcon = true,
-                    isActive = songWrapper.item.id == mediaMetadata?.id,
-                    isPlaying = isPlaying,
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, filteredSongs.size)
+                ) {
+                    SongListItem(
+                        song = songWrapper.item,
+                        showInLibraryIcon = true,
+                        isActive = songWrapper.item.id == mediaMetadata?.id,
+                        isPlaying = isPlaying,
 
-                    trailingContent = {
-                        IconButton(
-                            onClick = {
-                                menuState.show {
-                                    SongMenu(
-                                        originalSong = songWrapper.item,
-                                        navController = navController,
-                                        onDismiss = menuState::dismiss,
-                                    )
-                                }
-                            },
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.more_vert),
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                    isSelected = songWrapper.isSelected && selection,
-                    modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = {
-                                if (!selection) {
-                                    if (songWrapper.item.id == mediaMetadata?.id) {
-                                        playerConnection.player.togglePlayPause()
-                                    } else {
-                                        playerConnection.playQueue(
-                                            ListQueue(
-                                                title = context.getString(R.string.queue_all_songs),
-                                                items = songs.map { it.toMediaItem() },
-                                                startIndex = index,
-                                            ),
+                        trailingContent = {
+                            IconButton(
+                                onClick = {
+                                    menuState.show {
+                                        SongMenu(
+                                            originalSong = songWrapper.item,
+                                            navController = navController,
+                                            onDismiss = menuState::dismiss,
                                         )
                                     }
-                                } else {
-                                    songWrapper.isSelected = !songWrapper.isSelected
-                                }
-                            },
-                            onLongClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                if (!selection) {
-                                    selection = true
-                                }
-                                wrappedSongs.forEach {
-                                    it.isSelected = false
-                                } // Clear previous selections
-                                songWrapper.isSelected = true // Select current item
-                            },
-                        )
-                        .animateItem(),
-                )
+                                },
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.more_vert),
+                                    contentDescription = null,
+                                )
+                            }
+                        },
+                        isSelected = songWrapper.isSelected && selection,
+                        modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = {
+                                    if (!selection) {
+                                        if (songWrapper.item.id == mediaMetadata?.id) {
+                                            playerConnection.player.togglePlayPause()
+                                        } else {
+                                            playerConnection.playQueue(
+                                                ListQueue(
+                                                    title = context.getString(R.string.queue_all_songs),
+                                                    items = songs.map { it.toMediaItem() },
+                                                    startIndex = index,
+                                                ),
+                                            )
+                                        }
+                                    } else {
+                                        songWrapper.isSelected = !songWrapper.isSelected
+                                    }
+                                },
+                                onLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    if (!selection) {
+                                        selection = true
+                                    }
+                                    wrappedSongs.forEach {
+                                        it.isSelected = false
+                                    } // Clear previous selections
+                                    songWrapper.isSelected = true // Select current item
+                                },
+                            )
+                            .animateItem(),
+                    )
+                }
             }
         }
 

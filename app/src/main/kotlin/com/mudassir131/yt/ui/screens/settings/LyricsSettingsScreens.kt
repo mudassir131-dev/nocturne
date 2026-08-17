@@ -130,20 +130,28 @@ fun LyricsRomanizationSettingsScreen(navController: NavController) {
 
     Column(Modifier.fillMaxSize()) {
         SettingsBackBar("Lyrics romanization", navController)
-        PreferenceGroupTitle("Romanization")
-        SwitchPreference(
-            title = { Text("Romanize Japanese lyrics") },
-            description = "Show a Latin-script reading when supported",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = romanizeJapanese,
-            onCheckedChange = onRomanizeJapaneseChange,
-        )
-        SwitchPreference(
-            title = { Text("Romanize Korean lyrics") },
-            description = "Show a Latin-script reading when supported",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = romanizeKorean,
-            onCheckedChange = onRomanizeKoreanChange,
+        com.mudassir131.yt.ui.component.PreferenceGroup(
+            title = "Romanization",
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text("Romanize Japanese lyrics") },
+                        description = "Show a Latin-script reading when supported",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = romanizeJapanese,
+                        onCheckedChange = onRomanizeJapaneseChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Romanize Korean lyrics") },
+                        description = "Show a Latin-script reading when supported",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = romanizeKorean,
+                        onCheckedChange = onRomanizeKoreanChange,
+                    )
+                }
+            )
         )
     }
 }

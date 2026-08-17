@@ -114,7 +114,7 @@ fun AboutScreen(
             item {
                 DeveloperCard(
                     onGitHub = { uriHandler.openUri("https://github.com/mudassir131-dev") },
-                    onWebsite = { uriHandler.openUri("https://nocturne-music.vercel.app") },
+                    onWebsite = { uriHandler.openUri("https://portfolioooooss.vercel.app") },
                     onTelegram = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
                     onSupport = { launchUpiPayment(context, "touseefparay7-1@okicici", "Mudassir") },
                 )
@@ -122,46 +122,49 @@ fun AboutScreen(
 
             item { AboutSectionTitle("Contributors") }
             item {
-                ContributorCard(
-                    imageUrl = "https://avatars.githubusercontent.com/u/107134739?v=4",
-                    title = "Archivetune — by koiverse",
-                    subtitle = "Base framework",
-                    onClick = { uriHandler.openUri("https://github.com/koiverse/ArchiveTune") },
-                )
-            }
-            item {
-                ContributorCard(
-                    imageUrl = "https://avatars.githubusercontent.com/u/80542861?v=4",
-                    title = "MO AGAMY",
-                    subtitle = "Metrolist developer",
-                    onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") },
-                )
+                Column {
+                    ContributorCard(
+                        imageUrl = "https://avatars.githubusercontent.com/u/107134739?v=4",
+                        title = "Archivetune — by koiverse",
+                        subtitle = "Base framework",
+                        onClick = { uriHandler.openUri("https://github.com/koiverse/ArchiveTune") },
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.FIRST,
+                    )
+                    ContributorCard(
+                        imageUrl = "https://avatars.githubusercontent.com/u/80542861?v=4",
+                        title = "MO AGAMY",
+                        subtitle = "Metrolist developer",
+                        onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") },
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.LAST,
+                    )
+                }
             }
 
             item { AboutSectionTitle("Community & Info") }
             item {
-                AboutLinkCard(
-                    iconRes = R.drawable.github,
-                    title = "GitHub Repository",
-                    subtitle = "View source code",
-                    onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") },
-                )
-            }
-            item {
-                AboutLinkCard(
-                    iconRes = R.drawable.telegram,
-                    title = "Telegram Server",
-                    subtitle = "Chat with the community and report bugs",
-                    onClick = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
-                )
-            }
-            item {
-                AboutLinkCard(
-                    iconRes = R.drawable.website,
-                    title = "Nocturne Website",
-                    subtitle = "Visit the official website",
-                    onClick = { uriHandler.openUri("https://nocturne-music.vercel.app") },
-                )
+                Column {
+                    AboutLinkCard(
+                        iconRes = R.drawable.github,
+                        title = "GitHub Repository",
+                        subtitle = "View source code",
+                        onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") },
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.FIRST,
+                    )
+                    AboutLinkCard(
+                        iconRes = R.drawable.telegram,
+                        title = "Telegram Server",
+                        subtitle = "Chat with the community and report bugs",
+                        onClick = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE,
+                    )
+                    AboutLinkCard(
+                        iconRes = R.drawable.website,
+                        title = "Nocturne Website",
+                        subtitle = "Visit the official website",
+                        onClick = { uriHandler.openUri("https://nocturne-music.vercel.app") },
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.LAST,
+                    )
+                }
             }
 
             item { AboutSectionTitle("App Info") }
@@ -284,7 +287,7 @@ private fun DeveloperCard(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Lead developer",
+                        text = "App developer",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
@@ -364,12 +367,16 @@ private fun ContributorCard(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
+    val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+    val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
+        shape = com.mudassir131.yt.ui.utils.getPreferenceShape(position, 24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(top = topPadding, bottom = bottomPadding),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -415,12 +422,16 @@ private fun AboutLinkCard(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
+    val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+    val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
+        shape = com.mudassir131.yt.ui.utils.getPreferenceShape(position, 24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(top = topPadding, bottom = bottomPadding),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

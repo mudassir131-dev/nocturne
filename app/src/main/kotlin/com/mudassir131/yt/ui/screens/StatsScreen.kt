@@ -310,53 +310,57 @@ fun StatsScreen(
                 items = mostPlayedSongsStats,
                 key = { _, song -> song.id },
             ) { index, song ->
-                ListItem(
-                    title = "${index + 1}. ${song.title}",
-                    subtitle = joinByBullet(
-                        pluralStringResource(
-                            R.plurals.n_time,
-                            song.songCountListened,
-                            song.songCountListened,
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, mostPlayedSongsStats.size)
+                ) {
+                    ListItem(
+                        title = "${index + 1}. ${song.title}",
+                        subtitle = joinByBullet(
+                            pluralStringResource(
+                                R.plurals.n_time,
+                                song.songCountListened,
+                                song.songCountListened,
+                            ),
+                            makeTimeString(song.timeListened),
                         ),
-                        makeTimeString(song.timeListened),
-                    ),
-                    thumbnailContent = {
-                        ItemThumbnail(
-                            thumbnailUrl = song.thumbnailUrl,
-                            isActive = song.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            shape = RoundedCornerShape(8.dp), // Using a constant or the one from Items.kt
-                            modifier = Modifier.size(56.dp) // ListThumbnailSize
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = {
-                                if (song.id == mediaMetadata?.id) {
-                                    playerConnection.player.togglePlayPause()
-                                } else {
-                                    playerConnection.playQueue(
-                                        YouTubeQueue(
-                                            endpoint = WatchEndpoint(song.id),
-                                            preloadItem = mostPlayedSongs[index].toMediaMetadata(),
-                                        ),
-                                    )
-                                }
-                            },
-                            onLongClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                menuState.show {
-                                    SongMenu(
-                                        originalSong = mostPlayedSongs[index],
-                                        navController = navController,
-                                        onDismiss = menuState::dismiss,
-                                    )
-                                }
-                            },
-                        )
-                        .animateItem()
-                )
+                        thumbnailContent = {
+                            ItemThumbnail(
+                                thumbnailUrl = song.thumbnailUrl,
+                                isActive = song.id == mediaMetadata?.id,
+                                isPlaying = isPlaying,
+                                shape = RoundedCornerShape(8.dp), // Using a constant or the one from Items.kt
+                                modifier = Modifier.size(56.dp) // ListThumbnailSize
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = {
+                                    if (song.id == mediaMetadata?.id) {
+                                        playerConnection.player.togglePlayPause()
+                                    } else {
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(
+                                                endpoint = WatchEndpoint(song.id),
+                                                preloadItem = mostPlayedSongs[index].toMediaMetadata(),
+                                            ),
+                                        )
+                                    }
+                                },
+                                onLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    menuState.show {
+                                        SongMenu(
+                                            originalSong = mostPlayedSongs[index],
+                                            navController = navController,
+                                            onDismiss = menuState::dismiss,
+                                        )
+                                    }
+                                },
+                            )
+                            .animateItem()
+                    )
+                }
             }
 
             item(key = "mostPlayedArtists") {

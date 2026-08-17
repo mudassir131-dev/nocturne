@@ -4286,8 +4286,8 @@ class MusicService :
             .setBufferDurationsMs(
                 30_000, // minBufferMs
                 90_000, // maxBufferMs
-                500, // bufferForPlaybackMs - start quickly after a tap
-                1_500 // bufferForPlaybackAfterRebufferMs
+                100, // bufferForPlaybackMs - start play almost instantly (100ms instead of 500ms)
+                500 // bufferForPlaybackAfterRebufferMs - recover quickly (500ms instead of 1500ms)
             )
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
@@ -4325,7 +4325,7 @@ class MusicService :
                 enableAudioTrackPlaybackParams: Boolean,
             ) = DefaultAudioSink
                 .Builder(this@MusicService)
-                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableFloatOutput(true)
                 .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
                 .setAudioProcessorChain(
                     DefaultAudioSink.DefaultAudioProcessorChain(

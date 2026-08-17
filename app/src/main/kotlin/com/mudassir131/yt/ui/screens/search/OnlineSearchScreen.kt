@@ -15,6 +15,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -196,15 +197,19 @@ fun OnlineSearchScreen(
             }
         }
 
-        items(viewState.items.distinctBy { it.id }, key = { "item_${it.id}" }) { item ->
-            YouTubeListItem(
-                item = item,
-                isActive = when (item) {
-                    is SongItem -> mediaMetadata?.id == item.id
-                    is AlbumItem -> mediaMetadata?.album?.id == item.id
-                    else -> false
-                },
-                isPlaying = isPlaying,
+        val distinctItems = viewState.items.distinctBy { it.id }
+        itemsIndexed(distinctItems, key = { _, it -> "item_${it.id}" }) { index, item ->
+            androidx.compose.runtime.CompositionLocalProvider(
+                com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, distinctItems.size)
+            ) {
+                YouTubeListItem(
+                    item = item,
+                    isActive = when (item) {
+                        is SongItem -> mediaMetadata?.id == item.id
+                        is AlbumItem -> mediaMetadata?.album?.id == item.id
+                        else -> false
+                    },
+                    isPlaying = isPlaying,
                 trailingContent = {
                     IconButton(
                         onClick = {
@@ -320,6 +325,7 @@ fun OnlineSearchScreen(
                     )
                     .animateItem()
             )
+            }
         }
     }
 }

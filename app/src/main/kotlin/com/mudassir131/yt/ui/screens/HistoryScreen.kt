@@ -255,56 +255,60 @@ fun HistoryScreen(
                         )
                     }
 
-                    items(
+                    itemsIndexed(
                         items = section.songs,
-                        key = { "${section.title}_${it.id}_${section.songs.indexOf(it)}" }
-                    ) { song ->
-                        YouTubeListItem(
-                            item = song,
-                            isActive = song.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            YouTubeSongMenu(
-                                                song = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
+                        key = { index, song -> "${section.title}_${song.id}_$index" }
+                    ) { index, song ->
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, section.songs.size)
+                        ) {
+                            YouTubeListItem(
+                                item = song,
+                                isActive = song.id == mediaMetadata?.id,
+                                isPlaying = isPlaying,
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = {
+                                            menuState.show {
+                                                YouTubeSongMenu(
+                                                    song = song,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
                                         }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.more_vert),
+                                            contentDescription = null
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (song.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    YouTubeQueue.radio(song.toMediaMetadata())
+                                                )
+                                            }
+                                        },
+                                        onLongClick = {
+                                            menuState.show {
+                                                YouTubeSongMenu(
+                                                    song = song,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
+                                        }
                                     )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        if (song.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(
-                                                YouTubeQueue.radio(song.toMediaMetadata())
-                                            )
-                                        }
-                                    },
-                                    onLongClick = {
-                                        menuState.show {
-                                            YouTubeSongMenu(
-                                                song = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                )
-                                .animateItem()
-                        )
+                                    .animateItem()
+                            )
+                        }
                     }
                 }
             } else {
@@ -325,12 +329,15 @@ fun HistoryScreen(
                         key = { index, wrappedItem -> "${dateAgo}_${wrappedItem.item.event.id}_$index" }
                     ) { index, wrappedItem ->
                         val event = wrappedItem.item
-                        SongListItem(
-                            song = event.song,
-                            isActive = event.song.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            showInLibraryIcon = true,
-                            isSelected = wrappedItem.isSelected && selection,
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, currentDateWrappedItems.size)
+                        ) {
+                            SongListItem(
+                                song = event.song,
+                                isActive = event.song.id == mediaMetadata?.id,
+                                isPlaying = isPlaying,
+                                showInLibraryIcon = true,
+                                isSelected = wrappedItem.isSelected && selection,
 
                             trailingContent = {
                                 IconButton(
@@ -544,5 +551,6 @@ fun HistoryScreen(
             }
         }
     )
+    }
     }
 }

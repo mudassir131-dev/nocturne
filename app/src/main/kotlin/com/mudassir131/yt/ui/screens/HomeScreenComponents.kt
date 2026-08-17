@@ -986,53 +986,57 @@ fun QuickPicksListSection(
             val pageSongs = pages.getOrNull(pageIndex) ?: emptyList()
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    pageSongs.forEach { song ->
+                    pageSongs.forEachIndexed { index, song ->
                         val isActive = song.id == mediaMetadata?.id
-                        SongListItem(
-                            song = song,
-                            isActive = isActive,
-                            isPlaying = isPlaying,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, pageSongs.size)
+                        ) {
+                            SongListItem(
+                                song = song,
+                                isActive = isActive,
+                                isPlaying = isPlaying,
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
                                         }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.more_vert),
+                                            contentDescription = null
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (isActive) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
+                                            }
+                                        },
+                                        onLongClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
+                                        }
                                     )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        if (isActive) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
-                                        }
-                                    },
-                                    onLongClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = song,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss
-                                            )
-                                        }
-                                    }
-                                )
-                        )
+                            )
+                        }
                     }
                 }
             }

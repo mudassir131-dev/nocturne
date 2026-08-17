@@ -974,75 +974,79 @@ fun LocalPlaylistScreen(
                         }
 
                         val content: @Composable () -> Unit = {
-                            SongListItem(
-                                song = song.song,
-                                viewCountText =
-                                    viewCounts[song.song.id]?.let { count -> formatCompactCount(count.toLong()) },
-                                isActive = song.song.id == mediaMetadata?.id,
-                                isPlaying = isPlaying,
-                                showInLibraryIcon = true,
-                                trailingContent = {
-                                    IconButton(
-                                        onClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = song.song,
-                                                    playlistSong = song,
-                                                    playlistBrowseId = playlist?.playlist?.browseId,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss,
-                                                )
-                                            }
-                                        },
-                                        onLongClick = {}
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.more_vert),
-                                            contentDescription = null,
-                                        )
-                                    }
-
-                                    if (sortType == PlaylistSongSortType.CUSTOM && !locked && !selection && !isSearching && editable) {
+                            androidx.compose.runtime.CompositionLocalProvider(
+                                com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, (if (isSearching) filteredSongs else mutableSongs).size)
+                            ) {
+                                SongListItem(
+                                    song = song.song,
+                                    viewCountText =
+                                        viewCounts[song.song.id]?.let { count -> formatCompactCount(count.toLong()) },
+                                    isActive = song.song.id == mediaMetadata?.id,
+                                    isPlaying = isPlaying,
+                                    showInLibraryIcon = true,
+                                    trailingContent = {
                                         IconButton(
-                                            onClick = { },
-                                            onLongClick = {},
-                                            modifier = Modifier
-                                                .draggableHandle()
-                                                .graphicsLayer { alpha = 0.99f },
+                                            onClick = {
+                                                menuState.show {
+                                                    SongMenu(
+                                                        originalSong = song.song,
+                                                        playlistSong = song,
+                                                        playlistBrowseId = playlist?.playlist?.browseId,
+                                                        navController = navController,
+                                                        onDismiss = menuState::dismiss,
+                                                    )
+                                                }
+                                            },
+                                            onLongClick = {}
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.drag_handle),
+                                                painter = painterResource(R.drawable.more_vert),
                                                 contentDescription = null,
                                             )
                                         }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .combinedClickable(
-                                        onClick = {
-                                            if (song.song.id == mediaMetadata?.id) {
-                                                playerConnection.player.togglePlayPause()
-                                            } else {
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = playlist!!.playlist.name,
-                                                        items = songs.map { it.song.toMediaItem() },
-                                                        startIndex = songs.indexOfFirst { it.map.id == song.map.id },
-                                                    ),
+
+                                        if (sortType == PlaylistSongSortType.CUSTOM && !locked && !selection && !isSearching && editable) {
+                                            IconButton(
+                                                onClick = { },
+                                                onLongClick = {},
+                                                modifier = Modifier
+                                                    .draggableHandle()
+                                                    .graphicsLayer { alpha = 0.99f },
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.drag_handle),
+                                                    contentDescription = null,
                                                 )
                                             }
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            if (!selection) {
-                                                selection = true
-                                            }
-                                            wrappedSongs.forEach { it.isSelected = false }
-                                            wrappedSongs.find { it.item.map.id == song.map.id }?.isSelected = true
-                                        },
-                                    ),
-                            )
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (song.song.id == mediaMetadata?.id) {
+                                                    playerConnection.player.togglePlayPause()
+                                                } else {
+                                                    playerConnection.playQueue(
+                                                        ListQueue(
+                                                            title = playlist!!.playlist.name,
+                                                            items = songs.map { it.song.toMediaItem() },
+                                                            startIndex = songs.indexOfFirst { it.map.id == song.map.id },
+                                                        ),
+                                                    )
+                                                }
+                                            },
+                                            onLongClick = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                if (!selection) {
+                                                    selection = true
+                                                }
+                                                wrappedSongs.forEach { it.isSelected = false }
+                                                wrappedSongs.find { it.item.map.id == song.map.id }?.isSelected = true
+                                            },
+                                        ),
+                                )
+                            }
                         }
 
                         if (locked || selection) {
@@ -1101,78 +1105,82 @@ fun LocalPlaylistScreen(
                         }
 
                         val content: @Composable () -> Unit = {
-                            SongListItem(
-                                song = songWrapper.item.song,
-                                viewCountText =
-                                    viewCounts[songWrapper.item.song.id]?.let { count -> formatCompactCount(count.toLong()) },
-                                isActive = songWrapper.item.song.id == mediaMetadata?.id,
-                                isPlaying = isPlaying,
-                                showInLibraryIcon = true,
-                                trailingContent = {
-                                    IconButton(
-                                        onClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = songWrapper.item.song,
-                                                    playlistBrowseId = playlist?.playlist?.browseId,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss,
-                                                )
-                                            }
-                                        },
-                                        onLongClick = {}
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.more_vert),
-                                            contentDescription = null,
-                                        )
-                                    }
-                                    if (sortType == PlaylistSongSortType.CUSTOM && !locked && !selection && !isSearching && editable) {
+                            androidx.compose.runtime.CompositionLocalProvider(
+                                com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, wrappedSongs.size)
+                            ) {
+                                SongListItem(
+                                    song = songWrapper.item.song,
+                                    viewCountText =
+                                        viewCounts[songWrapper.item.song.id]?.let { count -> formatCompactCount(count.toLong()) },
+                                    isActive = songWrapper.item.song.id == mediaMetadata?.id,
+                                    isPlaying = isPlaying,
+                                    showInLibraryIcon = true,
+                                    trailingContent = {
                                         IconButton(
-                                            onClick = { },
-                                            onLongClick = {},
-                                            modifier = Modifier
-                                                .draggableHandle()
-                                                .graphicsLayer { alpha = 0.99f },
+                                            onClick = {
+                                                menuState.show {
+                                                    SongMenu(
+                                                        originalSong = songWrapper.item.song,
+                                                        playlistBrowseId = playlist?.playlist?.browseId,
+                                                        navController = navController,
+                                                        onDismiss = menuState::dismiss,
+                                                    )
+                                                }
+                                            },
+                                            onLongClick = {}
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.drag_handle),
+                                                painter = painterResource(R.drawable.more_vert),
                                                 contentDescription = null,
                                             )
                                         }
-                                    }
-                                },
-                                isSelected = songWrapper.isSelected && selection,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .combinedClickable(
-                                        onClick = {
-                                            if (!selection) {
-                                                if (songWrapper.item.song.id == mediaMetadata?.id) {
-                                                    playerConnection.player.togglePlayPause()
+                                        if (sortType == PlaylistSongSortType.CUSTOM && !locked && !selection && !isSearching && editable) {
+                                            IconButton(
+                                                onClick = { },
+                                                onLongClick = {},
+                                                modifier = Modifier
+                                                    .draggableHandle()
+                                                    .graphicsLayer { alpha = 0.99f },
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.drag_handle),
+                                                    contentDescription = null,
+                                                )
+                                            }
+                                        }
+                                    },
+                                    isSelected = songWrapper.isSelected && selection,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (!selection) {
+                                                    if (songWrapper.item.song.id == mediaMetadata?.id) {
+                                                        playerConnection.player.togglePlayPause()
+                                                    } else {
+                                                        playerConnection.playQueue(
+                                                            ListQueue(
+                                                                title = playlist!!.playlist.name,
+                                                                items = songs.map { it.song.toMediaItem() },
+                                                                startIndex = index,
+                                                            ),
+                                                        )
+                                                    }
                                                 } else {
-                                                    playerConnection.playQueue(
-                                                        ListQueue(
-                                                            title = playlist!!.playlist.name,
-                                                            items = songs.map { it.song.toMediaItem() },
-                                                            startIndex = index,
-                                                        ),
-                                                    )
+                                                    songWrapper.isSelected = !songWrapper.isSelected
                                                 }
-                                            } else {
-                                                songWrapper.isSelected = !songWrapper.isSelected
-                                            }
-                                        },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            if (!selection) {
-                                                selection = true
-                                            }
-                                            wrappedSongs.forEach { it.isSelected = false }
-                                            songWrapper.isSelected = true
-                                        },
-                                    ),
-                            )
+                                            },
+                                            onLongClick = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                if (!selection) {
+                                                    selection = true
+                                                }
+                                                wrappedSongs.forEach { it.isSelected = false }
+                                                songWrapper.isSelected = true
+                                            },
+                                        ),
+                                )
+                            }
                         }
 
                         if (locked || !editable) {

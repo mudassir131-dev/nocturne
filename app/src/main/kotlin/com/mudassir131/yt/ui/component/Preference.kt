@@ -66,13 +66,17 @@ fun PreferenceEntry(
     trailingContent: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
+    val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+    val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .padding(start = 12.dp, end = 12.dp, top = topPadding, bottom = bottomPadding)
             .alpha(if (isEnabled) 1f else 0.5f),
-        shape = RoundedCornerShape(24.dp),
+        shape = com.mudassir131.yt.ui.utils.getPreferenceShape(position),
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Row(
@@ -134,6 +138,7 @@ fun <T> ListPreference(
     valueText: @Composable (T) -> String,
     onValueSelected: (T) -> Unit,
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -175,6 +180,7 @@ fun <T> ListPreference(
         icon = icon,
         onClick = { showDialog = true },
         isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -187,6 +193,7 @@ inline fun <reified T : Enum<T>> EnumListPreference(
     noinline valueText: @Composable (T) -> String,
     noinline onValueSelected: (T) -> Unit,
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     ListPreference(
         modifier = modifier,
@@ -197,6 +204,7 @@ inline fun <reified T : Enum<T>> EnumListPreference(
         valueText = valueText,
         onValueSelected = onValueSelected,
         isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -209,6 +217,7 @@ fun SwitchPreference(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     PreferenceEntry(
         modifier = modifier,
@@ -232,7 +241,8 @@ fun SwitchPreference(
             )
         },
         onClick = { onCheckedChange(!checked) },
-        isEnabled = isEnabled
+        isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -246,6 +256,7 @@ fun EditTextPreference(
     singleLine: Boolean = true,
     isInputValid: (String) -> Boolean = { it.isNotEmpty() },
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -272,6 +283,7 @@ fun EditTextPreference(
         icon = icon,
         onClick = { showDialog = true },
         isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -284,6 +296,7 @@ fun SliderPreference(
     value: Float,
     onValueChange: (Float) -> Unit,
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     var showDialog by remember {
         mutableStateOf(false)
@@ -351,6 +364,7 @@ fun SliderPreference(
         icon = icon,
         onClick = { showDialog = true },
         isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -361,6 +375,7 @@ fun CrossfadeSliderPreference(
     value: Int,
     onValueChange: (Int) -> Unit,
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     var showDialog by remember {
         mutableStateOf(false)
@@ -452,6 +467,7 @@ fun CrossfadeSliderPreference(
         icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
         onClick = { if (isEnabled) showDialog = true },
         isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -466,6 +482,7 @@ fun NumberPickerPreference(
     maxValue: Int = 10,
     valueText: (Int) -> String = { it.toString() },
     isEnabled: Boolean = true,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
 ) {
     var showDialog by remember {
         mutableStateOf(false)
@@ -528,6 +545,7 @@ fun NumberPickerPreference(
         icon = icon,
         onClick = { if (isEnabled) showDialog = true },
         isEnabled = isEnabled,
+        position = position,
     )
 }
 
@@ -542,4 +560,30 @@ fun PreferenceGroupTitle(
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 6.dp),
     )
+}
+
+@Composable
+fun PreferenceGroup(
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    items: List<@Composable () -> Unit>
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        if (title != null) {
+            PreferenceGroupTitle(title = title)
+        }
+        items.forEachIndexed { index, item ->
+            val position = when {
+                items.size == 1 -> com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE
+                index == 0 -> com.mudassir131.yt.ui.utils.PreferencePosition.FIRST
+                index == items.size - 1 -> com.mudassir131.yt.ui.utils.PreferencePosition.LAST
+                else -> com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE
+            }
+            androidx.compose.runtime.CompositionLocalProvider(com.mudassir131.yt.ui.utils.LocalPreferenceShape provides com.mudassir131.yt.ui.utils.getPreferenceShape(position)) {
+                item()
+            }
+        }
+    }
 }

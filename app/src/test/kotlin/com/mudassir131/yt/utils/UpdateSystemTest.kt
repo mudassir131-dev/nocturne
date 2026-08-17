@@ -44,7 +44,7 @@ class UpdateSystemTest {
         assertEquals("2.2.3.4.01 should equal 2.2.3.4.1", 0, compare("2.2.3.4.01", "2.2.3.4.1"))
         assertTrue("2.2.3.4.01 should be newer than 2.2.3.4", compare("2.2.3.4.01", "2.2.3.4") > 0)
         assertTrue("Uppercase V labels must compare normally", compare("V2.22.03.21", "v2.22.3.19") > 0)
-        assertTrue("2.22.21 must update 2.22.03.21", compare("v2.22.21", "v2.22.03.21") > 0)
+        assertTrue("2.22.22 must update 2.22.03.21", compare("v2.22.22", "v2.22.03.21") > 0)
         assertTrue("New release label must remain monotonic", compare("Nocturne V2.22.03.21", "2.2.3.4.09") > 0)
     }
 

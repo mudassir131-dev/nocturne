@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -138,7 +139,7 @@ fun OnlineSearchResult(
         }
     }
 
-    val ytItemContent: @Composable LazyItemScope.(YTItem) -> Unit = { item: YTItem ->
+    val ytItemContent: @Composable LazyItemScope.(Int, Int, YTItem) -> Unit = { index: Int, count: Int, item: YTItem ->
         val longClick = {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             menuState.show {
@@ -172,52 +173,56 @@ fun OnlineSearchResult(
                 }
             }
         }
-        YouTubeListItem(
-            item = item,
-            isActive =
-            when (item) {
-                is SongItem -> mediaMetadata?.id == item.id
-                is AlbumItem -> mediaMetadata?.album?.id == item.id
-                else -> false
-            },
-            isPlaying = isPlaying,
-            trailingContent = {
-                IconButton(
-                    onClick = longClick,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = null,
-                    )
-                }
-            },
-            modifier =
-            Modifier
-                .combinedClickable(
-                    onClick = {
-                        when (item) {
-                            is SongItem -> {
-                                if (item.id == mediaMetadata?.id) {
-                                    playerConnection.player.togglePlayPause()
-                                } else {
-                                    playerConnection.playQueue(
-                                        YouTubeQueue(
-                                            WatchEndpoint(videoId = item.id),
-                                            item.toMediaMetadata()
+        androidx.compose.runtime.CompositionLocalProvider(
+            com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, count)
+        ) {
+            YouTubeListItem(
+                item = item,
+                isActive =
+                when (item) {
+                    is SongItem -> mediaMetadata?.id == item.id
+                    is AlbumItem -> mediaMetadata?.album?.id == item.id
+                    else -> false
+                },
+                isPlaying = isPlaying,
+                trailingContent = {
+                    IconButton(
+                        onClick = longClick,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = null,
+                        )
+                    }
+                },
+                modifier =
+                Modifier
+                    .combinedClickable(
+                        onClick = {
+                            when (item) {
+                                is SongItem -> {
+                                    if (item.id == mediaMetadata?.id) {
+                                        playerConnection.player.togglePlayPause()
+                                    } else {
+                                        playerConnection.playQueue(
+                                            YouTubeQueue(
+                                                WatchEndpoint(videoId = item.id),
+                                                item.toMediaMetadata()
+                                            )
                                         )
-                                    )
+                                    }
                                 }
-                            }
 
-                            is AlbumItem -> navController.navigate("album/${item.id}")
-                            is ArtistItem -> navController.navigate("artist/${item.id}")
-                            is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
-                        }
-                    },
-                    onLongClick = longClick,
-                )
-                .animateItem(),
-        )
+                                is AlbumItem -> navController.navigate("album/${item.id}")
+                                is ArtistItem -> navController.navigate("artist/${item.id}")
+                                is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+                            }
+                        },
+                        onLongClick = longClick,
+                    )
+                    .animateItem(),
+            )
+        }
     }
 
     NocturneDynamicScreen(disableBlur = disableBlur) {
@@ -309,11 +314,12 @@ fun OnlineSearchResult(
                     }
                 }
 
-                items(
+                itemsIndexed(
                     items = summary.items,
-                    key = { "${summary.title}/${it.id}/${summary.items.indexOf(it)}" },
-                    itemContent = ytItemContent,
-                )
+                    key = { index, item -> "${summary.title}/${item.id}/$index" },
+                ) { index, item ->
+                    ytItemContent(index, summary.items.size, item)
+                }
 
                 item {
                     Spacer(Modifier.height(4.dp))
@@ -329,11 +335,13 @@ fun OnlineSearchResult(
                 }
             }
         } else {
-            items(
-                items = itemsPage?.items.orEmpty().distinctBy { it.id },
-                key = { "filtered_${it.id}" },
-                itemContent = ytItemContent,
-            )
+            val filteredItems = itemsPage?.items.orEmpty().distinctBy { it.id }
+            itemsIndexed(
+                items = filteredItems,
+                key = { _, item -> "filtered_${item.id}" },
+            ) { index, item ->
+                ytItemContent(index, filteredItems.size, item)
+            }
 
             if (itemsPage?.continuation != null) {
                 item(key = "loading") {

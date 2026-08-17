@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -191,106 +192,111 @@ fun LocalSearchScreen(
                     }
                 }
 
-                items(
-                    items = items.distinctBy { it.id },
-                    key = { it.id },
-                    contentType = { CONTENT_TYPE_LIST },
-                ) { item ->
-                    when (item) {
-                        is Song -> SongListItem(
-                            song = item,
-                            showInLibraryIcon = true,
-                            isActive = item.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = item,
-                                                navController = navController,
-                                                onDismiss = {
-                                                    onDismiss()
-                                                    menuState.dismiss()
-                                                },
-                                                isFromCache = isFromCache
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null,
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .combinedClickable(
-                                    onClick = {
-                                        if (item.id == mediaMetadata?.id) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            val songs = result.map
-                                                .getOrDefault(LocalFilter.SONG, emptyList())
-                                                .filterIsInstance<Song>()
-                                                .map { it.toMediaItem() }
-                                            playerConnection.playQueue(
-                                                ListQueue(
-                                                    title = context.getString(R.string.queue_searched_songs),
-                                                    items = songs,
-                                                    startIndex = songs.indexOfFirst { it.mediaId == item.id },
+                val distinctItems = items.distinctBy { it.id }
+                itemsIndexed(
+                    items = distinctItems,
+                    key = { _, it -> it.id },
+                    contentType = { _, _ -> CONTENT_TYPE_LIST },
+                ) { index, item ->
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.mudassir131.yt.ui.utils.LocalListItemShape provides com.mudassir131.yt.ui.utils.getGroupShape(index, distinctItems.size)
+                    ) {
+                        when (item) {
+                            is Song -> SongListItem(
+                                song = item,
+                                showInLibraryIcon = true,
+                                isActive = item.id == mediaMetadata?.id,
+                                isPlaying = isPlaying,
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = item,
+                                                    navController = navController,
+                                                    onDismiss = {
+                                                        onDismiss()
+                                                        menuState.dismiss()
+                                                    },
+                                                    isFromCache = isFromCache
                                                 )
-                                            )
+                                            }
                                         }
-                                    },
-                                    onLongClick = {
-                                        menuState.show {
-                                            SongMenu(
-                                                originalSong = item,
-                                                navController = navController,
-                                                onDismiss = {
-                                                    onDismiss()
-                                                    menuState.dismiss()
-                                                },
-                                                isFromCache = isFromCache
-                                            )
-                                        }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.more_vert),
+                                            contentDescription = null,
+                                        )
                                     }
-                                )
-                                .animateItem(),
-                        )
+                                },
+                                modifier = Modifier
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (item.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                val songs = result.map
+                                                    .getOrDefault(LocalFilter.SONG, emptyList())
+                                                    .filterIsInstance<Song>()
+                                                    .map { it.toMediaItem() }
+                                                playerConnection.playQueue(
+                                                    ListQueue(
+                                                        title = context.getString(R.string.queue_searched_songs),
+                                                        items = songs,
+                                                        startIndex = songs.indexOfFirst { it.mediaId == item.id },
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        onLongClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = item,
+                                                    navController = navController,
+                                                    onDismiss = {
+                                                        onDismiss()
+                                                        menuState.dismiss()
+                                                    },
+                                                    isFromCache = isFromCache
+                                                )
+                                            }
+                                        }
+                                    )
+                                    .animateItem(),
+                            )
 
-                        is Album -> AlbumListItem(
-                            album = item,
-                            isActive = item.id == mediaMetadata?.album?.id,
-                            isPlaying = isPlaying,
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                    navController.navigate("album/${item.id}")
-                                }
-                                .animateItem(),
-                        )
+                            is Album -> AlbumListItem(
+                                album = item,
+                                isActive = item.id == mediaMetadata?.album?.id,
+                                isPlaying = isPlaying,
+                                modifier = Modifier
+                                    .clickable {
+                                        onDismiss()
+                                        navController.navigate("album/${item.id}")
+                                    }
+                                    .animateItem(),
+                            )
 
-                        is Artist -> ArtistListItem(
-                            artist = item,
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                    navController.navigate("artist/${item.id}")
-                                }
-                                .animateItem(),
-                        )
+                            is Artist -> ArtistListItem(
+                                artist = item,
+                                modifier = Modifier
+                                    .clickable {
+                                        onDismiss()
+                                        navController.navigate("artist/${item.id}")
+                                    }
+                                    .animateItem(),
+                            )
 
-                        is Playlist -> PlaylistListItem(
-                            playlist = item,
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                    navController.navigate("local_playlist/${item.id}")
-                                }
-                                .animateItem(),
-                        )
+                            is Playlist -> PlaylistListItem(
+                                playlist = item,
+                                modifier = Modifier
+                                    .clickable {
+                                        onDismiss()
+                                        navController.navigate("local_playlist/${item.id}")
+                                    }
+                                    .animateItem(),
+                            )
+                        }
                     }
                 }
             }

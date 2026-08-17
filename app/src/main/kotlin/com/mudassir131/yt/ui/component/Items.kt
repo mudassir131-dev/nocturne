@@ -149,14 +149,21 @@ inline fun ListItem(
     noinline subtitle: (@Composable RowScope.() -> Unit)? = null,
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
-    isActive: Boolean = false
+    isActive: Boolean = false,
+    shape: Shape = RoundedCornerShape(18.dp)
 ) {
+    val localShape = com.mudassir131.yt.ui.utils.LocalListItemShape.current
+    val resolvedShape = if (shape != RoundedCornerShape(18.dp)) shape else (localShape ?: shape)
+
+    val topPadding = if (resolvedShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(resolvedShape.topStart)) 2.dp else 0.5.dp
+    val bottomPadding = if (resolvedShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(resolvedShape.bottomStart)) 2.dp else 0.5.dp
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .height(ListItemHeight)
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .padding(start = 8.dp, end = 8.dp, top = topPadding, bottom = bottomPadding)
+            .clip(resolvedShape)
             .background(
                 if (isActive) MaterialTheme.colorScheme.secondaryContainer
                 else MaterialTheme.colorScheme.surfaceContainer,
@@ -183,11 +190,13 @@ fun ListItem(
     badges: @Composable RowScope.() -> Unit = {},
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
-    isActive: Boolean = false
+    isActive: Boolean = false,
+    shape: Shape = RoundedCornerShape(18.dp)
 ) = ListItem(
     title = title,
     modifier = modifier,
     isActive = isActive,
+    shape = shape,
     subtitle = {
         badges()
         if (!subtitle.isNullOrEmpty()) {
@@ -308,6 +317,7 @@ fun SongListItem(
     isActive: Boolean = false,
     isPlaying: Boolean = false,
     isSwipeable: Boolean = true,
+    shape: Shape = RoundedCornerShape(18.dp),
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) {
     val swipeEnabled by rememberPreference(SwipeToSongKey, defaultValue = false)
@@ -334,7 +344,8 @@ fun SongListItem(
             },
             trailingContent = trailingContent,
             modifier = modifier,
-            isActive = isActive
+            isActive = isActive,
+            shape = shape
         )
     }
 
@@ -430,6 +441,7 @@ fun ArtistListItem(
             )
         }
     },
+    shape: Shape = RoundedCornerShape(18.dp),
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) = ListItem(
     title = artist.artist.name,
@@ -446,6 +458,7 @@ fun ArtistListItem(
     },
     trailingContent = trailingContent,
     modifier = modifier,
+    shape = shape,
 )
 
 @Composable
@@ -519,6 +532,7 @@ fun AlbumListItem(
     },
     isActive: Boolean = false,
     isPlaying: Boolean = false,
+    shape: Shape = RoundedCornerShape(18.dp),
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) = ListItem(
     title = album.album.title,
@@ -538,7 +552,8 @@ fun AlbumListItem(
         )
     },
     trailingContent = trailingContent,
-    modifier = modifier
+    modifier = modifier,
+    shape = shape,
 )
 
 @Composable
@@ -632,6 +647,7 @@ fun PlaylistListItem(
     modifier: Modifier = Modifier,
     autoPlaylist: Boolean = false,
     badges: @Composable RowScope.() -> Unit = {},
+    shape: Shape = RoundedCornerShape(18.dp),
     trailingContent: @Composable RowScope.() -> Unit = {}
 ) = ListItem(
     title = playlist.playlist.name,
@@ -675,7 +691,8 @@ fun PlaylistListItem(
         )
     },
     trailingContent = trailingContent,
-    modifier = modifier
+    modifier = modifier,
+    shape = shape,
 )
 
 @Composable
@@ -881,6 +898,7 @@ fun MediaMetadataListItem(
     isActive: Boolean = false,
     isPlaying: Boolean = false,
     shouldLoadImage: Boolean = true,
+    shape: Shape = RoundedCornerShape(18.dp),
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) {
     ListItem(
@@ -903,7 +921,8 @@ fun MediaMetadataListItem(
         },
         trailingContent = trailingContent,
         modifier = modifier,
-        isActive = isActive
+        isActive = isActive,
+        shape = shape,
     )
 }
 
@@ -938,6 +957,7 @@ fun YouTubeListItem(
             Icon.Download(downloads[item.id]?.state)
         }
     },
+    shape: Shape = RoundedCornerShape(18.dp)
 ) {
     val swipeEnabled by rememberPreference(SwipeToSongKey, defaultValue = false)
 
@@ -968,7 +988,8 @@ fun YouTubeListItem(
             },
             trailingContent = trailingContent,
             modifier = modifier,
-            isActive = isActive
+            isActive = isActive,
+            shape = shape
         )
     }
 

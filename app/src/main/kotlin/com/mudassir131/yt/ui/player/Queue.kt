@@ -678,6 +678,10 @@ fun Queue(
                                     }
                                 }
 
+                                val itemShape = com.mudassir131.yt.ui.utils.getGroupShape(index, mutableQueueWindows.size)
+                                val topPadding = if (itemShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(itemShape.topStart)) 3.dp else 0.5.dp
+                                val bottomPadding = if (itemShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(itemShape.bottomStart)) 3.dp else 0.5.dp
+
                                 MediaMetadataListItem(
                                     mediaMetadata = window.mediaItem.metadata!!,
                                     isSelected = selection && window.mediaItem.metadata!! in selectedSongs,
@@ -730,8 +734,8 @@ fun Queue(
                                     modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 3.dp)
-                                        .clip(RoundedCornerShape(18.dp))
+                                        .padding(start = 12.dp, end = 12.dp, top = topPadding, bottom = bottomPadding)
+                                        .clip(itemShape)
                                         .background(
                                             if (isActive) {
                                                 MaterialTheme.colorScheme.secondaryContainer
@@ -831,6 +835,10 @@ fun Queue(
                         Row(
                             horizontalArrangement = Arrangement.Center,
                         ) {
+                            val itemShape = com.mudassir131.yt.ui.utils.getGroupShape(index, automix.size)
+                            val topPadding = if (itemShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(itemShape.topStart)) 3.dp else 0.5.dp
+                            val bottomPadding = if (itemShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(itemShape.bottomStart)) 3.dp else 0.5.dp
+
                             MediaMetadataListItem(
                                 mediaMetadata = item.metadata!!,
                                 trailingContent = {
@@ -864,8 +872,8 @@ fun Queue(
                                 modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 3.dp)
-                                    .clip(RoundedCornerShape(18.dp))
+                                    .padding(start = 12.dp, end = 12.dp, top = topPadding, bottom = bottomPadding)
+                                    .clip(itemShape)
                                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                     .combinedClickable(
                                         onClick = {},

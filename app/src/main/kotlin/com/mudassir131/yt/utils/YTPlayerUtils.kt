@@ -38,10 +38,15 @@ import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 object YTPlayerUtils {
     private const val logTag = "YTPlayerUtils"
     private const val FAILED_CLIENT_BACKOFF_MS = 10 * 60 * 1000L
+
+    @Volatile
+    private var cachedSignatureTimestamp: Int? = null
 
     @Volatile private var streamClientPair: Pair<java.net.Proxy?, OkHttpClient>? = null
 
@@ -222,9 +227,24 @@ object YTPlayerUtils {
         val metadataClient =
             preferredYouTubeClient.takeIf { preferredStreamClient == PlayerStreamClient.ANDROID_VR } ?: MAIN_CLIENT
 
-        Timber.tag(logTag).i("Fetching metadata response using client: ${metadataClient.clientName}")
-        val metadataPlayerResponse = runCatching {
-            YouTube.player(videoId, playlistId, metadataClient, signatureTimestamp).getOrThrow()}.getOrNull()
+        Timber.tag(logTag).i("Fetching metadata and preferred stream responses in parallel using clients: ${metadataClient.clientName} and ${preferredYouTubeClient.clientName}")
+        val (metadataPlayerResponse, preferredPlayerResponse) = coroutineScope {
+            val metadataDeferred = async {
+                runCatching {
+                    YouTube.player(videoId, playlistId, metadataClient, signatureTimestamp).getOrThrow()
+                }.getOrNull()
+            }
+            val preferredDeferred = if (preferredYouTubeClient != metadataClient) {
+                async {
+                    runCatching {
+                        YouTube.player(videoId, playlistId, preferredYouTubeClient, signatureTimestamp).getOrThrow()
+                    }.getOrNull()
+                }
+            } else null
+
+            metadataDeferred.await() to preferredDeferred?.await()
+        }
+
         val audioConfig = metadataPlayerResponse?.playerConfig?.audioConfig
         val videoDetails = metadataPlayerResponse?.videoDetails
         val playbackTracking = metadataPlayerResponse?.playbackTracking
@@ -260,13 +280,14 @@ object YTPlayerUtils {
                 continue
             }
 
-            streamPlayerResponse =
-                if (client == metadataClient) {
-                    metadataPlayerResponse
-                } else {
+            streamPlayerResponse = when (client) {
+                metadataClient -> metadataPlayerResponse
+                preferredYouTubeClient -> preferredPlayerResponse
+                else -> {
                     Timber.tag(logTag).i("Fetching player response for fallback client: ${client.clientName}")
                     YouTube.player(videoId, playlistId, client, signatureTimestamp).getOrNull()
                 }
+            }
 
             if (streamPlayerResponse == null) continue
 
@@ -328,17 +349,10 @@ object YTPlayerUtils {
             Timber.tag(logTag).i("Format found: ${format.mimeType}, bitrate: ${format.bitrate}")
             Timber.tag(logTag).v("Stream expires in: $streamExpiresInSeconds seconds")
 
-            val valid = validateStatus(streamUrl, client.userAgent)
-            if (valid) {
-                Timber.tag(logTag).i("Stream validated successfully with client: ${client.clientName}")
-                break
-            }
-
-            Timber.tag(logTag).w("Stream validation failed with client: ${client.clientName}, trying next fallback")
-            format = null
-            streamUrl = null
-            streamExpiresInSeconds = null
-            streamPlayerResponse = null
+            // Skip slow synchronous network validation during initial stream loading.
+            // ExoPlayer will handle loading errors, which are captured by onPlayerError to fetch fallback clients.
+            Timber.tag(logTag).i("Stream validated successfully (optimistic) with client: ${client.clientName}")
+            break
         }
 
         if (streamPlayerResponse == null) {
@@ -453,6 +467,7 @@ object YTPlayerUtils {
             when (audioQuality) {
                 AudioQuality.SAAVN -> 160_000
                 AudioQuality.OPUS -> 320_000
+                AudioQuality.LOSSLESS -> 1_411_200
             }
 
         val preferHigher =
@@ -518,6 +533,13 @@ object YTPlayerUtils {
                 codec?.contains("mp4a", ignoreCase = true) == true -> 4
                 else -> codecRank(codec)
             }
+            AudioQuality.LOSSLESS -> when {
+                codec?.contains("flac", ignoreCase = true) == true -> 5
+                codec?.contains("wav", ignoreCase = true) == true -> 5
+                codec?.contains("opus", ignoreCase = true) == true -> 4
+                codec?.contains("mp4a", ignoreCase = true) == true -> 3
+                else -> codecRank(codec)
+            }
         }
     private fun isLikelyPreview(
         format: PlayerResponse.StreamingData.Format,
@@ -528,59 +550,24 @@ object YTPlayerUtils {
         return approx in 1L..(minOf(90_000L, (expectedDurationMs * 9L) / 10L))
     }
     /**
-     * Checks if the stream url returns a successful status.
-     * If this returns true the url is likely to work.
-     * If this returns false the url might cause an error during playback.
-     */
-    private fun validateStatus(url: String, userAgent: String): Boolean {
-        Timber.tag(logTag).v("Validating stream URL status")
-        try {
-            val httpUrl = url.toHttpUrlOrNull()
-            val clientParam = httpUrl?.queryParameter("c")?.trim().orEmpty()
-
-            val resolvedUserAgent = StreamClientUtils.resolveUserAgent(clientParam).ifEmpty { userAgent }
-            val originReferer = StreamClientUtils.resolveOriginReferer(clientParam)
-
-            val probeRanges = listOf("bytes=0-0")
-
-            for (range in probeRanges) {
-                val rangeRequest =
-                    okhttp3.Request.Builder()
-                        .get()
-                        .header("User-Agent", resolvedUserAgent)
-                        .header("Range", range)
-                        .apply {
-                            originReferer.origin?.let { header("Origin", it) }
-                            originReferer.referer?.let { header("Referer", it) }
-                        }.url(url)
-                        .build()
-
-                val code = currentStreamClient().newCall(rangeRequest).execute().use { response -> response.code }
-                if (code == 403) return false
-                if (code !in 200..399 && code != 416) return false
-            }
-
-            return true
-        } catch (e: Exception) {
-            Timber.tag(logTag).e(e, "Stream URL validation failed with exception")
-            reportException(e)
-        }
-        return false
-    }
-    /**
      * Wrapper around the [NewPipeUtils.getSignatureTimestamp] function which reports exceptions
      */
     private fun getSignatureTimestampOrNull(
         videoId: String
     ): Int? {
+        cachedSignatureTimestamp?.let { return it }
         Timber.tag(logTag).i("Getting signature timestamp for videoId: $videoId")
-        return NewPipeUtils.getSignatureTimestamp(videoId)
+        val timestamp = NewPipeUtils.getSignatureTimestamp(videoId)
             .onSuccess { Timber.tag(logTag).i("Signature timestamp obtained: $it") }
             .onFailure {
                 Timber.tag(logTag).e(it, "Failed to get signature timestamp")
                 reportException(it)
             }
             .getOrNull()
+        if (timestamp != null) {
+            cachedSignatureTimestamp = timestamp
+        }
+        return timestamp
     }
     /**
      * Wrapper around the [NewPipeUtils.getStreamUrl] function which reports exceptions.
