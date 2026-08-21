@@ -94,6 +94,7 @@ import com.mudassir131.yt.constants.AutoDownloadOnLikeKey
 import com.mudassir131.yt.constants.AutoLoadMoreKey
 import com.mudassir131.yt.constants.AutoSkipNextOnErrorKey
 import com.mudassir131.yt.constants.AutoStartOnBluetoothKey
+import com.mudassir131.yt.constants.DataSaverKey
 import com.mudassir131.yt.constants.DiscordTokenKey
 import com.mudassir131.yt.constants.EnableDiscordRPCKey
 import com.mudassir131.yt.constants.EnableLastFMScrobblingKey
@@ -3547,16 +3548,46 @@ class MusicService :
             if (!playbackUrlCache.containsKey(nextMediaId)) {
                 scope.launch(Dispatchers.IO) {
                     try {
+                        val dataSaverEnabled = dataStore.get(DataSaverKey, false)
                         YTPlayerUtils.playerResponseForPlayback(
                             nextMediaId,
                             audioQuality = audioQuality,
                             connectivityManager = connectivityManager,
                             preferredStreamClient = preferredStreamClient,
                             avoidCodecs = avoidStreamCodecs,
+                            dataSaver = dataSaverEnabled,
                         ).onSuccess { nonNullPlayback ->
                             playbackUrlCache[nextMediaId] =
                                 nonNullPlayback.streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)
                             Timber.tag("MusicService").i("Prefetched audio stream URL for next track: $nextMediaId")
+                            val fmt = nonNullPlayback.format
+                            val rawMime = fmt.mimeType
+                            val cleanMime = rawMime.split(";").firstOrNull()?.trim() ?: "audio/webm"
+                            val cleanCodecs = if (rawMime.contains("codecs=")) {
+                                rawMime.substringAfter("codecs=").removeSurrounding("\"").split(",").firstOrNull()?.trim() ?: "opus"
+                            } else if (cleanMime.contains("opus")) {
+                                "opus"
+                            } else if (cleanMime.contains("mp4") || cleanMime.contains("aac")) {
+                                "mp4a.40.2"
+                            } else {
+                                "opus"
+                            }
+                            database.query {
+                                upsert(
+                                    FormatEntity(
+                                        id = nextMediaId,
+                                        itag = fmt.itag,
+                                        mimeType = cleanMime,
+                                        codecs = cleanCodecs,
+                                        bitrate = fmt.bitrate,
+                                        sampleRate = fmt.audioSampleRate,
+                                        contentLength = fmt.contentLength ?: C.LENGTH_UNSET.toLong(),
+                                        loudnessDb = nonNullPlayback.audioConfig?.loudnessDb,
+                                        perceptualLoudnessDb = nonNullPlayback.audioConfig?.perceptualLoudnessDb,
+                                        playbackUrl = nonNullPlayback.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+                                    )
+                                )
+                            }
                         }
                     } catch (e: Exception) {
                         Timber.tag("MusicService").w("Failed to prefetch stream URL for $nextMediaId: ${e.message}")
@@ -4217,6 +4248,7 @@ class MusicService :
                 return@Factory dataSpec.withUri(it.first.toUri()).subrange(dataSpec.uriPositionOffset, length)
             }
 
+            val dataSaverEnabled = runBlocking(Dispatchers.IO) { dataStore.get(DataSaverKey, false) }
             val playbackData = runBlocking(Dispatchers.IO) {
                 YTPlayerUtils.playerResponseForPlayback(
                     mediaId,
@@ -4224,6 +4256,7 @@ class MusicService :
                     connectivityManager = connectivityManager,
                     preferredStreamClient = preferredStreamClient,
                     avoidCodecs = avoidStreamCodecs,
+                    dataSaver = dataSaverEnabled,
                 )
             }.getOrElse { throwable ->
                 when (throwable) {
@@ -4266,13 +4299,25 @@ class MusicService :
                     Timber.tag("AudioNormalization").w("No loudness data available from YouTube for video: $mediaId")
                 }
 
+                val rawMime = format.mimeType
+                val cleanMime = rawMime.split(";").firstOrNull()?.trim() ?: "audio/webm"
+                val cleanCodecs = if (rawMime.contains("codecs=")) {
+                    rawMime.substringAfter("codecs=").removeSurrounding("\"").split(",").firstOrNull()?.trim() ?: "opus"
+                } else if (cleanMime.contains("opus")) {
+                    "opus"
+                } else if (cleanMime.contains("mp4") || cleanMime.contains("aac")) {
+                    "mp4a.40.2"
+                } else {
+                    "opus"
+                }
+
                 database.query {
                     upsert(
                         FormatEntity(
                             id = mediaId,
                             itag = format.itag,
-                            mimeType = format.mimeType.split(";")[0],
-                            codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\""),
+                            mimeType = cleanMime,
+                            codecs = cleanCodecs,
                             bitrate = format.bitrate,
                             sampleRate = format.audioSampleRate,
                             contentLength = format.contentLength ?: C.LENGTH_UNSET.toLong(),

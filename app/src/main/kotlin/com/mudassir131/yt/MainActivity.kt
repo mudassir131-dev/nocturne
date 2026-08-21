@@ -507,6 +507,39 @@ class MainActivity : ComponentActivity() {
                 }
         }
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            dataStore.data
+                .map { it[com.mudassir131.yt.constants.ForcePeakRefreshRateKey] ?: true }
+                .distinctUntilChanged()
+                .collectLatest { forceHighRate ->
+                    withContext(Dispatchers.Main) {
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                val display = window.context.display
+                                if (forceHighRate && display != null) {
+                                    val maxMode = display.supportedModes.maxByOrNull { it.refreshRate }
+                                    if (maxMode != null) {
+                                        val params = window.attributes
+                                        params.preferredDisplayModeId = maxMode.modeId
+                                        window.attributes = params
+                                    }
+                                } else {
+                                    val params = window.attributes
+                                    params.preferredDisplayModeId = 0
+                                    window.attributes = params
+                                }
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                val params = window.attributes
+                                params.preferredRefreshRate = if (forceHighRate) 120f else 0f
+                                window.attributes = params
+                            }
+                        } catch (e: Exception) {
+                            reportException(e)
+                        }
+                    }
+                }
+        }
+
         setContent {
             var latestReleaseInfo by remember { mutableStateOf<com.mudassir131.yt.utils.ReleaseInfo?>(null) }
             var showUpdateDialog by remember { mutableStateOf(false) }
@@ -640,7 +673,7 @@ class MainActivity : ComponentActivity() {
 
 
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
-            val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "default")
+            val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "spotify_green")
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val useSystemFont by rememberPreference(UseSystemFontKey, defaultValue = false)
             val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -789,7 +822,7 @@ class MainActivity : ComponentActivity() {
                     val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                     val (appleMusicInspired) = rememberPreference(
                         AppleMusicInspiredKey,
-                        defaultValue = false,
+                        defaultValue = true,
                     )
                     val defaultOpenTab by rememberEnumPreference(DefaultOpenTabKey, NavigationTab.HOME)
                     val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
@@ -823,7 +856,7 @@ class MainActivity : ComponentActivity() {
                     var searchPrimaryTab by rememberSaveable {
                         mutableStateOf(SearchPrimaryTab.EXPLORE)
                     }
-                    val (disableRootBlur) = rememberPreference(DisableBlurKey, defaultValue = true)
+                    val (disableRootBlur) = rememberPreference(DisableBlurKey, defaultValue = false)
                     var openSearchImmediately: Boolean by remember {
                         mutableStateOf(intent?.action == ACTION_SEARCH)
                     }

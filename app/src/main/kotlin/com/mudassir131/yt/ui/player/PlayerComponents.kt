@@ -99,6 +99,8 @@ import com.mudassir131.yt.constants.PlayerButtonsStyle
 import com.mudassir131.yt.constants.PlayerDesignStyle
 import com.mudassir131.yt.constants.GlassEffectsKey
 import com.mudassir131.yt.constants.GlassEffectsMode
+import com.mudassir131.yt.constants.CinematicThemeFollowKey
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.ui.theme.glassmorphicButton
@@ -111,6 +113,7 @@ import com.mudassir131.yt.playback.PlayerConnection
 import com.mudassir131.yt.ui.component.BottomSheetPageState
 import com.mudassir131.yt.ui.component.ActualPlaybackQualityBadge
 import com.mudassir131.yt.ui.component.BottomSheetState
+import com.mudassir131.yt.ui.component.CapsulePlayerSlider
 import com.mudassir131.yt.ui.component.MenuState
 import com.mudassir131.yt.ui.component.PlayerSliderTrack
 import com.mudassir131.yt.ui.component.ResizableIconButton
@@ -380,7 +383,7 @@ fun PlayerTopActions(
         }
 
         PlayerDesignStyle.V4 -> {
-            val buttonShape = RoundedCornerShape(14.dp)
+            val buttonShape = RoundedCornerShape(16.dp)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -390,17 +393,16 @@ fun PlayerTopActions(
                         onShareClick()
                     },
                     shape = buttonShape,
-                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
                     modifier = Modifier
-                        .height(44.dp)
-                        .width(44.dp)
+                        .size(46.dp)
                         .then(
                             if (isGlassActive) {
                                 Modifier.glassmorphic(
                                     shape = buttonShape,
-                                    tintColor = textBackgroundColor.copy(alpha = 0.12f),
-                                    fallbackColor = textBackgroundColor.copy(alpha = 0.12f),
-                                    borderColor = Color.White.copy(alpha = 0.08f)
+                                    tintColor = textBackgroundColor.copy(alpha = 0.14f),
+                                    fallbackColor = textBackgroundColor.copy(alpha = 0.14f),
+                                    borderColor = Color.White.copy(alpha = 0.10f)
                                 )
                             } else Modifier
                         )
@@ -423,18 +425,17 @@ fun PlayerTopActions(
                     } else if (currentSongLiked) {
                         MaterialTheme.colorScheme.error.copy(alpha = 0.25f)
                     } else {
-                        textBackgroundColor.copy(alpha = 0.12f)
+                        textBackgroundColor.copy(alpha = 0.14f)
                     },
                     modifier = Modifier
-                        .height(44.dp)
-                        .width(44.dp)
+                        .size(46.dp)
                         .then(
                             if (isGlassActive) {
                                 Modifier.glassmorphic(
                                     shape = buttonShape,
-                                    tintColor = if (currentSongLiked) MaterialTheme.colorScheme.error.copy(alpha = 0.25f) else textBackgroundColor.copy(alpha = 0.12f),
-                                    fallbackColor = textBackgroundColor.copy(alpha = 0.12f),
-                                    borderColor = Color.White.copy(alpha = 0.08f)
+                                    tintColor = if (currentSongLiked) MaterialTheme.colorScheme.error.copy(alpha = 0.25f) else textBackgroundColor.copy(alpha = 0.14f),
+                                    fallbackColor = textBackgroundColor.copy(alpha = 0.14f),
+                                    borderColor = Color.White.copy(alpha = 0.10f)
                                 )
                             } else Modifier
                         )
@@ -464,7 +465,7 @@ fun PlayerTopActions(
                                 onShowDetailsDialog = {
                                     mediaMetadata.id.let {
                                         bottomSheetPageState.show {
-                                            ShowMediaInfo(it)
+                                             ShowMediaInfo(it)
                                         }
                                     }
                                 },
@@ -473,17 +474,16 @@ fun PlayerTopActions(
                         }
                     },
                     shape = buttonShape,
-                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
                     modifier = Modifier
-                        .height(44.dp)
-                        .width(44.dp)
+                        .size(46.dp)
                         .then(
                             if (isGlassActive) {
                                 Modifier.glassmorphic(
                                     shape = buttonShape,
-                                    tintColor = textBackgroundColor.copy(alpha = 0.12f),
-                                    fallbackColor = textBackgroundColor.copy(alpha = 0.12f),
-                                    borderColor = Color.White.copy(alpha = 0.08f)
+                                    tintColor = textBackgroundColor.copy(alpha = 0.14f),
+                                    fallbackColor = textBackgroundColor.copy(alpha = 0.14f),
+                                    borderColor = Color.White.copy(alpha = 0.10f)
                                 )
                             } else Modifier
                         )
@@ -607,19 +607,12 @@ fun StyledPlaybackSlider(
 ) {
     when (sliderStyle) {
         SliderStyle.Standard -> {
-            Slider(
+            CapsulePlayerSlider(
                 value = value,
                 valueRange = valueRange,
                 onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
-                colors = PlayerSliderColors.standardSliderColors(activeColor),
-                track = { sliderState ->
-                    PlayerSliderTrack(
-                        sliderState = sliderState,
-                        colors = PlayerSliderColors.standardSliderColors(activeColor),
-                        trackHeight = 4.dp
-                    )
-                },
+                activeColor = activeColor,
                 modifier = modifier
             )
         }
@@ -716,11 +709,6 @@ fun PlayerTimeLabel(
             color = textBackgroundColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-        )
-
-        ActualPlaybackQualityBadge(
-            format = format,
-            color = textBackgroundColor,
         )
 
         Text(
@@ -1075,262 +1063,235 @@ fun PlayerPlaybackControls(
         }
 
         PlayerDesignStyle.V4, PlayerDesignStyle.V4_GLASS -> {
-            BoxWithConstraints(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding)
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val baseLarge = 56.dp
-                val baseSmall = 46.dp
-                val baseGap = 12.dp
-                val baseLargeIcon = 28.dp
-                val baseSmallIcon = 22.dp
-                val baseLargeRadius = 18.dp
-                val baseSmallRadius = 16.dp
-                val centerSize = 88.dp
-                val centerPadding = 40.dp
-                val sideTotal = (maxWidth - centerSize - centerPadding) / 2f
-                val scale =
-                    ((sideTotal - baseGap) / (baseLarge + baseSmall)).coerceAtMost(1f).coerceAtLeast(0.6f)
-                val large = baseLarge * scale
-                val small = baseSmall * scale
-                val gap = baseGap * scale
-                val largeIcon = baseLargeIcon * scale
-                val smallIcon = baseSmallIcon * scale
-                val largeRadius = baseLargeRadius * scale
-                val smallRadius = baseSmallRadius * scale
+                val buttonSize = 52.dp
+                val buttonRadius = 18.dp
+                val buttonShape = RoundedCornerShape(buttonRadius)
+                val playSize = 76.dp
+                val playRadius = 26.dp
+                val playShape = RoundedCornerShape(playRadius)
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            onClick = {
-                                playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                            },
-                            shape = RoundedCornerShape(smallRadius),
-                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
-                                alpha = if (shuffleModeEnabled) 0.2f else 0.08f
-                            ),
-                            modifier = Modifier
-                                .size(small)
-                                .then(
-                                    if (isGlassActive) {
-                                        Modifier.glassmorphicButton(
-                                            isGlassActive = true,
-                                            shape = RoundedCornerShape(smallRadius),
-                                            baseColor = textBackgroundColor.copy(
-                                                alpha = if (shuffleModeEnabled) 0.2f else 0.08f
-                                            )
-                                        )
-                                    } else Modifier
-                                )
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.shuffle),
-                                    contentDescription = null,
-                                    tint = textBackgroundColor.copy(
-                                        alpha = if (shuffleModeEnabled) 1f else 0.6f
-                                    ),
-                                    modifier = Modifier.size(smallIcon)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(gap))
-
-                        Surface(
-                            onClick = { playerConnection.seekToPrevious() },
-                            enabled = canSkipPrevious,
-                            shape = RoundedCornerShape(largeRadius),
-                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.15f),
-                            modifier = Modifier
-                                .size(large)
-                                .then(
-                                    if (isGlassActive) {
-                                        Modifier.glassmorphicButton(
-                                            isGlassActive = true,
-                                            shape = RoundedCornerShape(largeRadius),
-                                            baseColor = textBackgroundColor.copy(alpha = 0.15f)
-                                        )
-                                    } else Modifier
-                                )
-                                .semantics {
-                                    role = Role.Button
-                                    contentDescription = "Previous"
-                                }
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.skip_previous),
-                                    contentDescription = null,
-                                    tint = textBackgroundColor.copy(
-                                        alpha = if (canSkipPrevious) 1f else 0.4f
-                                    ),
-                                    modifier = Modifier.size(largeIcon)
-                                )
-                            }
-                        }
-                    }
-
-                    Surface(
-                        onClick = {
-                            if (playbackState == STATE_ENDED) {
-                                playerConnection.player.seekTo(0, 0)
-                                playerConnection.player.playWhenReady = true
-                            } else {
-                                playerConnection.player.togglePlayPause()
-                            }
-                        },
-                        shape = RoundedCornerShape(28.dp),
-                        color = if (isGlassActive) Color.Transparent else textButtonColor,
-                        modifier = Modifier
-                            .padding(horizontal = 20.dp)
-                            .size(88.dp)
-                            .then(
-                                if (isGlassActive) {
-                                    Modifier.glassmorphicButton(
-                                        isGlassActive = true,
-                                        shape = RoundedCornerShape(28.dp),
-                                        baseColor = textButtonColor.copy(alpha = 0.3f)
+                // 1. Shuffle
+                Surface(
+                    onClick = {
+                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
+                    },
+                    shape = buttonShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
+                        alpha = if (shuffleModeEnabled) 0.24f else 0.14f
+                    ),
+                    modifier = Modifier
+                        .size(buttonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = buttonShape,
+                                    baseColor = textBackgroundColor.copy(
+                                        alpha = if (shuffleModeEnabled) 0.24f else 0.14f
                                     )
-                                } else Modifier
-                            )
-                            .semantics {
-                                role = Role.Button
-                                contentDescription = when {
-                                    playbackState == STATE_ENDED -> "Replay"
-                                    isPlaying -> "Pause"
-                                    else -> "Play"
-                                }
-                            }
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isLoading) {
-                                VeluneLoader(size = 40.dp)
-                            } else {
-                                Icon(
-                                    painter = painterResource(
-                                        when {
-                                            playbackState == STATE_ENDED -> R.drawable.replay
-                                            isPlaying -> R.drawable.pause
-                                            else -> R.drawable.play
-                                        }
-                                    ),
-                                    contentDescription = null,
-                                    tint = if (isGlassActive) textBackgroundColor else icBackgroundColor,
-                                    modifier = Modifier.size(44.dp)
                                 )
+                            } else Modifier
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.shuffle),
+                            contentDescription = null,
+                            tint = textBackgroundColor.copy(
+                                alpha = if (shuffleModeEnabled) 1f else 0.7f
+                            ),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                // 2. Previous
+                Surface(
+                    onClick = { playerConnection.seekToPrevious() },
+                    enabled = canSkipPrevious,
+                    shape = buttonShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
+                    modifier = Modifier
+                        .size(buttonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = buttonShape,
+                                    baseColor = textBackgroundColor.copy(alpha = 0.14f)
+                                )
+                            } else Modifier
+                        )
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = "Previous"
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.apple_skip_previous),
+                            contentDescription = null,
+                            tint = textBackgroundColor.copy(
+                                alpha = if (canSkipPrevious) 1f else 0.4f
+                            ),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+
+                // 3. Play / Pause
+                Surface(
+                    onClick = {
+                        if (playbackState == STATE_ENDED) {
+                            playerConnection.player.seekTo(0, 0)
+                            playerConnection.player.playWhenReady = true
+                        } else {
+                            playerConnection.player.togglePlayPause()
+                        }
+                    },
+                    shape = playShape,
+                    color = if (isGlassActive) Color.Transparent else textButtonColor,
+                    modifier = Modifier
+                        .size(playSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = playShape,
+                                    baseColor = textButtonColor.copy(alpha = 0.35f)
+                                )
+                            } else Modifier
+                        )
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = when {
+                                playbackState == STATE_ENDED -> "Replay"
+                                isPlaying -> "Pause"
+                                else -> "Play"
                             }
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading) {
+                            VeluneLoader(size = 36.dp)
+                        } else {
+                            Icon(
+                                painter = painterResource(
+                                    when {
+                                        playbackState == STATE_ENDED -> R.drawable.replay
+                                        isPlaying -> R.drawable.pause_applemusic
+                                        else -> R.drawable.play_applemusic
+                                    }
+                                ),
+                                contentDescription = null,
+                                tint = if (isGlassActive) textBackgroundColor else Color.Black,
+                                modifier = Modifier.size(38.dp)
+                            )
                         }
                     }
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
+                }
+
+                // 4. Next
+                Surface(
+                    onClick = { playerConnection.seekToNext() },
+                    enabled = canSkipNext,
+                    shape = buttonShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
+                    modifier = Modifier
+                        .size(buttonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = buttonShape,
+                                    baseColor = textBackgroundColor.copy(alpha = 0.14f)
+                                )
+                            } else Modifier
+                        )
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = "Next"
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Surface(
-                            onClick = { playerConnection.seekToNext() },
-                            enabled = canSkipNext,
-                            shape = RoundedCornerShape(largeRadius),
-                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.15f),
-                            modifier = Modifier
-                                .size(large)
-                                .then(
-                                    if (isGlassActive) {
-                                        Modifier.glassmorphicButton(
-                                            isGlassActive = true,
-                                            shape = RoundedCornerShape(largeRadius),
-                                            baseColor = textBackgroundColor.copy(alpha = 0.15f)
-                                        )
-                                    } else Modifier
-                                )
-                                .semantics {
-                                    role = Role.Button
-                                    contentDescription = "Next"
-                                }
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.skip_next),
-                                    contentDescription = null,
-                                    tint = textBackgroundColor.copy(
-                                        alpha = if (canSkipNext) 1f else 0.4f
-                                    ),
-                                    modifier = Modifier.size(largeIcon)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(gap))
-
-                        Surface(
-                            onClick = { playerConnection.player.toggleRepeatMode() },
-                            shape = RoundedCornerShape(smallRadius),
-                            color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
-                                alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.2f else 0.08f
+                        Icon(
+                            painter = painterResource(R.drawable.apple_skip_next),
+                            contentDescription = null,
+                            tint = textBackgroundColor.copy(
+                                alpha = if (canSkipNext) 1f else 0.4f
                             ),
-                            modifier = Modifier
-                                .size(small)
-                                .then(
-                                    if (isGlassActive) {
-                                        Modifier.glassmorphicButton(
-                                            isGlassActive = true,
-                                            shape = RoundedCornerShape(smallRadius),
-                                            baseColor = textBackgroundColor.copy(
-                                                alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.2f else 0.08f
-                                            )
-                                        )
-                                    } else Modifier
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+
+                // 5. Repeat
+                Surface(
+                    onClick = { playerConnection.player.toggleRepeatMode() },
+                    shape = buttonShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
+                        alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.24f else 0.14f
+                    ),
+                    modifier = Modifier
+                        .size(buttonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = buttonShape,
+                                    baseColor = textBackgroundColor.copy(
+                                        alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.24f else 0.14f
+                                    )
                                 )
-                                .semantics {
-                                    role = Role.Button
-                                    contentDescription = "Repeat"
-                                    stateDescription = when (repeatMode) {
-                                        Player.REPEAT_MODE_OFF -> "Off"
-                                        Player.REPEAT_MODE_ALL -> "Repeat all"
-                                        Player.REPEAT_MODE_ONE -> "Repeat one"
-                                        else -> "Off"
-                                    }
-                                }
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(
-                                        when (repeatMode) {
-                                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                            else -> R.drawable.repeat
-                                        }
-                                    ),
-                                    contentDescription = null,
-                                    tint = textBackgroundColor.copy(
-                                        alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.6f else 1f
-                                    ),
-                                    modifier = Modifier.size(smallIcon)
-                                )
+                            } else Modifier
+                        )
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = "Repeat"
+                            stateDescription = when (repeatMode) {
+                                Player.REPEAT_MODE_OFF -> "Off"
+                                Player.REPEAT_MODE_ALL -> "Repeat all"
+                                Player.REPEAT_MODE_ONE -> "Repeat one"
+                                else -> "Off"
                             }
                         }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                when (repeatMode) {
+                                    Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                    else -> R.drawable.repeat
+                                }
+                            ),
+                            contentDescription = null,
+                            tint = textBackgroundColor.copy(
+                                alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.7f else 1f
+                            ),
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                 }
             }
@@ -1853,6 +1814,8 @@ fun PlayerBackground(
             }
 
             PlayerBackgroundStyle.GLOW -> {
+                val (cinematicThemeFollow) = rememberPreference(CinematicThemeFollowKey, defaultValue = true)
+                val isDark = !cinematicThemeFollow || isSystemInDarkTheme()
                 AnimatedContent(
                     targetState = gradientColors,
                     transitionSpec = {
@@ -1868,8 +1831,8 @@ fun PlayerBackground(
                                     val width = size.width
                                     val height = size.height
 
-                                    // Use a dark base, but the gradients will cover most of it
-                                    val baseColor = Color(0xFF050505)
+                                    // Base color follows light / dark theme
+                                    val baseColor = if (isDark) Color(0xFF050505) else Color(0xFFECEEF2)
 
                                     // Extract up to 6 colors
                                     val color1 = colors.getOrElse(0) { Color.DarkGray }
@@ -1879,11 +1842,13 @@ fun PlayerBackground(
                                     val color5 = colors.getOrElse(4) { color2 }
                                     val color6 = colors.getOrElse(5) { color3 }
 
+                                    val alphaScale = if (isDark) 1f else 0.75f
+
                                     // Top-Left Large Glow (Primary)
                                     val brush1 = Brush.radialGradient(
                                         colors = listOf(
-                                            color1.copy(alpha = 0.8f),
-                                            color1.copy(alpha = 0.5f),
+                                            color1.copy(alpha = 0.8f * alphaScale),
+                                            color1.copy(alpha = 0.5f * alphaScale),
                                             Color.Transparent
                                         ),
                                         center = Offset(width * 0.2f, height * 0.25f),
@@ -1893,8 +1858,8 @@ fun PlayerBackground(
                                     // Bottom-Right Large Glow (Secondary)
                                     val brush2 = Brush.radialGradient(
                                         colors = listOf(
-                                            color2.copy(alpha = 0.75f),
-                                            color2.copy(alpha = 0.45f),
+                                            color2.copy(alpha = 0.75f * alphaScale),
+                                            color2.copy(alpha = 0.45f * alphaScale),
                                             Color.Transparent
                                         ),
                                         center = Offset(width * 0.85f, height * 0.8f),
@@ -1904,8 +1869,8 @@ fun PlayerBackground(
                                     // Top-Right Glow (Tertiary)
                                     val brush3 = Brush.radialGradient(
                                         colors = listOf(
-                                            color3.copy(alpha = 0.7f),
-                                            color3.copy(alpha = 0.4f),
+                                            color3.copy(alpha = 0.7f * alphaScale),
+                                            color3.copy(alpha = 0.4f * alphaScale),
                                             Color.Transparent
                                         ),
                                         center = Offset(width * 0.9f, height * 0.15f),
@@ -1915,8 +1880,8 @@ fun PlayerBackground(
                                     // Bottom-Left (Quaternary)
                                     val brush4 = Brush.radialGradient(
                                         colors = listOf(
-                                            color4.copy(alpha = 0.65f),
-                                            color4.copy(alpha = 0.35f),
+                                            color4.copy(alpha = 0.65f * alphaScale),
+                                            color4.copy(alpha = 0.35f * alphaScale),
                                             Color.Transparent
                                         ),
                                         center = Offset(width * 0.1f, height * 0.9f),
@@ -1926,8 +1891,8 @@ fun PlayerBackground(
                                     // Top-Center (Quinary)
                                     val brush5 = Brush.radialGradient(
                                         colors = listOf(
-                                            color5.copy(alpha = 0.6f),
-                                            color5.copy(alpha = 0.3f),
+                                            color5.copy(alpha = 0.6f * alphaScale),
+                                            color5.copy(alpha = 0.3f * alphaScale),
                                             Color.Transparent
                                         ),
                                         center = Offset(width * 0.5f, height * 0.1f),
@@ -1937,8 +1902,8 @@ fun PlayerBackground(
                                     // Bottom-Center (Senary)
                                     val brush6 = Brush.radialGradient(
                                         colors = listOf(
-                                            color6.copy(alpha = 0.6f),
-                                            color6.copy(alpha = 0.3f),
+                                            color6.copy(alpha = 0.6f * alphaScale),
+                                            color6.copy(alpha = 0.3f * alphaScale),
                                             Color.Transparent
                                         ),
                                         center = Offset(width * 0.5f, height * 0.95f),

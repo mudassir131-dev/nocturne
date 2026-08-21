@@ -50,7 +50,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -196,8 +198,8 @@ fun LyricsScreen(
     // Track loading state: when buffering or when user is seeking
     val isLoading = playbackState == STATE_BUFFERING || sliderPosition != null
 
-    val playerBackground by rememberEnumPreference(PlayerBackgroundStyleKey, PlayerBackgroundStyle.DEFAULT)
-    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val playerBackground by rememberEnumPreference(PlayerBackgroundStyleKey, PlayerBackgroundStyle.GLOW)
+    val (disableBlur) = rememberPreference(DisableBlurKey, false)
 
     val (playerCustomImageUri) = rememberPreference(PlayerCustomImageUriKey, "")
     val (playerCustomBlur) = rememberPreference(PlayerCustomBlurKey, 0f)
@@ -589,71 +591,64 @@ fun LyricsScreen(
                 }
             }
             else -> {
-                // Portrait layout - original layout
+                // Portrait layout - Image 4 Apple Music lyrics design
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(WindowInsets.systemBars.asPaddingValues())
                 ) {
-                    // Header with More button and Down arrow on opposite sides
+                    // Top drag handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 8.dp, bottom = 10.dp)
+                            .width(36.dp)
+                            .height(4.dp)
+                            .background(Color.White.copy(alpha = 0.35f), RoundedCornerShape(2.dp))
+                            .align(Alignment.CenterHorizontally)
+                    )
+
+                    // Header: Album art thumbnail + Song Title/Artist + Circular More button
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(horizontal = 24.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Down arrow button (left)
-                        Box(
+                        // Thumbnail
+                        AsyncImage(
+                            model = mediaMetadata.thumbnailUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .size(32.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(
-                                        bounded = true,
-                                        radius = 16.dp
-                                    )
-                                ) { onBackClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.expand_more),
-                                contentDescription = stringResource(R.string.close),
-                                tint = textBackgroundColor,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        
-                        // Centered content
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+
+                        // Title & Artist
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 14.dp)
                         ) {
-                            Text(
-                                text = stringResource(R.string.now_playing),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = textBackgroundColor
-                            )
                             Text(
                                 text = mediaMetadata.title,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = mediaMetadata.artists.joinToString { it.name },
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = textBackgroundColor.copy(alpha = 0.8f),
+                                color = Color.White.copy(alpha = 0.7f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        
-                        // More button (right)
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(
-                                        bounded = true,
-                                        radius = 16.dp
-                                    )
-                                ) {
+
+                            // Circular More button
+                            Surface(
+                                onClick = {
                                     menuState.show {
                                         LyricsMenu(
                                             lyricsProvider = { currentLyrics },
@@ -662,196 +657,176 @@ fun LyricsScreen(
                                         )
                                     }
                                 },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.more_horiz),
-                                contentDescription = stringResource(R.string.more_options),
-                                tint = textBackgroundColor,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        if (useLyricsV2) {
-                            LyricsV2(
-                                sliderPositionProvider = { sliderPosition }
-                            )
-                        } else {
-                            Lyrics(
-                                sliderPositionProvider = { sliderPosition }
-                            )
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 48.dp, vertical = 16.dp)
-                    ) {
-                        StyledPlaybackSlider(
-                            sliderStyle = sliderStyle,
-                            value = (sliderPosition ?: position).toFloat(),
-                            valueRange = 0f..(if (duration == C.TIME_UNSET) 0f else duration.toFloat()),
-                            onValueChange = {
-                                sliderPosition = it.toLong()
-                            },
-                            onValueChangeFinished = {
-                                sliderPosition?.let {
-                                    player.seekTo(it)
-                                    position = it
-                                }
-                                sliderPosition = null
-                            },
-                            activeColor = textBackgroundColor,
-                            isPlaying = isPlaying,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        // Time display below slider
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = makeTimeString(sliderPosition ?: position),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = textBackgroundColor.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                text = if (duration != C.TIME_UNSET) makeTimeString(duration) else "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = textBackgroundColor.copy(alpha = 0.7f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Optimized control buttons for better fit
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp), // Reduced padding
-                            horizontalArrangement = Arrangement.SpaceEvenly, // Even distribution
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Repeat button with clear state indication
-                            IconButton(
-                                onClick = { playerConnection.player.toggleRepeatMode() },
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.15f),
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(
-                                    painter = painterResource(
-                                        when (repeatMode) {
-                                            Player.REPEAT_MODE_OFF, 
-                                            Player.REPEAT_MODE_ALL -> R.drawable.repeat
-                                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                            else -> R.drawable.repeat
-                                        }
-                                    ),
-                                    contentDescription = when (repeatMode) {
-                                        Player.REPEAT_MODE_OFF -> "Repeat Off"
-                                        Player.REPEAT_MODE_ALL -> "Repeat All"
-                                        Player.REPEAT_MODE_ONE -> "Repeat One"
-                                        else -> "Repeat"
-                                    },
-                                    tint = if (repeatMode == Player.REPEAT_MODE_OFF) {
-                                        // Inactive state - low opacity
-                                        textBackgroundColor.copy(alpha = 0.4f)
-                                    } else {
-                                        // Active state - full brightness
-                                        textBackgroundColor
-                                    },
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            // Previous button
-                            IconButton(
-                                onClick = { player.seekToPrevious() },
-                                modifier = Modifier.size(40.dp) // Slightly smaller
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.skip_previous),
-                                    contentDescription = null,
-                                    tint = textBackgroundColor,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-
-                            // Play/Pause button (largest)
-                            IconButton(
-                                onClick = { player.togglePlayPause() },
-                                modifier = Modifier.size(56.dp) // Slightly smaller but still prominent
-                            ) {
-                                if (isLoading) {
-                                    VeluneLoader(size = 36.dp)
-                                } else {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                                     Icon(
-                                        painter = painterResource(
-                                            if (isPlaying) R.drawable.pause else R.drawable.play
-                                        ),
-                                        contentDescription = if (isPlaying) "Pause" else stringResource(R.string.play),
-                                        tint = textBackgroundColor,
-                                        modifier = Modifier.size(36.dp)
+                                        painter = painterResource(R.drawable.more_horiz),
+                                        contentDescription = stringResource(R.string.more_options),
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
+                        }
 
-                            // Next button
-                            IconButton(
-                                onClick = { player.seekToNext() },
-                                modifier = Modifier.size(40.dp) // Slightly smaller
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.skip_next),
-                                    contentDescription = null,
-                                    tint = textBackgroundColor,
-                                    modifier = Modifier.size(24.dp)
+                        // Synchronized / Karaoke Lyrics Area
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            if (useLyricsV2) {
+                                LyricsV2(
+                                    sliderPositionProvider = { sliderPosition }
                                 )
-                            }
-
-                            // Shuffle button with clear state indication
-                            IconButton(
-                                onClick = { playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.shuffle),
-                                    contentDescription = if (shuffleModeEnabled) stringResource(R.string.shuffle) else stringResource(R.string.shuffle),
-                                    tint = if (shuffleModeEnabled) {
-                                        // Active state - full brightness
-                                        textBackgroundColor
-                                    } else {
-                                        // Inactive state - low opacity
-                                        textBackgroundColor.copy(alpha = 0.4f)
-                                    },
-                                    modifier = Modifier.size(20.dp)
+                            } else {
+                                Lyrics(
+                                    sliderPositionProvider = { sliderPosition }
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp)) // Proper spacing
+                        // Bottom Controls Section matching Image 4
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 32.dp, vertical = 8.dp)
+                        ) {
+                            // Seeker Slider
+                            StyledPlaybackSlider(
+                                sliderStyle = sliderStyle,
+                                value = (sliderPosition ?: position).toFloat(),
+                                valueRange = 0f..(if (duration == C.TIME_UNSET) 0f else duration.toFloat()),
+                                onValueChange = {
+                                    sliderPosition = it.toLong()
+                                },
+                                onValueChangeFinished = {
+                                    sliderPosition?.let {
+                                        player.seekTo(it)
+                                        position = it
+                                    }
+                                    sliderPosition = null
+                                },
+                                activeColor = Color.White,
+                                isPlaying = isPlaying,
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
-                        SystemMediaVolumeSlider(
-                            contentColor = textBackgroundColor,
-                            activeColor = textBackgroundColor,
-                            modifier = Modifier.padding(horizontal = 48.dp),
-                        )
+                            // Time stamps (0:02 on left, -4:09 remaining on right)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val currentPos = sliderPosition ?: position
+                                Text(
+                                    text = makeTimeString(currentPos),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    text = if (duration != C.TIME_UNSET) {
+                                        val remaining = (duration - currentPos).coerceAtLeast(0L)
+                                        "-${makeTimeString(remaining)}"
+                                    } else "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                            }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // 3 Apple-style Playback Controls (<<, || / ▶, >>)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Previous
+                                IconButton(
+                                    onClick = { player.seekToPrevious() },
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.apple_skip_previous),
+                                        contentDescription = "Previous",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(34.dp)
+                                    )
+                                }
+
+                                // Play / Pause
+                                IconButton(
+                                    onClick = { player.togglePlayPause() },
+                                    modifier = Modifier.size(64.dp)
+                                ) {
+                                    if (isLoading) {
+                                        VeluneLoader(size = 36.dp)
+                                    } else {
+                                        Icon(
+                                            painter = painterResource(
+                                                if (isPlaying) R.drawable.pause_applemusic else R.drawable.play_applemusic
+                                            ),
+                                            contentDescription = if (isPlaying) "Pause" else stringResource(R.string.play),
+                                            tint = Color.White,
+                                            modifier = Modifier.size(44.dp)
+                                        )
+                                    }
+                                }
+
+                                // Next
+                                IconButton(
+                                    onClick = { player.seekToNext() },
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.apple_skip_next),
+                                        contentDescription = "Next",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(34.dp)
+                                    )
+                                }
+                            }
+                            // Volume Bar with Mute and Speaker icons
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.volume_off),
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                SystemMediaVolumeSlider(
+                                    contentColor = Color.White,
+                                    activeColor = Color.White,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    painter = painterResource(R.drawable.volume_up),
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }
         }
     }
-}

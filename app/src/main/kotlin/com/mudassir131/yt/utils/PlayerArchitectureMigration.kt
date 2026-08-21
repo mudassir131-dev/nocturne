@@ -15,7 +15,7 @@ import com.mudassir131.yt.constants.GlassTransparencyKey
 import com.mudassir131.yt.constants.PlayerDesignStyleKey
 
 private val LegacyPlayerExperienceKey = stringPreferencesKey("playerExperience")
-private val PlayerArchitectureMigratedKey = booleanPreferencesKey("playerArchitectureMigratedV2")
+private val PlayerArchitectureMigratedKey = booleanPreferencesKey("playerArchitectureMigratedV3")
 
 /**
  * Collapses stale player selections before any composable reads them.
@@ -27,9 +27,8 @@ object PlayerArchitectureMigration : DataMigration<Preferences> {
 
     override suspend fun migrate(currentData: Preferences): Preferences {
         val migrated = mutablePreferencesOf().apply { this += currentData }
-        if (migrated[AppleMusicInspiredKey] == null) {
-            migrated[AppleMusicInspiredKey] = currentData[LegacyPlayerExperienceKey] == "APPLE"
-        }
+        // Force Apple Music inspired player to default ON
+        migrated[AppleMusicInspiredKey] = true
 
         migrated.remove(LegacyPlayerExperienceKey)
         migrated.remove(PlayerDesignStyleKey)

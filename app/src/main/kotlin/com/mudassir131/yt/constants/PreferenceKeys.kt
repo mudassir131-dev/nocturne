@@ -51,6 +51,7 @@ val ThumbnailCornerRadiusKey = floatPreferencesKey("thumbnailCornerRadius")
 val CropThumbnailToSquareKey = booleanPreferencesKey("cropThumbnailToSquare")
 val SeekExtraSeconds = booleanPreferencesKey("seekExtraSeconds")
 val DisableBlurKey = booleanPreferencesKey("disableBlur")
+val DataSaverKey = booleanPreferencesKey("data_saver_mode")
 
 enum class SliderStyle {
     Standard,
@@ -59,6 +60,9 @@ enum class SliderStyle {
     Circular,
     Simple,
 }
+
+val ForcePeakRefreshRateKey = booleanPreferencesKey("forcePeakRefreshRate")
+val CinematicThemeFollowKey = booleanPreferencesKey("cinematicThemeFollow")
 
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
 val AppLanguageKey = stringPreferencesKey("appLanguage")

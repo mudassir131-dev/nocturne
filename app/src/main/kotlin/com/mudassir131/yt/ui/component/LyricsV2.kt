@@ -154,7 +154,7 @@ fun LyricsV2(
     val lyricsFontFamily = remember(useSystemFont) {
         if (useSystemFont) null else FontFamily(Font(R.font.sfprodisplaybold))
     }
-    val playerBackground by rememberEnumPreference(PlayerBackgroundStyleKey, PlayerBackgroundStyle.DEFAULT)
+    val playerBackground by rememberEnumPreference(PlayerBackgroundStyleKey, PlayerBackgroundStyle.GLOW)
 
     // ── Text colour derived from background style ──
     val textColor = if (playerBackground == PlayerBackgroundStyle.DEFAULT)

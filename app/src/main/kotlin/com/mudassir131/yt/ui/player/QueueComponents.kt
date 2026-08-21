@@ -1134,8 +1134,8 @@ fun QueueCollapsedContentV4(
                 ),
         ) {
             val buttonSize = 48.dp
-            val iconSize = 22.dp
-            val pillShape = RoundedCornerShape(16.dp)
+            val iconSize = 20.dp
+            val pillShape = RoundedCornerShape(50)
 
             // Queue button (pill)
             Box(
@@ -1148,10 +1148,10 @@ fun QueueCollapsedContentV4(
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = pillShape,
-                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                baseColor = textBackgroundColor.copy(alpha = 0.12f)
                             )
                         } else {
-                            Modifier.background(textBackgroundColor.copy(alpha = 0.1f))
+                            Modifier.background(textBackgroundColor.copy(alpha = 0.12f))
                         }
                     )
                     .clickable { onExpandQueue() },
@@ -1163,7 +1163,7 @@ fun QueueCollapsedContentV4(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.queue_music),
+                        painter = painterResource(id = R.drawable.apple_queue),
                         contentDescription = null,
                         modifier = Modifier.size(iconSize),
                         tint = textBackgroundColor
@@ -1190,12 +1190,12 @@ fun QueueCollapsedContentV4(
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = CircleShape,
-                                baseColor = textBackgroundColor.copy(alpha = if (sleepTimerEnabled) 0.15f else 0.08f)
+                                baseColor = textBackgroundColor.copy(alpha = if (sleepTimerEnabled) 0.22f else 0.12f)
                             )
                         } else {
                             Modifier.background(
-                                if (sleepTimerEnabled) textBackgroundColor.copy(alpha = 0.2f)
-                                else textBackgroundColor.copy(alpha = 0.1f)
+                                if (sleepTimerEnabled) textBackgroundColor.copy(alpha = 0.22f)
+                                else textBackgroundColor.copy(alpha = 0.12f)
                             )
                         }
                     )
@@ -1242,10 +1242,10 @@ fun QueueCollapsedContentV4(
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = pillShape,
-                                baseColor = textBackgroundColor.copy(alpha = 0.08f)
+                                baseColor = textBackgroundColor.copy(alpha = 0.12f)
                             )
                         } else {
-                            Modifier.background(textBackgroundColor.copy(alpha = 0.1f))
+                            Modifier.background(textBackgroundColor.copy(alpha = 0.12f))
                         }
                     )
                     .clickable { onShowLyrics() },
@@ -1257,7 +1257,7 @@ fun QueueCollapsedContentV4(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.lyrics),
+                        painter = painterResource(id = R.drawable.ic_apple_lyrics),
                         contentDescription = null,
                         modifier = Modifier.size(iconSize),
                         tint = textBackgroundColor

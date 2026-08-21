@@ -7,18 +7,18 @@ import org.junit.Test
 class ActualPlaybackQualityBadgeTest {
     @Test
     fun `resolved Opus codec is labeled Opus`() {
-        assertEquals("OPUS", format(codecs = "opus").actualPlaybackQualityLabel())
+        assertEquals("OPUS 160 kbps", format(codecs = "opus").actualPlaybackQualityLabel())
     }
 
     @Test
     fun `YouTube AAC fallback is not mislabeled Saavn`() {
-        assertEquals("AAC", format(codecs = "mp4a.40.2").actualPlaybackQualityLabel())
+        assertEquals("AAC 160 kbps", format(codecs = "mp4a.40.2").actualPlaybackQualityLabel())
     }
 
     @Test
     fun `actual Saavn playback URL is labeled Saavn`() {
         assertEquals(
-            "SAAVN",
+            "SAAVN 160 kbps",
             format(codecs = "mp4a.40.2", playbackUrl = "https://stream.saavn.example/audio").actualPlaybackQualityLabel(),
         )
     }

@@ -110,7 +110,7 @@ fun OnlineSearchResult(
 
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
-    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val (disableBlur) = rememberPreference(DisableBlurKey, false)
     val searchRootEntry = remember(navController) {
         runCatching { navController.getBackStackEntry(Screens.Search.route) }.getOrNull()
     }

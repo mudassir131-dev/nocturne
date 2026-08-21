@@ -10,6 +10,7 @@ package com.mudassir131.yt.ui.player
 
 import com.mudassir131.yt.ui.menu.ShareOptionsDialog
 import com.mudassir131.yt.ui.menu.LoadingScreen
+import com.mudassir131.yt.ui.player.cinematic.CinematicPlayerView
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.Configuration
@@ -163,7 +164,7 @@ fun BottomSheetPlayer(
 
     val playerBackground by rememberEnumPreference(
         key = PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.COLORING
+        defaultValue = PlayerBackgroundStyle.GLOW
     )
 
     val (playerCustomImageUri) = rememberPreference(PlayerCustomImageUriKey, "")
@@ -171,7 +172,7 @@ fun BottomSheetPlayer(
     val (playerCustomContrast) = rememberPreference(PlayerCustomContrastKey, 1f)
     val (playerCustomBrightness) = rememberPreference(PlayerCustomBrightnessKey, 1f)
 
-    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val (disableBlur) = rememberPreference(DisableBlurKey, false)
     val (showCodecOnPlayer) = rememberPreference(
         booleanPreferencesKey("show_codec_on_player"),
         false
@@ -237,14 +238,16 @@ fun BottomSheetPlayer(
     }
     val currentSongLiked = currentSong?.song?.liked == true
     val queueWindows by playerConnection.queueWindows.collectAsState()
+    val queueTitle by playerConnection.queueTitle.collectAsState()
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
     val automix by playerConnection.service.automixItems.collectAsState()
+    val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
 
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
-    val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.Circular)
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.Standard)
 
     var position by rememberSaveable(playbackState) {
         mutableLongStateOf(playerConnection.player.currentPosition)
@@ -457,7 +460,9 @@ fun BottomSheetPlayer(
     }
 
     val dynamicQueuePeekHeight =
-        if (showCodecOnPlayer) {
+        if (playerDesignStyle == PlayerDesignStyle.V4 || playerDesignStyle == PlayerDesignStyle.V4_GLASS || playerDesignStyle == PlayerDesignStyle.V5 || playerDesignStyle == PlayerDesignStyle.V5_GLASS) {
+            0.dp
+        } else if (showCodecOnPlayer) {
             88.dp
         } else {
             QueuePeekHeight
@@ -698,7 +703,43 @@ fun BottomSheetPlayer(
             }
 
             else -> {
-                if (playerDesignStyle == PlayerDesignStyle.V5 || playerDesignStyle == PlayerDesignStyle.V5_GLASS) {
+                if (playerDesignStyle == PlayerDesignStyle.V4 || playerDesignStyle == PlayerDesignStyle.V4_GLASS) {
+                    enrichedMetadata?.let { metadata ->
+                        CinematicPlayerView(
+                            mediaMetadata = metadata,
+                            queueTitle = queueTitle,
+                            playbackState = playbackState,
+                            isPlaying = isPlaying,
+                            isLoading = isLoading,
+                            canSkipPrevious = canSkipPrevious,
+                            canSkipNext = canSkipNext,
+                            currentSongLiked = currentSongLiked,
+                            shuffleModeEnabled = shuffleModeEnabled,
+                            repeatMode = repeatMode,
+                            sliderStyle = sliderStyle,
+                            sliderPosition = sliderPosition,
+                            position = position,
+                            duration = duration,
+                            textBackgroundColor = TextBackgroundColor,
+                            textButtonColor = textButtonColor,
+                            iconButtonColor = iconButtonColor,
+                            isGlassActive = isGlassActive,
+                            playerConnection = playerConnection,
+                            navController = navController,
+                            state = state,
+                            queueSheetState = queueSheetState,
+                            lyricsSheetState = lyricsSheetState,
+                            menuState = menuState,
+                            bottomSheetPageState = bottomSheetPageState,
+                            onSliderValueChange = onSliderValueChange,
+                            onSliderValueChangeFinished = onSliderValueChangeFinished,
+                            onShowSleepTimer = { showSleepTimerDialog = true },
+                            modifier = Modifier
+                                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+                                .padding(bottom = queueSheetState.collapsedBound)
+                        )
+                    }
+                } else if (playerDesignStyle == PlayerDesignStyle.V5 || playerDesignStyle == PlayerDesignStyle.V5_GLASS) {
                     enrichedMetadata?.let { metadata ->
                         MetroPlayerContent(
                             mediaMetadata = metadata,

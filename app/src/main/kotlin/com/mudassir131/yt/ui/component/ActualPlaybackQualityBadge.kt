@@ -21,13 +21,15 @@ import com.mudassir131.yt.db.entities.FormatEntity
 fun FormatEntity.actualPlaybackQualityLabel(): String {
     val source = playbackUrl.orEmpty()
     val codec = codecs.lowercase()
-    return when {
+    val bitrateKbps = if (bitrate > 0) "${bitrate / 1000} kbps" else ""
+    val codecName = when {
         source.contains("saavn", ignoreCase = true) -> "SAAVN"
         codec.contains("opus") || mimeType.contains("opus", ignoreCase = true) -> "OPUS"
-        codec.contains("mp4a") -> "AAC"
+        codec.contains("mp4a") || mimeType.contains("mp4", ignoreCase = true) || mimeType.contains("aac", ignoreCase = true) -> "AAC"
         codec.isNotBlank() -> codecs.substringBefore('.').uppercase()
         else -> mimeType.substringAfter('/', "AUDIO").uppercase()
     }
+    return if (bitrateKbps.isNotBlank()) "$codecName $bitrateKbps" else codecName
 }
 
 @Composable

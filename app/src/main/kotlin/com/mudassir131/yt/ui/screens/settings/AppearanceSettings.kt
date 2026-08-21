@@ -102,6 +102,8 @@ import com.mudassir131.yt.constants.ThumbnailCornerRadiusKey
 import com.mudassir131.yt.constants.CropThumbnailToSquareKey
 import com.mudassir131.yt.constants.DisableBlurKey
 import com.mudassir131.yt.constants.AppIconStyleKey
+import com.mudassir131.yt.constants.ForcePeakRefreshRateKey
+import com.mudassir131.yt.constants.CinematicThemeFollowKey
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 
@@ -141,7 +143,7 @@ fun AppearanceSettings(
     )
     val (appleMusicInspired, onAppleMusicInspiredChange) = rememberPreference(
         AppleMusicInspiredKey,
-        defaultValue = false,
+        defaultValue = true,
     )
     val (applePlayerBackground, onApplePlayerBackgroundChange) = rememberEnumPreference(
         ApplePlayerBackgroundStyleKey,
@@ -176,7 +178,7 @@ fun AppearanceSettings(
         defaultValue = false
     )
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = true)
-    val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = true)
+    val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = false)
     val (useSystemFont, onUseSystemFontChange) = rememberPreference(UseSystemFontKey, defaultValue = false)
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(
         DefaultOpenTabKey,
@@ -201,9 +203,18 @@ fun AppearanceSettings(
     val (useLyricsV2, onUseLyricsV2Change) = rememberPreference(UseLyricsV2Key, defaultValue = false)
 
 
+    val (forcePeakRefreshRate, onForcePeakRefreshRateChange) = rememberPreference(
+        ForcePeakRefreshRateKey,
+        defaultValue = true
+    )
+    val (cinematicThemeFollow, onCinematicThemeFollowChange) = rememberPreference(
+        CinematicThemeFollowKey,
+        defaultValue = true
+    )
+
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
-        defaultValue = SliderStyle.Circular
+        defaultValue = SliderStyle.Standard
     )
     val (swipeThumbnail, onSwipeThumbnailChange) = rememberPreference(
         SwipeThumbnailKey,
@@ -330,7 +341,27 @@ fun AppearanceSettings(
             .verticalScroll(rememberScrollState()),
     ) {
         PreferenceGroupTitle(
+            title = "Display & Refresh Rate",
+        )
+
+        SwitchPreference(
+            title = { Text("Force Peak Refresh Rate") },
+            description = "Forces 90Hz/120Hz peak display refresh rate for smooth animations and UI",
+            icon = { Icon(painterResource(R.drawable.speed), null) },
+            checked = forcePeakRefreshRate,
+            onCheckedChange = onForcePeakRefreshRateChange,
+        )
+
+        PreferenceGroupTitle(
             title = stringResource(R.string.theme),
+        )
+
+        SwitchPreference(
+            title = { Text("Cinematic Background Theme Adaptation") },
+            description = "Automatically adapt Cinematic glow background with light/dark theme",
+            icon = { Icon(painterResource(R.drawable.palette), null) },
+            checked = cinematicThemeFollow,
+            onCheckedChange = onCinematicThemeFollowChange,
         )
 
         SwitchPreference(

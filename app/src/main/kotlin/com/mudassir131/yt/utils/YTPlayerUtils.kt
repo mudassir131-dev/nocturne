@@ -160,6 +160,7 @@ object YTPlayerUtils {
         // if provided, this preference overrides ConnectivityManager.isActiveNetworkMetered
         networkMetered: Boolean? = null,
         avoidCodecs: Set<String> = emptySet(),
+        dataSaver: Boolean = false,
     ): Result<PlaybackData> = runCatching {
         val attempts = listOf(audioQuality)
 
@@ -175,6 +176,7 @@ object YTPlayerUtils {
                         preferredStreamClient = preferredStreamClient,
                         networkMetered = networkMetered,
                         avoidCodecs = avoidCodecs,
+                        dataSaver = dataSaver,
                     )
                 }
             if (attemptResult.isSuccess) return@runCatching attemptResult.getOrThrow()
@@ -191,6 +193,7 @@ object YTPlayerUtils {
         preferredStreamClient: PlayerStreamClient,
         networkMetered: Boolean?,
         avoidCodecs: Set<String>,
+        dataSaver: Boolean = false,
     ): PlaybackData {
         Timber.tag(logTag).i("Fetching player response for videoId: $videoId, playlistId: $playlistId")
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
@@ -313,6 +316,7 @@ object YTPlayerUtils {
                     audioQuality,
                     isMetered,
                     avoidCodecs = avoidCodecs,
+                    dataSaver = dataSaver,
                 )
 
             if (candidates.isEmpty()) continue
@@ -446,8 +450,9 @@ object YTPlayerUtils {
         audioQuality: AudioQuality,
         networkMetered: Boolean,
         avoidCodecs: Set<String> = emptySet(),
+        dataSaver: Boolean = false,
     ): List<PlayerResponse.StreamingData.Format> {
-        Timber.tag(logTag).i("Finding format with audioQuality: $audioQuality, network metered: $networkMetered")
+        Timber.tag(logTag).i("Finding format with audioQuality: $audioQuality, network metered: $networkMetered, dataSaver: $dataSaver")
 
         val audioFormats =
             playerResponse.streamingData?.adaptiveFormats
@@ -464,10 +469,14 @@ object YTPlayerUtils {
         if (audioFormats.isEmpty()) return emptyList()
 
         val targetBitrateBps =
-            when (audioQuality) {
-                AudioQuality.SAAVN -> 160_000
-                AudioQuality.OPUS -> 320_000
-                AudioQuality.LOSSLESS -> 1_411_200
+            if (dataSaver) {
+                64_000
+            } else {
+                when (audioQuality) {
+                    AudioQuality.SAAVN -> 160_000
+                    AudioQuality.OPUS -> 320_000
+                    AudioQuality.LOSSLESS -> 1_411_200
+                }
             }
 
         val preferHigher =

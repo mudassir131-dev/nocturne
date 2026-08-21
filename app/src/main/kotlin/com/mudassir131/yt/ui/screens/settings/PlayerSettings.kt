@@ -45,6 +45,7 @@ import com.mudassir131.yt.constants.AudioNormalizationKey
 import com.mudassir131.yt.constants.AudioOffload
 import com.mudassir131.yt.constants.AudioQuality
 import com.mudassir131.yt.constants.AudioQualityKey
+import com.mudassir131.yt.constants.DataSaverKey
 import com.mudassir131.yt.constants.NetworkMeteredKey
 import com.mudassir131.yt.constants.AutoDownloadOnLikeKey
 import com.mudassir131.yt.constants.AutoStartOnBluetoothKey
@@ -94,6 +95,10 @@ fun PlayerSettings(
     val (networkMetered, onNetworkMeteredChange) = rememberPreference(
         NetworkMeteredKey,
         defaultValue = true
+    )
+    val (dataSaver, onDataSaverChange) = rememberPreference(
+        DataSaverKey,
+        defaultValue = false
     )
     val (persistentQueue, onPersistentQueueChange) = rememberPreference(
         PersistentQueueKey,
@@ -287,6 +292,15 @@ fun PlayerSettings(
                         icon = { Icon(painterResource(R.drawable.android_cell), null) },
                         checked = networkMetered,
                         onCheckedChange = onNetworkMeteredChange
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Data Saver") },
+                        description = "Play songs with optimized lower bitrate for instant playback on slow networks.",
+                        icon = { Icon(painterResource(R.drawable.speed), null) },
+                        checked = dataSaver,
+                        onCheckedChange = onDataSaverChange
                     )
                 },
                 {

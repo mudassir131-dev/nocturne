@@ -29,12 +29,102 @@ import androidx.compose.ui.unit.dp
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Slider
 import com.mudassir131.yt.constants.GlassEffectsKey
 import com.mudassir131.yt.constants.GlassEffectsMode
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.ui.theme.glassmorphic
+
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CapsulePlayerSlider(
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+    activeColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Slider(
+        value = value,
+        valueRange = valueRange,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        colors = SliderDefaults.colors(
+            thumbColor = activeColor,
+            activeTrackColor = activeColor,
+            inactiveTrackColor = activeColor.copy(alpha = 0.25f),
+        ),
+        thumb = {
+            // Rendered directly in track canvas for 100% exact alignment
+            Spacer(modifier = Modifier.size(0.dp))
+        },
+        track = { sliderState ->
+            val trackValueRange = sliderState.valueRange
+            val fraction = calcFraction(
+                trackValueRange.start,
+                trackValueRange.endInclusive,
+                sliderState.value.coerceIn(trackValueRange.start, trackValueRange.endInclusive)
+            )
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+            ) {
+                val centerY = size.height / 2f
+                val activeHeight = 11.dp.toPx()
+                val inactiveHeight = 4.dp.toPx()
+                val handleWidth = 5.dp.toPx()
+                val handleHeight = 26.dp.toPx()
+                val activeEnd = (size.width * fraction).coerceIn(0f, size.width)
+
+                // 1. Inactive track (thin horizontal bar from activeEnd to end)
+                if (activeEnd < size.width) {
+                    drawRoundRect(
+                        color = activeColor.copy(alpha = 0.25f),
+                        topLeft = Offset(activeEnd, centerY - inactiveHeight / 2f),
+                        size = Size((size.width - activeEnd).coerceAtLeast(0f), inactiveHeight),
+                        cornerRadius = CornerRadius(inactiveHeight / 2f, inactiveHeight / 2f)
+                    )
+                    // Small circular end dot
+                    drawCircle(
+                        color = activeColor.copy(alpha = 0.45f),
+                        radius = 2.5.dp.toPx(),
+                        center = Offset(size.width - 2.5.dp.toPx(), centerY)
+                    )
+                }
+
+                // 2. Active track (thick horizontal capsule bar from start to activeEnd)
+                if (activeEnd > 0f) {
+                    drawRoundRect(
+                        color = activeColor,
+                        topLeft = Offset(0f, centerY - activeHeight / 2f),
+                        size = Size(activeEnd.coerceIn(activeHeight, size.width), activeHeight),
+                        cornerRadius = CornerRadius(activeHeight / 2f, activeHeight / 2f)
+                    )
+                }
+
+                // 3. Vertical pill thumb handle `|` standing at activeEnd
+                val handleLeft = (activeEnd - handleWidth / 2f).coerceIn(0f, size.width - handleWidth)
+                val handleTop = centerY - handleHeight / 2f
+                drawRoundRect(
+                    color = activeColor,
+                    topLeft = Offset(handleLeft, handleTop),
+                    size = Size(handleWidth, handleHeight),
+                    cornerRadius = CornerRadius(handleWidth / 2f, handleWidth / 2f)
+                )
+            }
+        },
+        modifier = modifier
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

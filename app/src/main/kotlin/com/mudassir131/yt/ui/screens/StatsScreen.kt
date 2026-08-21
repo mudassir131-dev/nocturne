@@ -221,7 +221,7 @@ fun StatsScreen(
             emptyList()
         }
 
-    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val (disableBlur) = rememberPreference(DisableBlurKey, false)
     val statsFilters = @Composable {
         ChoiceChipsRow(
             chips =

@@ -52,7 +52,7 @@ fun LibraryScreen(navController: NavController) {
         if (filterType == LibraryFilter.LIBRARY) filterType = LibraryFilter.PLAYLISTS
     }
 
-    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val (disableBlur) = rememberPreference(DisableBlurKey, false)
 
     val database = LocalDatabase.current
     val (showTagsInLibrary) = rememberPreference(ShowTagsInLibraryKey, true)

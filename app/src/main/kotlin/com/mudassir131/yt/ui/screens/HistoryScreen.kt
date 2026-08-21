@@ -144,7 +144,7 @@ fun HistoryScreen(
     val events by viewModel.events.collectAsState()
     val historyPage by viewModel.historyPage
 
-    val (disableBlur) = rememberPreference(DisableBlurKey, true)
+    val (disableBlur) = rememberPreference(DisableBlurKey, false)
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)

@@ -208,10 +208,95 @@ async function download(videoId, { type = "audio", outDir }) {
   return stdout.split("\n").map((s) => s.trim()).filter(Boolean).pop();
 }
 
+async function getVideoInfo(videoId) {
+  const args = withCookies([
+    ...EXTRACTOR_ARGS_VIDEO,
+    "--dump-json",
+    "--no-playlist",
+    "--no-warnings",
+    "--youtube-skip-dash-manifest",
+    "--no-check-formats",
+    videoUrl(videoId),
+  ]);
+
+  const { stdout } = await execFileAsync(YTDLP_BIN, args, {
+    maxBuffer: 1024 * 1024 * 16,
+    timeout: 30_000,
+    ...getSpawnOptions(),
+  });
+
+  const entry = JSON.parse(stdout);
+  const formats = entry.formats || [];
+  const audioFormats = formats.filter(
+    (f) => f.vcodec === "none" && f.acodec && f.acodec !== "none"
+  );
+
+  if (audioFormats.length === 0) {
+    throw new Error("No audio formats found");
+  }
+
+  // Sort: prefer opus, then sort by bitrate (tbr or abr) descending
+  audioFormats.sort((a, b) => {
+    const aIsOpus = (a.acodec || "").toLowerCase().includes("opus");
+    const bIsOpus = (b.acodec || "").toLowerCase().includes("opus");
+    if (aIsOpus && !bIsOpus) return -1;
+    if (!aIsOpus && bIsOpus) return 1;
+    return (b.tbr || b.abr || 0) - (a.tbr || a.abr || 0);
+  });
+
+  const bestAudio = audioFormats[0];
+
+  // Try to find the highest-quality thumbnail
+  let thumbnail = entry.thumbnail || "";
+  if (entry.thumbnails && entry.thumbnails.length > 0) {
+    const sortedThumbs = [...entry.thumbnails].sort((a, b) => {
+      return (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0);
+    });
+    thumbnail = sortedThumbs[0].url || thumbnail;
+  }
+  if (!thumbnail) {
+    thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  }
+
+  // Parse expiration from googlevideo URL
+  let expireMs = Date.now() + 3600 * 1000; // fallback: 1 hour
+  try {
+    const urlObj = new URL(bestAudio.url);
+    const expStr = urlObj.searchParams.get("expire");
+    if (expStr) {
+      expireMs = parseInt(expStr, 10) * 1000;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // Determine standard mimeType
+  let ext = bestAudio.ext || "webm";
+  let acodec = bestAudio.acodec || "opus";
+  if (ext === "m4a") ext = "mp4";
+  const mimeType = bestAudio.mime_type || `audio/${ext}; codecs="${acodec}"`;
+
+  return {
+    id: videoId,
+    title: entry.title || "",
+    artist: entry.uploader || entry.channel || "Unknown",
+    duration: typeof entry.duration === "number" ? Math.round(entry.duration) : null,
+    thumbnail,
+    streamUrl: bestAudio.url,
+    codec: acodec,
+    container: ext,
+    bitrate: bestAudio.abr || bestAudio.tbr || null,
+    mimeType,
+    httpHeaders: bestAudio.http_headers || {},
+    expireMs,
+  };
+}
+
 module.exports = {
   search,
   streamAudio,
   download,
+  getVideoInfo,
   videoUrl,
   YTDLP_BIN,
   COOKIES_PATH,

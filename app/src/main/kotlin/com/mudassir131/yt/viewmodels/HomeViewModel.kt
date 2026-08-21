@@ -411,6 +411,39 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
+            combine(database.quickPicks(), quickPicksEnum) { picks, enumVal ->
+                picks to enumVal
+            }.distinctUntilChanged().collectLatest { (picks, enumVal) ->
+                when (enumVal) {
+                    QuickPicks.QUICK_PICKS -> {
+                        if (picks.isNotEmpty()) {
+                            _quickPicks.value = picks.shuffled().take(20)
+                        }
+                    }
+                    QuickPicks.LAST_LISTEN -> songLoad()
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            database.forgottenFavorites().distinctUntilChanged().collectLatest { favorites ->
+                if (favorites.isNotEmpty()) {
+                    _forgottenFavorites.value = favorites.shuffled().take(20)
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            database.events().debounce(2500).collectLatest { events ->
+                if (events.isNotEmpty()) {
+                    runCatching {
+                        loadSimilarRecommendations()
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
             kotlinx.coroutines.delay(3000)
             
             syncUtils.cleanupDuplicatePlaylists()

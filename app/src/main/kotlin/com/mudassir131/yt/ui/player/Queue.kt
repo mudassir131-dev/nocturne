@@ -328,25 +328,7 @@ fun Queue(
                 }
 
                 PlayerDesignStyle.V4, PlayerDesignStyle.V4_GLASS -> {
-                    QueueCollapsedContentV4(
-                        showCodecOnPlayer = showCodecOnPlayer,
-                        currentFormat = currentFormat,
-                        textBackgroundColor = TextBackgroundColor,
-                        textButtonColor = textButtonColor,
-                        iconButtonColor = iconButtonColor,
-                        sleepTimerEnabled = sleepTimerEnabled,
-                        sleepTimerTimeLeft = sleepTimerTimeLeft,
-                        mediaMetadata = mediaMetadata,
-                        onExpandQueue = { state.expandSoft() },
-                        onSleepTimerClick = {
-                            if (sleepTimerEnabled) {
-                                playerConnection.service.sleepTimer.clear()
-                            } else {
-                                showSleepTimerDialog = true
-                            }
-                        },
-                        onShowLyrics = onShowLyrics
-                    )
+                    Unit
                 }
                 
                 PlayerDesignStyle.V1, PlayerDesignStyle.V1_GLASS -> {

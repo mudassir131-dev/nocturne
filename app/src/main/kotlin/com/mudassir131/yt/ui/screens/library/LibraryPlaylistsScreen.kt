@@ -412,7 +412,6 @@ fun LibraryPlaylistsScreen(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(surfaceColor)
             .pullToRefresh(
                 state = pullRefreshState,
                 isRefreshing = isRefreshing,
