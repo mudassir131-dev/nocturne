@@ -43,12 +43,14 @@ import kotlinx.coroutines.coroutineScope
 
 object YTPlayerUtils {
     private const val logTag = "YTPlayerUtils"
-    private const val FAILED_CLIENT_BACKOFF_MS = 10 * 60 * 1000L
+    private const val FAILED_CLIENT_BACKOFF_MS = 60 * 1000L // 1 minute scoped backoff
 
     @Volatile
     private var cachedSignatureTimestamp: Int? = null
 
     @Volatile private var streamClientPair: Pair<java.net.Proxy?, OkHttpClient>? = null
+
+    private val inFlightResolutions = ConcurrentHashMap<String, kotlinx.coroutines.Deferred<Result<PlaybackData>>>()
 
     private fun currentStreamClient(): OkHttpClient {
         val current = YouTube.streamProxy
@@ -106,11 +108,17 @@ object YTPlayerUtils {
         streamUrlCache.keys.removeIf { it.startsWith(prefix) }
     }
 
+    fun invalidateCachedStreamUrl(videoId: String, itag: Int) {
+        val key = buildCacheKey(videoId, itag)
+        streamUrlCache.remove(key)
+    }
+
     fun markStreamClientFailed(videoId: String, clientKey: String?, httpStatusCode: Int?) {
         if (httpStatusCode != 403 && httpStatusCode != 429) return
         val normalizedClientKey = normalizeStreamClientKey(clientKey)
         if (normalizedClientKey.isEmpty()) return
-        failedStreamClientsUntil[normalizedClientKey] =
+        val scopedKey = buildFailedClientKey(videoId, normalizedClientKey)
+        failedStreamClientsUntil[scopedKey] =
             System.currentTimeMillis() + FAILED_CLIENT_BACKOFF_MS
     }
 
@@ -118,14 +126,14 @@ object YTPlayerUtils {
         val normalizedClientKey = normalizeStreamClientKey(clientKey)
         if (normalizedClientKey.isEmpty()) return false
 
-        val until = failedStreamClientsUntil[normalizedClientKey] ?: return false
+        val scopedKey = buildFailedClientKey(videoId, normalizedClientKey)
+        val until = failedStreamClientsUntil[scopedKey] ?: return false
         if (until <= System.currentTimeMillis()) {
-            failedStreamClientsUntil.remove(normalizedClientKey)
+            failedStreamClientsUntil.remove(scopedKey)
             return false
         }
         return true
     }
-
 
     fun markPreferredClientFailed(videoId: String, client: PlayerStreamClient, httpStatusCode: Int?) {
         markStreamClientFailed(videoId, client.name, httpStatusCode)
@@ -147,9 +155,7 @@ object YTPlayerUtils {
         val streamExpiresInSeconds: Int,
     )
     /**
-     * Custom player response intended to use for playback.
-     * Metadata like audioConfig and videoDetails are from [MAIN_CLIENT].
-     * Format & stream can be from [MAIN_CLIENT] or [STREAM_FALLBACK_CLIENTS].
+     * Custom player response intended to use for playback with in-flight request deduplication.
      */
     suspend fun playerResponseForPlayback(
         videoId: String,
@@ -161,17 +167,18 @@ object YTPlayerUtils {
         networkMetered: Boolean? = null,
         avoidCodecs: Set<String> = emptySet(),
         dataSaver: Boolean = false,
-    ): Result<PlaybackData> = runCatching {
-        val attempts = listOf(audioQuality)
-
-        var lastError: Throwable? = null
-        for (attempt in attempts) {
-            val attemptResult =
+    ): Result<PlaybackData> = coroutineScope {
+        val dedupeKey = "$videoId:$audioQuality:${preferredStreamClient.name}:$dataSaver"
+        
+        var isOriginator = false
+        val deferred = inFlightResolutions.computeIfAbsent(dedupeKey) {
+            isOriginator = true
+            async(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
                     playerResponseForPlaybackOnce(
                         videoId = videoId,
                         playlistId = playlistId,
-                        audioQuality = attempt,
+                        audioQuality = audioQuality,
                         connectivityManager = connectivityManager,
                         preferredStreamClient = preferredStreamClient,
                         networkMetered = networkMetered,
@@ -179,10 +186,16 @@ object YTPlayerUtils {
                         dataSaver = dataSaver,
                     )
                 }
-            if (attemptResult.isSuccess) return@runCatching attemptResult.getOrThrow()
-            lastError = attemptResult.exceptionOrNull()
+            }
         }
-        throw lastError ?: IllegalStateException("Failed to resolve stream")
+
+        try {
+            deferred.await()
+        } finally {
+            if (isOriginator) {
+                inFlightResolutions.remove(dedupeKey)
+            }
+        }
     }
 
     private suspend fun playerResponseForPlaybackOnce(
@@ -303,7 +316,8 @@ object YTPlayerUtils {
                 if (isBotDetection) {
                     botDetectedClients.add(client.clientName)
 
-                    failedStreamClientsUntil[normalizeStreamClientKey(client.clientName)] =
+                    val scopedKey = buildFailedClientKey(videoId, client.clientName)
+                    failedStreamClientsUntil[scopedKey] =
                         System.currentTimeMillis() + FAILED_CLIENT_BACKOFF_MS
                 }
                 continue
@@ -323,6 +337,7 @@ object YTPlayerUtils {
 
             var selectedFormat: PlayerResponse.StreamingData.Format? = null
             var selectedUrl: String? = null
+            val isFallbackClient = client != preferredYouTubeClient && client != metadataClient
 
             for (candidate in candidates.asSequence().take(6)) {
                 if (isLoggedIn && expectedDurationMs != null && isLikelyPreview(candidate, expectedDurationMs)) continue
@@ -334,6 +349,26 @@ object YTPlayerUtils {
                     } else {
                         findUrlOrNull(candidate, videoId, client)
                     } ?: continue
+
+                val streamCandidate = com.mudassir131.yt.playback.recovery.StreamCandidate.create(
+                    videoId = videoId,
+                    client = client,
+                    format = candidate,
+                    streamUrl = candidateUrl,
+                    expiresInSeconds = streamPlayerResponse.streamingData?.expiresInSeconds ?: 21600,
+                )
+
+                if (isFallbackClient) {
+                    val isValid = com.mudassir131.yt.playback.recovery.StreamCandidate.validateSelectively(
+                        streamCandidate,
+                        isSuspiciousOrFallback = true
+                    )
+                    if (!isValid) {
+                        Timber.tag(logTag).w("Fallback candidate ${streamCandidate.candidateId} failed preflight check, skipping")
+                        continue
+                    }
+                }
+
                 selectedFormat = candidate
                 selectedUrl = candidateUrl
                 break
@@ -352,10 +387,6 @@ object YTPlayerUtils {
 
             Timber.tag(logTag).i("Format found: ${format.mimeType}, bitrate: ${format.bitrate}")
             Timber.tag(logTag).v("Stream expires in: $streamExpiresInSeconds seconds")
-
-            // Skip slow synchronous network validation during initial stream loading.
-            // ExoPlayer will handle loading errors, which are captured by onPlayerError to fetch fallback clients.
-            Timber.tag(logTag).i("Stream validated successfully (optimistic) with client: ${client.clientName}")
             break
         }
 

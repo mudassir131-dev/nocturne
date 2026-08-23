@@ -289,6 +289,10 @@ class MusicService :
         PlayerStreamClientKey,
         PlayerStreamClient.IOS
     )
+    lateinit var recoveryController: com.mudassir131.yt.playback.recovery.PlaybackRecoveryController
+        private set
+    lateinit var playbackWatchdog: com.mudassir131.yt.playback.recovery.PlaybackWatchdog
+        private set
     private val playbackUrlCache = ConcurrentHashMap<String, Pair<String, Long>>()
     private val streamRecoveryState = ConcurrentHashMap<String, Pair<Int, Long>>()
     @Volatile
@@ -571,6 +575,25 @@ class MusicService :
                     addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
                     setOffloadEnabled(false)
                 }
+
+        recoveryController = com.mudassir131.yt.playback.recovery.PlaybackRecoveryController(
+            scope = scope,
+            getPlayer = { if (::player.isInitialized) player else null },
+            onClearTrackCache = { mediaId ->
+                playbackUrlCache.remove(mediaId)
+                clearStreamRefreshGuards(mediaId)
+            },
+            onUnrecoverableFailure = { mediaId, error ->
+                handleUnrecoverablePlaybackFailure(mediaId, error)
+            }
+        )
+
+        playbackWatchdog = com.mudassir131.yt.playback.recovery.PlaybackWatchdog(
+            scope = scope,
+            getPlayer = { if (::player.isInitialized) player else null },
+            recoveryController = recoveryController,
+        )
+        playbackWatchdog.start()
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         setupAudioFocusRequest()
@@ -3386,16 +3409,20 @@ class MusicService :
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-    super.onMediaItemTransition(mediaItem, reason)
+        super.onMediaItemTransition(mediaItem, reason)
 
-    clearStreamRefreshGuards(
-        mediaItem?.mediaId
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: player.currentMediaItem?.mediaId
-    )
+        if (::recoveryController.isInitialized) {
+            recoveryController.startNewSession(mediaItem?.mediaId)
+        }
 
-    crossfadeAudio?.onMediaItemTransition(mediaItem, reason)
+        clearStreamRefreshGuards(
+            mediaItem?.mediaId
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?: player.currentMediaItem?.mediaId
+        )
+
+        crossfadeAudio?.onMediaItemTransition(mediaItem, reason)
 
     val currentIndex = player.currentMediaItemIndex
     val queue = player.mediaItems.mapNotNull { it.metadata }
@@ -4035,78 +4062,52 @@ class MusicService :
 
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
-        val isConnectionError = (error.cause?.cause is PlaybackException) &&
-                (error.cause?.cause as PlaybackException).errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
 
-        if (!isNetworkConnected.value || isConnectionError) {
-            waitOnNetworkError()
+        val currentMediaId = player.currentMediaItem?.mediaId
+        if (currentMediaId == null) {
+            if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
+                skipOnError()
+            } else {
+                stopOnError()
+            }
             return
         }
 
-        val currentMediaId = player.currentMediaItem?.mediaId
-        val httpStatusCode = error.httpStatusCodeOrNull()
+        val cachedUrlEntry = playbackUrlCache[currentMediaId]
+        val isExpiredByTimestamp = cachedUrlEntry != null && System.currentTimeMillis() >= (cachedUrlEntry.second - 10_000L)
+        val hasPlayedSuccessfully = player.currentPosition > 1000L
 
-        if (currentMediaId != null && YTPlayerUtils.isBotDetectionException(error)) {
-            if (markAndCheckRecoveryAllowance(currentMediaId)) {
-                Timber.tag("MusicService").w(
-                    "Bot detection error for $currentMediaId — clearing caches and retrying with fresh stream"
-                )
-                YTPlayerUtils.invalidateCachedStreamUrls(currentMediaId)
-                playbackUrlCache.remove(currentMediaId)
-                pendingStreamRefreshValidationMediaId = currentMediaId
-                player.prepare()
-                player.playWhenReady = true
-                return
-            }
+        val category = com.mudassir131.yt.playback.recovery.PlaybackErrorClassifier.classify(
+            error = error,
+            isStreamExpiredByTimestamp = isExpiredByTimestamp,
+            hasPlayedSuccessfullyBeforeError = hasPlayedSuccessfully,
+        )
+
+        val httpStatusCode = com.mudassir131.yt.playback.recovery.PlaybackErrorClassifier.run { error.extractHttpStatusCode() }
+        val failingStreamClientKey =
+            cachedUrlEntry
+                ?.first
+                ?.toHttpUrlOrNull()
+                ?.queryParameter("c")
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+
+        if (failingStreamClientKey != null && httpStatusCode != null) {
+            YTPlayerUtils.markStreamClientFailed(currentMediaId, failingStreamClientKey, httpStatusCode)
         }
 
-        val shouldAttemptStreamRefresh =
-            currentMediaId != null && (
-                error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ||
-                    error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND ||
-                    error.errorCode == PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE ||
-                    error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED ||
-                    error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED ||
-                    error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ||
-                    error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED ||
-                    error.errorCode == PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK ||
-                    httpStatusCode in setOf(403, 404, 410, 416, 429, 500, 502, 503)
-                )
-
-        if (currentMediaId != null && error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
+        if (error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
             scope.launch(Dispatchers.IO) {
                 runCatching { downloadCache.removeResource(currentMediaId) }
                 runCatching { playerCache.removeResource(currentMediaId) }
             }
         }
 
-        if (shouldAttemptStreamRefresh && currentMediaId != null && shouldSkipRedundantStreamRefresh(currentMediaId)) {
-            Timber.tag("MusicService").w(
-                "Skipping redundant stream refresh for $currentMediaId after validated recovery; resuming playback without URL refresh"
-            )
-            player.prepare()
-            player.playWhenReady = true
-            return
-        }
+        val isConnectionError = (error.cause?.cause is PlaybackException) &&
+                (error.cause?.cause as PlaybackException).errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
 
-        if (shouldAttemptStreamRefresh && currentMediaId != null && markAndCheckRecoveryAllowance(currentMediaId)) {
-            val failingStreamClientKey =
-                playbackUrlCache[currentMediaId]
-                    ?.first
-                    ?.toHttpUrlOrNull()
-                    ?.queryParameter("c")
-                    ?.trim()
-                    ?.takeIf { it.isNotBlank() }
-            Timber.tag("MusicService").w(
-                "Attempting stream refresh for $currentMediaId (http=$httpStatusCode, code=${error.errorCode}, client=${failingStreamClientKey ?: "unknown"})"
-            )
-            YTPlayerUtils.markStreamClientFailed(currentMediaId, failingStreamClientKey, httpStatusCode)
-            YTPlayerUtils.markPreferredClientFailed(currentMediaId, preferredStreamClient, httpStatusCode)
-            YTPlayerUtils.invalidateCachedStreamUrls(currentMediaId)
-            playbackUrlCache.remove(currentMediaId)
-            pendingStreamRefreshValidationMediaId = currentMediaId
-            player.prepare()
-            player.playWhenReady = true
+        if (!isNetworkConnected.value && isConnectionError) {
+            waitOnNetworkError()
             return
         }
 
@@ -4132,20 +4133,37 @@ class MusicService :
                 } catch (t: Throwable) {
                     Timber.tag("MusicService").e(t, "failed to recover from silence-skipper error")
                 }
+                handleUnrecoverablePlaybackFailure(currentMediaId, error)
+            }
+            return
+        }
+
+        if (::recoveryController.isInitialized) {
+            recoveryController.triggerRecovery(
+                mediaId = currentMediaId,
+                error = error,
+                category = category,
+            )
+            return
+        }
+
+        handleUnrecoverablePlaybackFailure(currentMediaId, error)
+    }
+
+    private fun handleUnrecoverablePlaybackFailure(mediaId: String, error: PlaybackException?) {
+        Timber.tag("MusicService").e("Unrecoverable playback failure for $mediaId, advancing to next queue item if available")
+        scope.launch(Dispatchers.Main) {
+            if (player.mediaItemCount > 1 && player.hasNextMediaItem()) {
+                player.seekToNextMediaItem()
+                player.prepare()
+                player.playWhenReady = true
+            } else {
                 if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
                     skipOnError()
                 } else {
                     stopOnError()
                 }
             }
-
-            return
-        }
-
-        if (dataStore.get(AutoSkipNextOnErrorKey, true)) {
-            skipOnError()
-        } else {
-            stopOnError()
         }
     }
 
@@ -4344,9 +4362,17 @@ class MusicService :
         clearStreamRefreshGuards(mediaId)
         YTPlayerUtils.invalidateCachedStreamUrls(mediaId)
         playbackUrlCache.remove(mediaId)
-        pendingStreamRefreshValidationMediaId = mediaId
-        player.prepare()
-        player.playWhenReady = true
+        if (::recoveryController.isInitialized) {
+            recoveryController.triggerRecovery(
+                mediaId = mediaId,
+                error = null,
+                category = com.mudassir131.yt.playback.recovery.PlaybackFailureCategory.UNKNOWN,
+                forced = true,
+            )
+        } else {
+            player.prepare()
+            player.playWhenReady = true
+        }
     }
 
     private fun PlaybackException.httpStatusCodeOrNull(): Int? {
@@ -4690,6 +4716,9 @@ class MusicService :
 
 
     override fun onDestroy() {
+        if (::playbackWatchdog.isInitialized) {
+            playbackWatchdog.stop()
+        }
         super.onDestroy()
         unregisterBluetoothReceiver()
         try {

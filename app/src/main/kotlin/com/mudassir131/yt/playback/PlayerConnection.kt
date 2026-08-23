@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerConnection(
@@ -103,6 +104,16 @@ class PlayerConnection(
             val mediaItem = player.currentMediaItem
             if (mediaItem != null) {
                 mediaMetadata.value = mediaItem.metadata
+            }
+        }
+
+        scope.launch {
+            service.recoveryController.isRecovering.collect { isRecovering ->
+                if (isRecovering) {
+                    error.value = null
+                } else if (player.playerError != null && service.recoveryController.recoveryState.value == com.mudassir131.yt.playback.recovery.RecoveryState.FAILED) {
+                    error.value = player.playerError
+                }
             }
         }
     }
@@ -219,7 +230,12 @@ class PlayerConnection(
         if (playbackError != null) {
             reportException(playbackError)
         }
-        error.value = playbackError
+        if (service.recoveryController.isRecovering.value) {
+            // Suppress transient error UI while active background recovery is underway
+            error.value = null
+        } else {
+            error.value = playbackError
+        }
     }
 
     private fun updateCanSkipPreviousAndNext() {
