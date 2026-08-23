@@ -105,7 +105,7 @@
       <div align="left">
         <h3>🤝 Sync & Social</h3>
         <ul>
-          <li>Import & sync playlists directly from YouTube</li>
+          <li>Import & sync playlists directly from YouTube, Spotify, and Apple Music</li>
           <li>Discord Rich Presence with live playback metadata</li>
           <li>Last.fm and ListenBrainz scrobbling integration</li>
           <li>Music Together real-time synchronized listening rooms</li>
