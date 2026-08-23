@@ -1,13 +1,13 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
 
 package com.mudassir131.yt.ui.screens.playlist
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -233,7 +233,7 @@ fun PlaylistSuggestionsSection(
                 contentAlignment = Alignment.Center
             ) {
                 if (isLoading) {
-                    VeluneLoader(size = 24.dp)
+                    NocturneLoader(size = 24.dp)
                 } else {
                     TextButton(
                         onClick = { viewModel.resetAndLoadPlaylistSuggestions() }

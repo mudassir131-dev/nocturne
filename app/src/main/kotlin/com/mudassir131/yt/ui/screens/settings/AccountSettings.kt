@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -9,7 +9,7 @@
 package com.mudassir131.yt.ui.screens.settings
 
 import androidx.compose.animation.AnimatedContent
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -898,7 +898,7 @@ private fun PlaylistSelectionDialog(onDismiss: () -> Unit) {
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    VeluneLoader(size = 48.dp)
+                    NocturneLoader(size = 48.dp)
                 }
             } else {
                 LazyColumn(

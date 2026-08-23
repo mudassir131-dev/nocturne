@@ -40,7 +40,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true"
         android:supportsRtl="false"
-        android:theme="@style/Theme.VeluneApp"
+        android:theme="@style/Theme.NocturneApp"
         tools:targetApi="tiramisu">
         <meta-data
             android:name="androidx.media3.session.default_notification_icon"
@@ -54,7 +54,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.VeluneApp"
+            android:theme="@style/Theme.NocturneApp"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -266,24 +266,24 @@
             android:name=".DebugActivity"
             android:exported="true"
             android:process=":crash"
-            android:theme="@style/Theme.VeluneApp">
+            android:theme="@style/Theme.NocturneApp">
         </activity>
         <receiver
-            android:name=".ui.widget.VeluneWidgetReceiver"
+            android:name=".ui.widget.NocturneWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/velune_widget_info" />
+                android:resource="@xml/nocturne_widget_info" />
         </receiver>
 
 
         <activity
             android:name=".ui.screens.settings.PoTokenExtractionActivity"
             android:exported="false"
-            android:theme="@style/Theme.VeluneApp" />
+            android:theme="@style/Theme.NocturneApp" />
     </application>
 
 </manifest>

@@ -1,5 +1,5 @@
 /*
- * Velune Project Original (2026)
+ * Nocturne Project (2026)
  * Kòi Natsuko (github.com/koiverse)
  * Licensed Under GPL-3.0 | see git history for contributors
  */
@@ -26,7 +26,7 @@ import kotlinx.serialization.json.Json
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
-object VeluneCanvas {
+object NocturneCanvas {
     private const val BASE_URL = "https://artwork-archivetune.koiiverse.cloud/"
 
     private val json = Json {
@@ -181,3 +181,6 @@ data class CanvasArtwork(
     val preferredAnimationUrl: String?
         get() = animated ?: videoUrl
 }
+
+
+typealias VeluneCanvas = NocturneCanvas

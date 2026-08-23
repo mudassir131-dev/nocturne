@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -36,7 +36,7 @@ val PlayerDesignStyleKey = stringPreferencesKey("playerDesignStyle")
 val UseNewLibraryDesignKey = booleanPreferencesKey("useNewLibraryDesign")
 val UseNewMiniPlayerDesignKey = booleanPreferencesKey("useNewMiniPlayerDesign")
 val HidePlayerThumbnailKey = booleanPreferencesKey("hidePlayerThumbnail")
-val VeluneCanvasKey = booleanPreferencesKey("veluneCanvas")
+val NocturneCanvasKey = booleanPreferencesKey("nocturneCanvas")
 val ApplePlayerDataSaverKey = booleanPreferencesKey("applePlayerDataSaver")
 val AppleMusicInspiredKey = booleanPreferencesKey("appleMusicInspired")
 val AppleHideVolumeSliderKey = booleanPreferencesKey("appleHideVolumeSlider")

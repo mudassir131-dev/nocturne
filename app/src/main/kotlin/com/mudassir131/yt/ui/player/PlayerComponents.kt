@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.player
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -818,7 +818,7 @@ fun PlayerPlaybackControls(
                             )
                     ) {
                         if (isLoading) {
-                            VeluneLoader(size = 42.dp)
+                            NocturneLoader(size = 42.dp)
                         } else {
                             Icon(
                                 painter = painterResource(
@@ -969,7 +969,7 @@ fun PlayerPlaybackControls(
                         contentAlignment = Alignment.Center
                     ) {
                         if (isLoading) {
-                            VeluneLoader(size = 32.dp)
+                            NocturneLoader(size = 32.dp)
                         } else {
                             Icon(
                                 painter = painterResource(
@@ -1189,7 +1189,7 @@ fun PlayerPlaybackControls(
                         contentAlignment = Alignment.Center
                     ) {
                         if (isLoading) {
-                            VeluneLoader(size = 36.dp)
+                            NocturneLoader(size = 36.dp)
                         } else {
                             Icon(
                                 painter = painterResource(
@@ -1393,7 +1393,7 @@ fun PlayerPlaybackControls(
                         },
                 ) {
                     if (isLoading) {
-                        VeluneLoader(size = 36.dp)
+                        NocturneLoader(size = 36.dp)
                     } else {
                         Image(
                             painter =

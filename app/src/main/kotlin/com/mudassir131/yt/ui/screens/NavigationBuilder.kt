@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -72,8 +72,8 @@ import com.mudassir131.yt.ui.screens.settings.AboutScreen
 import com.mudassir131.yt.ui.screens.settings.AppearanceSettings
 import com.mudassir131.yt.ui.screens.settings.CustomizeBackground
 import com.mudassir131.yt.ui.screens.settings.BackupAndRestore
-import com.mudassir131.yt.ui.screens.settings.VeluneSettingsScreen
-import com.mudassir131.yt.ui.screens.settings.VeluneAccountSettingsScreen
+import com.mudassir131.yt.ui.screens.settings.NocturneSettingsScreen
+import com.mudassir131.yt.ui.screens.settings.NocturneAccountSettingsScreen
 import com.mudassir131.yt.ui.screens.settings.ChangelogScreen
 import com.mudassir131.yt.ui.screens.settings.ContentSettings
 import com.mudassir131.yt.ui.screens.settings.LyricsProviderPriorityScreen
@@ -322,10 +322,10 @@ fun NavGraphBuilder.navigationBuilder(
         YouTubeBrowseScreen(navController)
     }
     composable("settings") {
-        VeluneSettingsScreen(navController)
+        NocturneSettingsScreen(navController)
     }
     composable("settings/account") {
-        VeluneAccountSettingsScreen(navController)
+        NocturneAccountSettingsScreen(navController)
     }
     composable("settings/appearance") {
         AppearanceSettings(navController, scrollBehavior)

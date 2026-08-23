@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.menu
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -405,7 +405,7 @@ fun SelectionSongMenu(
                     ListItem(
                         headlineContent = { Text(text = stringResource(R.string.downloading)) },
                         leadingContent = {
-                            VeluneLoader(size = 24.dp)
+                            NocturneLoader(size = 24.dp)
                         },
                         modifier = Modifier.clickable {
                             showRemoveDownloadDialog = true
@@ -774,7 +774,7 @@ fun SelectionMediaMetadataMenu(
                     ListItem(
                         headlineContent = { Text(text = stringResource(R.string.downloading)) },
                         leadingContent = {
-                            VeluneLoader(size = 24.dp)
+                            NocturneLoader(size = 24.dp)
                         },
                         modifier = Modifier.clickable {
                             showRemoveDownloadDialog = true

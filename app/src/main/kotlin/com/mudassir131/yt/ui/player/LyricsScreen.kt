@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.player
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -535,7 +535,7 @@ fun LyricsScreen(
                                     modifier = Modifier.size(56.dp)
                                 ) {
                                     if (isLoading) {
-                                        VeluneLoader(size = 36.dp)
+                                        NocturneLoader(size = 36.dp)
                                     } else {
                                         Icon(
                                             painter = painterResource(
@@ -769,7 +769,7 @@ fun LyricsScreen(
                                     modifier = Modifier.size(64.dp)
                                 ) {
                                     if (isLoading) {
-                                        VeluneLoader(size = 36.dp)
+                                        NocturneLoader(size = 36.dp)
                                     } else {
                                         Icon(
                                             painter = painterResource(

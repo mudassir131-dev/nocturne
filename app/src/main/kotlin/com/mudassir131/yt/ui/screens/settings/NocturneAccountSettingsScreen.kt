@@ -49,12 +49,12 @@ import com.mudassir131.yt.innertube.utils.completed
 import com.mudassir131.yt.innertube.utils.parseCookieString
 import com.mudassir131.yt.ui.component.InfoLabel
 import com.mudassir131.yt.ui.component.TextFieldDialog
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import com.mudassir131.yt.utils.dataStore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VeluneAccountSettingsScreen(
+fun NocturneAccountSettingsScreen(
     navController: NavController,
 ) {
     val context = LocalContext.current
@@ -426,7 +426,7 @@ private fun PlaylistSelectionDialog(onDismiss: () -> Unit) {
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    VeluneLoader(size = 48.dp)
+                    NocturneLoader(size = 48.dp)
                 }
             } else {
                 LazyColumn(
@@ -493,4 +493,10 @@ private fun PlaylistSelectionDialog(onDismiss: () -> Unit) {
             }
         }
     )
+}
+
+
+@Composable
+fun VeluneAccountSettingsScreen(navController: androidx.navigation.NavController) {
+    NocturneAccountSettingsScreen(navController)
 }

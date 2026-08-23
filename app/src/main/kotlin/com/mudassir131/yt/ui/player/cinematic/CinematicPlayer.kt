@@ -75,7 +75,7 @@ import com.mudassir131.yt.playback.PlayerConnection
 import com.mudassir131.yt.ui.component.BottomSheetPageState
 import com.mudassir131.yt.ui.component.BottomSheetState
 import com.mudassir131.yt.ui.component.MenuState
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import com.mudassir131.yt.ui.component.CapsulePlayerSlider
 import com.mudassir131.yt.ui.menu.PlayerMenu
 import com.mudassir131.yt.ui.player.StyledPlaybackSlider
@@ -522,7 +522,7 @@ fun CinematicPlayerView(
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     if (isLoading) {
-                        VeluneLoader(size = 32.dp, color = Color.Black)
+                        NocturneLoader(size = 32.dp, color = Color.Black)
                     } else {
                         Icon(
                             painter = painterResource(

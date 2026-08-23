@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.menu
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.app.SearchManager
 import android.content.Intent
 import android.content.res.Configuration
@@ -309,7 +309,7 @@ fun LyricsMenu(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        VeluneLoader()
+                        NocturneLoader()
                     }
                 }
             }
@@ -364,7 +364,7 @@ fun LyricsMenu(
                     }
                     Spacer(Modifier.width(8.dp))
                     if (isTranslating) {
-                        VeluneLoader(size = 20.dp)
+                        NocturneLoader(size = 20.dp)
                     } else {
                         TextButton(onClick = {
                             isTranslating = true

@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -2561,10 +2561,10 @@ fun Lyrics(
     }
 }
 
-private const val VELUNE_AUTO_SCROLL_DURATION = 1500L 
-private const val VELUNE_INITIAL_SCROLL_DURATION = 1000L 
-private const val VELUNE_SEEK_DURATION = 800L 
-private const val VELUNE_FAST_SEEK_DURATION = 600L 
+private const val NOCTURNE_AUTO_SCROLL_DURATION = 1500L 
+private const val NOCTURNE_INITIAL_SCROLL_DURATION = 1000L 
+private const val NOCTURNE_SEEK_DURATION = 800L 
+private const val NOCTURNE_FAST_SEEK_DURATION = 600L 
 
 private const val LyricsWordSyncLeadMs = 300L
 

@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -9,7 +9,7 @@
 package com.mudassir131.yt.ui.player
 
 import androidx.compose.material3.CircularProgressIndicator
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -280,7 +280,7 @@ fun MiniPlayerPlayPauseButton(
             // The icon is inside.
             
             if (isLoading) {
-                VeluneLoader(size = 20.dp)
+                NocturneLoader(size = 20.dp)
             } else {
                 Icon(
                     painter = painterResource(

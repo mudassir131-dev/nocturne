@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -53,7 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.mudassir131.yt.ui.theme.VeluneTheme
+import com.mudassir131.yt.ui.theme.NocturneTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -75,7 +75,7 @@ class DebugActivity : ComponentActivity() {
         val deviceInfo = buildDeviceInfo(this)
 
         setContent {
-            VeluneTheme {
+            NocturneTheme {
                 CrashReportScreen(
                     previewText = previewText,
                     timestampText = timestampText,
@@ -365,7 +365,7 @@ private fun buildCrashReport(
     }.getOrDefault("")
 
     val header = buildString {
-        appendLine("Velune crash report")
+        appendLine("Nocturne crash report")
         if (timestampText.isNotBlank()) appendLine("Time: $timestampText")
         if (versionName.isNotBlank() || versionCode.isNotBlank()) {
             appendLine("App: $versionName ($versionCode)")

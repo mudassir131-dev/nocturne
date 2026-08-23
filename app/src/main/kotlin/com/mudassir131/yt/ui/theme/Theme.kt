@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -53,7 +53,7 @@ data class ThemeSeedPalette(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun VeluneTheme(
+fun NocturneTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     pureBlack: Boolean = false,
     themeColor: Color = DefaultThemeColor,
@@ -493,4 +493,24 @@ object ThemeSeedPaletteCodec {
             Color(android.graphics.Color.parseColor(withHash))
         }.getOrNull()
     }
+}
+
+
+@Composable
+fun VeluneTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    pureBlack: Boolean = false,
+    themeColor: Color = DefaultThemeColor,
+    seedPalette: ThemeSeedPalette? = null,
+    useSystemFont: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    NocturneTheme(
+        darkTheme = darkTheme,
+        pureBlack = pureBlack,
+        themeColor = themeColor,
+        seedPalette = seedPalette,
+        useSystemFont = useSystemFont,
+        content = content,
+    )
 }

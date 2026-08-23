@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.screens.settings
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -107,7 +107,7 @@ import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.CustomThemeColorKey
 import com.mudassir131.yt.constants.DynamicThemeKey
 import com.mudassir131.yt.ui.component.IconButton
-import com.mudassir131.yt.ui.theme.VeluneTheme
+import com.mudassir131.yt.ui.theme.NocturneTheme
 import com.mudassir131.yt.ui.theme.ColorSaver
 import com.mudassir131.yt.ui.theme.ThemeSeedPalette
 import com.mudassir131.yt.ui.theme.ThemeSeedPaletteCodec
@@ -286,7 +286,7 @@ fun ThemeCreatorScreen(
                     onClick = {
                         val safeName = themeName
                             .trim()
-                            .ifBlank { "Velune Theme" }
+                            .ifBlank { "Nocturne Theme" }
                             .replace(Regex("[^a-zA-Z0-9 _\\-]"), "_")
                             .take(64)
                         exportLauncher.launch("$safeName.json")
@@ -404,7 +404,7 @@ private fun ThemeHeroPreview(
     val animatedTertiary by animateColorAsState(palette.tertiary, animationSpec = spring(stiffness = Spring.StiffnessMediumLow), label = "previewTertiary")
     val animatedNeutral by animateColorAsState(palette.neutral, animationSpec = spring(stiffness = Spring.StiffnessMediumLow), label = "previewNeutral")
 
-    VeluneTheme(
+    NocturneTheme(
         darkTheme = isDark,
         seedPalette = ThemeSeedPalette(animatedPrimary, animatedSecondary, animatedTertiary, animatedNeutral),
     ) {
@@ -612,7 +612,7 @@ private fun ThemeRichPreview(
     val animatedTertiary by animateColorAsState(palette.tertiary, animationSpec = spring(stiffness = Spring.StiffnessMediumLow), label = "richPreviewTertiary")
     val animatedNeutral by animateColorAsState(palette.neutral, animationSpec = spring(stiffness = Spring.StiffnessMediumLow), label = "richPreviewNeutral")
 
-    VeluneTheme(
+    NocturneTheme(
         darkTheme = isDark,
         seedPalette = ThemeSeedPalette(animatedPrimary, animatedSecondary, animatedTertiary, animatedNeutral),
     ) {
@@ -625,7 +625,7 @@ private fun ThemeRichPreview(
         var checkboxOn by rememberSaveable { mutableStateOf(true) }
         var radioSelected by rememberSaveable { mutableStateOf(0) }
         var sliderValue by rememberSaveable { mutableStateOf(0.62f) }
-        var query by rememberSaveable { mutableStateOf("Velune") }
+        var query by rememberSaveable { mutableStateOf("Nocturne") }
 
         Card(
             modifier = modifier
@@ -1007,7 +1007,7 @@ private fun ThemeRichPreview(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text("Loading", style = MaterialTheme.typography.labelLarge)
-                                VeluneLoader(size = 22.dp)
+                                NocturneLoader(size = 22.dp)
                             }
                         }
                     }

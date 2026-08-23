@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.menu
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import com.mudassir131.yt.ui.component.SystemMediaVolumeSlider
 import android.content.Intent
 import android.content.res.Configuration
@@ -621,7 +621,7 @@ fun PlayerMenu(
                         ListItem(
                         headlineContent = { Text(text = stringResource(R.string.downloading)) },
                         leadingContent = {
-                            VeluneLoader(size = 24.dp)
+                            NocturneLoader(size = 24.dp)
                         },
                         modifier = Modifier.clickable {
                             DownloadService.sendRemoveDownload(
@@ -1419,7 +1419,7 @@ fun EqualizerDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(24.dp),
                             ) {
-                                VeluneLoader()
+                                NocturneLoader()
                                 Spacer(Modifier.height(16.dp))
                                 Text(
                                     text = stringResource(R.string.eq_waiting_for_audio_session),

@@ -74,8 +74,8 @@ val widgetBgColorKey = intPreferencesKey("widget_bg_color")
 val widgetTextColorKey = intPreferencesKey("widget_text_color")
 
 
-class VeluneWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = VeluneWidget()
+class NocturneWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = NocturneWidget()
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
@@ -104,7 +104,7 @@ class VeluneWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 
-class VeluneWidget : GlanceAppWidget() {
+class NocturneWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -119,7 +119,7 @@ class VeluneWidget : GlanceAppWidget() {
 
         val isPlaying = prefs[widgetIsPlayingKey] ?: false
         val currentSongTitle = prefs[widgetTitleKey] ?: "Not Playing"
-        val currentArtistName = prefs[widgetArtistKey] ?: "Velune"
+        val currentArtistName = prefs[widgetArtistKey] ?: "Nocturne"
 
         val artPath = prefs[widgetArtPathKey]
         val artBitmap = artPath?.let { BitmapFactory.decodeFile(it) }
@@ -287,10 +287,10 @@ class VeluneWidget : GlanceAppWidget() {
 }
 
 
-fun updateVeluneWidgetState(context: Context, title: String, artist: String, isPlaying: Boolean, thumbnailUrl: String?) {
+fun updateNocturneWidgetState(context: Context, title: String, artist: String, isPlaying: Boolean, thumbnailUrl: String?) {
     CoroutineScope(Dispatchers.IO).launch {
         val manager = GlanceAppWidgetManager(context)
-        val glanceIds = manager.getGlanceIds(VeluneWidget::class.java)
+        val glanceIds = manager.getGlanceIds(NocturneWidget::class.java)
         if (glanceIds.isEmpty()) return@launch
 
         val state: Preferences = androidx.glance.appwidget.state.getAppWidgetState(
@@ -342,7 +342,7 @@ fun updateVeluneWidgetState(context: Context, title: String, artist: String, isP
                     prefs[widgetArtPathKey] = downloadedArtPath
                 }
             }
-            VeluneWidget().update(context, glanceId)
+            NocturneWidget().update(context, glanceId)
         }
     }
 }
@@ -365,3 +365,11 @@ class MediaControlCallback : ActionCallback {
     }
 }
 
+
+
+typealias VeluneWidget = NocturneWidget
+typealias VeluneWidgetReceiver = NocturneWidgetReceiver
+
+fun updateVeluneWidgetState(context: Context, title: String, artist: String, isPlaying: Boolean, thumbnailUrl: String?) {
+    updateNocturneWidgetState(context, title, artist, isPlaying, thumbnailUrl)
+}

@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.screens.settings
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -315,7 +315,7 @@ fun DiscordSettings(
         isEnabled = discordRPC,
         trailingContent = {
            if (isRefreshing) {
-                VeluneLoader(size = 28.dp)
+                NocturneLoader(size = 28.dp)
         } else {
             OutlinedButton(
                 enabled = discordRPC,
@@ -574,7 +574,7 @@ if (intervalSelection == "Custom") {
         )
         val (button2Label, onButton2LabelChange) = rememberPreference(
             key = DiscordActivityButton2LabelKey,
-            defaultValue = "Go to Velune"
+            defaultValue = "Go to Nocturne"
         )
         val (button2Enabled, onButton2EnabledChange) = rememberPreference(
             key = DiscordActivityButton2EnabledKey,
@@ -962,7 +962,7 @@ fun RichPresence(
    val (button1Label) = rememberPreference(DiscordActivityButton1LabelKey, "Listen on YouTube Music")
    val (button1Enabled) = rememberPreference(DiscordActivityButton1EnabledKey, true)
 
-   val (button2Label) = rememberPreference(DiscordActivityButton2LabelKey, "Go to Velune")
+   val (button2Label) = rememberPreference(DiscordActivityButton2LabelKey, "Go to Nocturne")
    val (button2Enabled) = rememberPreference(DiscordActivityButton2EnabledKey, true)
 
 // Button URL sources + custom
@@ -1002,7 +1002,7 @@ fun RichPresence(
     ActivitySource.ARTIST -> "$activityVerb ${song?.artists?.firstOrNull()?.name ?: "Artist"}"
     ActivitySource.ALBUM -> "$activityVerb ${song?.album?.title ?: song?.song?.albumName ?: "Album"}"
     ActivitySource.SONG -> "$activityVerb ${song?.song?.title ?: "Song"}"
-    ActivitySource.APP -> "$activityVerb Velune"
+    ActivitySource.APP -> "$activityVerb Nocturne"
    }
 
 

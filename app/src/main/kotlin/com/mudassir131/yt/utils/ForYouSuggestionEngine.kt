@@ -19,7 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Velune For You — Suggestion engine
+ * Nocturne For You — Suggestion engine
  *
  * Scores songs based on:
  * - Play count (higher = better)

@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -88,14 +88,14 @@ import coil3.compose.AsyncImage
 import androidx.compose.material3.Icon
 import com.mudassir131.yt.LocalPlayerConnection
 import com.mudassir131.yt.R
-import com.mudassir131.yt.canvas.VeluneCanvas
+import com.mudassir131.yt.canvas.NocturneCanvas
 import com.mudassir131.yt.canvas.CanvasArtwork
 import com.mudassir131.yt.constants.PlayerBackgroundStyle
 import com.mudassir131.yt.constants.PlayerBackgroundStyleKey
 import com.mudassir131.yt.constants.PlayerHorizontalPadding
 import com.mudassir131.yt.constants.SeekExtraSeconds
 import com.mudassir131.yt.constants.SwipeThumbnailKey
-import com.mudassir131.yt.constants.VeluneCanvasKey
+import com.mudassir131.yt.constants.NocturneCanvasKey
 import com.mudassir131.yt.constants.MaxCanvasCacheSizeKey
 import com.mudassir131.yt.constants.ThumbnailCornerRadiusKey
 import com.mudassir131.yt.constants.CropThumbnailToSquareKey
@@ -274,7 +274,7 @@ fun Thumbnail(
 
     val swipeThumbnail by rememberPreference(SwipeThumbnailKey, true)
     val hidePlayerThumbnail by rememberPreference(HidePlayerThumbnailKey, false)
-    val veluneCanvasEnabled by rememberPreference(VeluneCanvasKey, false)
+    val nocturneCanvasEnabled by rememberPreference(NocturneCanvasKey, false)
     val (maxCanvasCacheSize, _) = rememberPreference(
         key = MaxCanvasCacheSizeKey,
         defaultValue = 256,
@@ -492,7 +492,7 @@ fun Thumbnail(
                                     if (country.length == 2) country.lowercase(Locale.ROOT) else "us"
                                 }
                             val shouldAnimateCanvas =
-                                veluneCanvasEnabled &&
+                                nocturneCanvasEnabled &&
                                     item.mediaId.isNotBlank() &&
                                     item.mediaId == currentMediaItem?.mediaId
                             var canvasArtwork by remember(item.mediaId) { mutableStateOf<CanvasArtwork?>(null) }
@@ -549,7 +549,7 @@ fun Thumbnail(
                                             }
 
                                         candidates.firstNotNullOfOrNull { (song, artist) ->
-                                            VeluneCanvas
+                                            NocturneCanvas
                                                 .getBySongArtist(
                                                     song = song,
                                                     artist = artist,

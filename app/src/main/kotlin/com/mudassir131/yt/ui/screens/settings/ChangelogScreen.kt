@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.screens.settings
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -96,7 +96,7 @@ fun ChangelogScreen(
         ) {
             when {
                 isLoading -> {
-                    VeluneLoader(size = 24.dp)
+                    NocturneLoader(size = 24.dp)
                 }
                 error != null && releases.isEmpty() -> {
                     Column(

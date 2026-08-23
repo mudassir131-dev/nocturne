@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -240,7 +240,7 @@ import com.mudassir131.yt.ui.screens.search.SearchShellHeader
 import com.mudassir131.yt.ui.screens.settings.DarkMode
 import com.mudassir131.yt.ui.screens.settings.DiscordPresenceManager
 import com.mudassir131.yt.ui.screens.settings.NavigationTab
-import com.mudassir131.yt.ui.theme.VeluneTheme
+import com.mudassir131.yt.ui.theme.NocturneTheme
 import com.mudassir131.yt.ui.theme.ColorSaver
 import com.mudassir131.yt.ui.theme.DefaultThemeColor
 import com.mudassir131.yt.ui.theme.extractThemeColor
@@ -761,7 +761,7 @@ class MainActivity : ComponentActivity() {
             }
 
             com.mudassir131.yt.ui.theme.ProvideGlassmorphismState {
-                VeluneTheme(
+                NocturneTheme(
                     darkTheme = useDarkTheme,
                     pureBlack = pureBlack,
                     themeColor = themeColor,

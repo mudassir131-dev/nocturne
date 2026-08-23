@@ -57,7 +57,7 @@ private data class SettingsDestination(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VeluneSettingsScreen(navController: NavController) {
+fun NocturneSettingsScreen(navController: NavController) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val destinations = remember {
         listOf(
@@ -239,4 +239,9 @@ private fun SettingsDestinationCard(
             )
         }
     }
+}
+
+@Composable
+fun VeluneSettingsScreen(navController: androidx.navigation.NavController) {
+    NocturneSettingsScreen(navController)
 }

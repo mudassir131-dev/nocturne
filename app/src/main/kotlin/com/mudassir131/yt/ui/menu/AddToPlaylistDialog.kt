@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.menu
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -243,7 +243,7 @@ fun AddToPlaylistDialog(
                     }
                 ) {
                     if (isAddingToPlaylist) {
-                        VeluneLoader(size = 16.dp)
+                        NocturneLoader(size = 16.dp)
                     } else {
                         Text("Done")
                     }

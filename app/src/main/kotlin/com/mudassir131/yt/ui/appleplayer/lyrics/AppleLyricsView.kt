@@ -134,7 +134,7 @@ fun AppleLyricsView(
         ) {
             itemsIndexed(
                 items = lines,
-                key = { index, line -> "${line.startMs ?: index}_${line.text}" },
+                key = { index, line -> "${index}_${line.startMs ?: 0L}_${line.text.hashCode()}" },
                 contentType = { _, line -> if (line.words.isEmpty()) "line" else "word_line" },
             ) { index, line ->
                 val active = index == activeIndex

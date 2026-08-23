@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -1147,7 +1147,7 @@ private fun MetroPlayerContent(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        if (isLoading) com.mudassir131.yt.ui.component.VeluneLoader(size = 24.dp)
+                        if (isLoading) com.mudassir131.yt.ui.component.NocturneLoader(size = 24.dp)
                         else {
                             Icon(
                                 painter = painterResource(if (isPlaying) R.drawable.pause else R.drawable.play),

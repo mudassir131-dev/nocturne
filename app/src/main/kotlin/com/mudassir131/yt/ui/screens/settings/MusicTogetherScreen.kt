@@ -1,12 +1,12 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
 package com.mudassir131.yt.ui.screens.settings
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
@@ -959,7 +959,7 @@ private fun HostSectionCard(
             ),
         ) {
             if (isLoading) {
-                VeluneLoader(size = 18.dp)
+                NocturneLoader(size = 18.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = stringResource(R.string.loading),
@@ -1089,14 +1089,14 @@ private fun JoinSectionCard(
             interactionSource = interactionSource,
         ) {
             if (isJoining) {
-                VeluneLoader(size = 18.dp)
+                NocturneLoader(size = 18.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = stringResource(R.string.connecting),
                     fontWeight = FontWeight.SemiBold,
                 )
             } else if (isWaitingApproval) {
-                VeluneLoader(size = 18.dp)
+                NocturneLoader(size = 18.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = stringResource(R.string.together_waiting_approval),

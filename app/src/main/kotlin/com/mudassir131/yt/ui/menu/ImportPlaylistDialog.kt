@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.menu
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -93,7 +93,7 @@ fun ImportPlaylistDialog(
             },
             extraContent = {
                 if (isImporting) {
-                    VeluneLoader()
+                    NocturneLoader()
                 }
             },
             onDone = { finalName ->
@@ -168,7 +168,7 @@ fun ImportPlaylistDialog(
                     Text(text = stringResource(R.string.already_in_playlist))
                     if (isProcessingDuplicate) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        VeluneLoader()
+                        NocturneLoader()
                     }
                 }
             },

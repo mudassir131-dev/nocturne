@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -97,7 +97,7 @@ import com.mudassir131.yt.constants.SwipeThumbnailKey
 import com.mudassir131.yt.constants.SwipeSensitivityKey
 import com.mudassir131.yt.constants.SwipeToSongKey
 import com.mudassir131.yt.constants.HidePlayerThumbnailKey
-import com.mudassir131.yt.constants.VeluneCanvasKey
+import com.mudassir131.yt.constants.NocturneCanvasKey
 import com.mudassir131.yt.constants.ThumbnailCornerRadiusKey
 import com.mudassir131.yt.constants.CropThumbnailToSquareKey
 import com.mudassir131.yt.constants.DisableBlurKey
@@ -165,8 +165,8 @@ fun AppearanceSettings(
         HidePlayerThumbnailKey,
         defaultValue = false
     )
-    val (veluneCanvasEnabled, onVeluneCanvasEnabledChange) = rememberPreference(
-        VeluneCanvasKey,
+    val (nocturneCanvasEnabled, onNocturneCanvasEnabledChange) = rememberPreference(
+        NocturneCanvasKey,
         defaultValue = false
     )
     val (thumbnailCornerRadius, onThumbnailCornerRadiusChange) = rememberPreference(
@@ -557,11 +557,11 @@ fun AppearanceSettings(
         )
 
         SwitchPreference(
-            title = { Text(stringResource(R.string.velune_canvas)) },
-            description = stringResource(R.string.velune_canvas_desc),
+            title = { Text(stringResource(R.string.nocturne_canvas)) },
+            description = stringResource(R.string.nocturne_canvas_desc),
             icon = { Icon(painterResource(R.drawable.motion_photos_on), null) },
-            checked = veluneCanvasEnabled,
-            onCheckedChange = onVeluneCanvasEnabledChange
+            checked = nocturneCanvasEnabled,
+            onCheckedChange = onNocturneCanvasEnabledChange
         )
       
 

@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -179,7 +179,7 @@ import com.mudassir131.yt.constants.ContentFilterMode
 import com.mudassir131.yt.extensions.toEnum
 import com.mudassir131.yt.ui.screens.settings.DiscordPresenceManager
 import com.mudassir131.yt.ui.screens.settings.ListenBrainzManager
-import com.mudassir131.yt.canvas.VeluneCanvas
+import com.mudassir131.yt.canvas.NocturneCanvas
 import com.mudassir131.yt.ui.player.CanvasArtworkPlaybackCache
 import com.mudassir131.yt.utils.normalizeCanvasSongTitle
 import com.mudassir131.yt.utils.normalizeCanvasArtistName
@@ -195,7 +195,7 @@ import com.mudassir131.yt.utils.get
 import com.mudassir131.yt.utils.getAsync
 import com.mudassir131.yt.utils.getPresenceIntervalMillis
 import com.mudassir131.yt.utils.reportException
-import com.mudassir131.yt.ui.widget.updateVeluneWidgetState
+import com.mudassir131.yt.ui.widget.updateNocturneWidgetState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -3617,7 +3617,7 @@ class MusicService :
                             ).filter { (song, artist) -> song.isNotBlank() && artist.isNotBlank() }
 
                             val fetched = candidates.firstNotNullOfOrNull { (song, artist) ->
-                                VeluneCanvas.getBySongArtist(
+                                NocturneCanvas.getBySongArtist(
                                     song = song,
                                     artist = artist,
                                     storefront = storefront,
@@ -3907,7 +3907,7 @@ class MusicService :
             val currentPosition = player.currentPosition
             val isPlaying = player.isPlaying
 
-            updateVeluneWidgetState(
+            updateNocturneWidgetState(
                 context = this@MusicService,
                 title = currentMetadata?.title ?: "Not Playing",
                 artist = currentMetadata?.artists?.joinToString(", ") { it.name } ?: "Nocturne",

@@ -37,14 +37,14 @@ import androidx.compose.ui.unit.dp
  * Nocturne custom loading animation - animated Pill-Infinity logo that pulses and rotates
  */
 @Composable
-fun VeluneLoader(
+fun NocturneLoader(
     modifier: Modifier = Modifier,
     size: Dp = 40.dp,
     color: Color? = null,
 ) {
     val accentColor = color ?: MaterialTheme.colorScheme.primary
 
-    val infiniteTransition = rememberInfiniteTransition(label = "velune_loader")
+    val infiniteTransition = rememberInfiniteTransition(label = "nocturne_loader")
 
     // Pulsing scale animation
     val scale by infiniteTransition.animateFloat(
@@ -215,4 +215,15 @@ fun VeluneLoader(
             }
         }
     }
+}
+
+
+@Deprecated("Use NocturneLoader instead", ReplaceWith("NocturneLoader(modifier, size, color)"))
+@Composable
+fun VeluneLoader(
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 40.dp,
+    color: androidx.compose.ui.graphics.Color? = null,
+) {
+    NocturneLoader(modifier, size, color)
 }

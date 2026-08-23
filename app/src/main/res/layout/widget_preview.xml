@@ -11,7 +11,7 @@
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:background="#151515"
-        android:src="@drawable/ic_velune_concept"
+        android:src="@drawable/ic_nocturne_concept"
         android:scaleType="centerInside"
         android:padding="8dp" />
 

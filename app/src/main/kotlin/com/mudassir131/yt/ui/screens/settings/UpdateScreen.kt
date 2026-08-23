@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.screens.settings
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -152,13 +152,13 @@ fun UpdateScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "⚠️ By using Velune's in-app updater, you are getting updates straight from the developer. These updates are not checked by whatever app store you might have installed Velune from.",
+                        text = "⚠️ By using Nocturne's in-app updater, you are getting updates straight from the developer. These updates are not checked by whatever app store you might have installed Nocturne from.",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
 
                     Text(
-                        text = "Velune provides two download channels for builds:",
+                        text = "Nocturne provides two download channels for builds:",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -237,13 +237,13 @@ fun UpdateScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "⚠️ By using Velune's in-app updater, you are getting updates straight from the developer. These updates are not checked by whatever app store you might have installed Velune from.",
+                        text = "⚠️ By using Nocturne's in-app updater, you are getting updates straight from the developer. These updates are not checked by whatever app store you might have installed Nocturne from.",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
 
                     Text(
-                        text = "Velune provides two download channels for builds:",
+                        text = "Nocturne provides two download channels for builds:",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -577,7 +577,7 @@ fun UpdateScreen(
                                             .padding(32.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        VeluneLoader(size = 24.dp)
+                                        NocturneLoader(size = 24.dp)
                                     }
                                 }
                             }

@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -182,7 +182,7 @@ class DiscordRPC(
 
         val button1Label = context.dataStore[DiscordActivityButton1LabelKey] ?: "Listen on YouTube Music"
         val button1Enabled = context.dataStore[DiscordActivityButton1EnabledKey] ?: true
-        val button2Label = context.dataStore[DiscordActivityButton2LabelKey] ?: "Go to Velune"
+        val button2Label = context.dataStore[DiscordActivityButton2LabelKey] ?: "Go to Nocturne"
         val button2Enabled = context.dataStore[DiscordActivityButton2EnabledKey] ?: true
 
         val button1UrlSource = context.dataStore[DiscordActivityButton1UrlSourceKey] ?: "songurl"
@@ -318,7 +318,7 @@ class DiscordRPC(
                 "custom" -> song.artists.firstOrNull()?.name
                 else -> translatedMap["{artist}"] ?: song.artists.firstOrNull()?.name
             }
-            "$baseSmallText on Velune"
+            "$baseSmallText on Nocturne"
         }
 
         val applicationIdToSend = APPLICATION_ID

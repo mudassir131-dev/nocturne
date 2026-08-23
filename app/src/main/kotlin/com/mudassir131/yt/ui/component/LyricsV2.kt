@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil & WTTexe!
+ * WTTexe!
  * Licensed Under GPL-3.0
  */
 

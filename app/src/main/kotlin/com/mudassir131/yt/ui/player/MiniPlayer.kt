@@ -1,6 +1,6 @@
 /*
  * Nocturne - by Mudassir
- * Nikhil
+
  * Licensed Under GPL-3.0
  */
 
@@ -8,7 +8,7 @@
 
 package com.mudassir131.yt.ui.player
 
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -369,7 +369,7 @@ private fun LegacyMiniPlayer(
                 },
             ) {
                 if (isLoading) {
-                    VeluneLoader(size = 24.dp)
+                    NocturneLoader(size = 24.dp)
                 } else {
                     Icon(
                         painter = painterResource(
@@ -584,7 +584,7 @@ private fun FloatingMiniPlayerContent(
                     contentAlignment = Alignment.Center
                 ) {
                     if (isLoading) {
-                        com.mudassir131.yt.ui.component.VeluneLoader(size = 20.dp)
+                        com.mudassir131.yt.ui.component.NocturneLoader(size = 20.dp)
                     } else {
                         Icon(
                             painter = painterResource(R.drawable.play),
