@@ -46,10 +46,16 @@
 
 <div align="center">
 
-  <img src=".github/assets/screen_home.jpg" alt="Home Screen" width="23%" style="border-radius: 12px; margin: 4px;" />
-  <img src=".github/assets/screen_search.jpg" alt="Search & Exploration" width="23%" style="border-radius: 12px; margin: 4px;" />
-  <img src=".github/assets/screen_player.jpg" alt="Apple Music Player Style" width="23%" style="border-radius: 12px; margin: 4px;" />
-  <img src=".github/assets/screen_lyrics.jpg" alt="Live Synced Lyrics" width="23%" style="border-radius: 12px; margin: 4px;" />
+  <p>
+    <img src=".github/assets/screen_home.jpg" alt="Home Screen" width="31%" style="border-radius: 12px; margin: 4px;" />
+    <img src=".github/assets/screen_search.jpg" alt="Search & Exploration" width="31%" style="border-radius: 12px; margin: 4px;" />
+    <img src=".github/assets/screen_cinematic.jpg" alt="Cinematic Player" width="31%" style="border-radius: 12px; margin: 4px;" />
+  </p>
+  <p>
+    <img src=".github/assets/screen_synced_lyrics.jpg" alt="Live Synced Lyrics" width="31%" style="border-radius: 12px; margin: 4px;" />
+    <img src=".github/assets/screen_player.jpg" alt="Apple Music Player Style" width="31%" style="border-radius: 12px; margin: 4px;" />
+    <img src=".github/assets/screen_lyrics.jpg" alt="Lyrics & Romaji" width="31%" style="border-radius: 12px; margin: 4px;" />
+  </p>
 
 </div>
 
