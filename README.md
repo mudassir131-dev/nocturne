@@ -234,8 +234,20 @@ If you love using Nocturne and want to support its ongoing development, features
 
 <div align="center">
 
-  <h3>UPI Payment</h3>
-  <code>touseeparay7-1@okicici</code>
+  <br />
+
+  <img src=".github/assets/upi_qr.png" width="180" height="180" alt="UPI QR Code" style="border-radius: 18px; border: 3px solid #6366f1; padding: 6px; background-color: #ffffff; box-shadow: 0 8px 24px rgba(99,102,241,0.25);" />
+
+  <br /><br />
+
+  <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Nocturne&cu=INR">
+    <img src="https://img.shields.io/badge/Pay%20via%20UPI-0084FF?style=for-the-badge&logo=google-pay&logoColor=white" alt="Pay via UPI" />
+  </a>
+  <img src="https://img.shields.io/badge/GPay%20%7C%20PhonePe%20%7C%20Paytm-6366f1?style=for-the-badge" alt="UPI Apps" />
+
+  <br /><br />
+
+  <p><b>UPI ID:</b> <code>touseeparay7-1@okicici</code></p>
 
 </div>
 
