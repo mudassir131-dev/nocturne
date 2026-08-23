@@ -734,9 +734,7 @@ fun BottomSheetPlayer(
                             onSliderValueChange = onSliderValueChange,
                             onSliderValueChangeFinished = onSliderValueChangeFinished,
                             onShowSleepTimer = { showSleepTimerDialog = true },
-                            modifier = Modifier
-                                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                                .padding(bottom = queueSheetState.collapsedBound)
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 } else if (playerDesignStyle == PlayerDesignStyle.V5 || playerDesignStyle == PlayerDesignStyle.V5_GLASS) {

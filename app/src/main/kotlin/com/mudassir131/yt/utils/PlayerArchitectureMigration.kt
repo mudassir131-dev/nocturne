@@ -27,8 +27,8 @@ object PlayerArchitectureMigration : DataMigration<Preferences> {
 
     override suspend fun migrate(currentData: Preferences): Preferences {
         val migrated = mutablePreferencesOf().apply { this += currentData }
-        // Force Apple Music inspired player to default ON
-        migrated[AppleMusicInspiredKey] = true
+        // Default Apple Music inspired player to OFF (use refined default Cinematic Player)
+        migrated[AppleMusicInspiredKey] = false
 
         migrated.remove(LegacyPlayerExperienceKey)
         migrated.remove(PlayerDesignStyleKey)

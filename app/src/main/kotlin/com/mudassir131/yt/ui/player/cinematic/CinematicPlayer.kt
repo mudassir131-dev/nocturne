@@ -144,49 +144,85 @@ fun CinematicPlayerView(
         label = "cinematicPlayPauseCorner"
     )
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Layout geometry, measured from the ArchiveTune reference player.
+    // Reference device: 432 x 960 dp (1080 x 2400 px @ 2.5). Every value below is
+    // taken from that screenshot rather than eyeballed, so the whole vertical
+    // rhythm lives here instead of being scattered through inline Spacer values.
+    // ──────────────────────────────────────────────────────────────────────────
+    // Horizontal: the artwork, metadata row, slider and time labels share one
+    // content column (30dp side margins); the bottom action row is wider and the
+    // playback control row is narrower than that column.
+    val contentWidth = 0.86f
+    val bottomRowWidth = 0.91f
+    val artworkCorner = 14.dp
+    // Vertical rhythm
+    val headerTopGap = 16.dp          // status bar inset -> "Now Playing"
+    val headerTitleGap = 4.dp         // "Now Playing" -> subtitle
+    val artworkToTitleGap = 54.dp     // artwork bottom -> song title
+    val metadataToSliderGap = 16.dp   // artist/action buttons -> slider
+    val sliderToTimeGap = 6.dp        // slider -> time labels
+    val timeToControlsGap = 14.dp     // time labels -> playback controls
+    val controlsToBottomGap = 38.dp   // playback controls -> Queue/Sleep/Lyrics
+    val bottomGestureGap = 7.dp       // Queue/Sleep/Lyrics -> navigation inset
+    // Action buttons (share / favorite / more)
+    val actionButtonSize = 42.dp
+    val actionButtonGap = 12.dp
+    // Playback controls: outer pair, skip pair, centre play/pause, and the two
+    // distinct gaps between them (the reference does not use an even arrangement).
+    val sideControlSize = 44.dp
+    val skipControlSize = 56.dp
+    val playControlSize = 86.dp
+    val controlGapOuter = 12.dp       // shuffle <-> previous, next <-> repeat
+    val controlGapInner = 19.dp       // previous <-> play, play <-> next
+    // Bottom action row
+    val bottomPillHeight = 48.dp
+    val bottomPillGap = 12.dp
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Status bar ke baad 48px (~24dp) gap
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(headerTopGap))
 
-        // 1. TOP HEADER ("Now Playing" + Subtitle)
+        // 1. TOP HEADER ("Now Playing" + Playlist/Album Subtitle)
         Text(
             text = "Now Playing",
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = textBackgroundColor.copy(alpha = 0.70f),
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(headerTitleGap))
         val headerSubtitle = queueTitle ?: mediaMetadata.album?.title ?: artistLine
         if (headerSubtitle.isNotBlank()) {
             Text(
                 text = headerSubtitle,
                 style = MaterialTheme.typography.titleMedium,
-                color = textBackgroundColor.copy(alpha = 0.85f),
+                color = textBackgroundColor.copy(alpha = 0.90f),
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .fillMaxWidth(0.88f)
+                    .fillMaxWidth(contentWidth)
                     .basicMarquee()
             )
         }
 
-        // Dynamic spacer to absorb vertical height before artwork
+        // Header -> artwork. The reference leaves ~75dp of slack here on a 960dp
+        // tall screen; taking it as the flexible gap keeps every spacing below the
+        // artwork exact and lets shorter screens compress this one first.
         Spacer(Modifier.weight(1f))
 
-        // 2. THUMBNAIL IMAGE — square (1:1), width = 85%, rounded corners (24dp)
+        // 2. THUMBNAIL IMAGE — square (1:1), width = content column, 14dp corners
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.85f)
+                .fillMaxWidth(contentWidth)
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(artworkCorner))
         ) {
             val artworkUrl = mediaMetadata.thumbnailUrl?.toHighResThumbnail()
                 ?: playerConnection.player.currentMediaItem?.mediaMetadata?.artworkUri?.toString()?.toHighResThumbnail()
@@ -198,18 +234,22 @@ fun CinematicPlayerView(
             )
         }
 
-        // Fixed gap from artwork to title Y ≈ 36dp
-        Spacer(Modifier.height(36.dp))
+        // Artwork -> song title. Measured 60dp from the artwork edge to the title's
+        // cap height in the reference; 54dp of layout gap once headlineSmall's own
+        // ascent slack is accounted for.
+        Spacer(Modifier.height(artworkToTitleGap))
 
-        // 3. ROW: Left song title + artist (vertically centered Column), Right 3 transparent action icons
+        // 3. ROW: Left (Song Title + Artist), Right (3 Rounded Glass Action Buttons: Share, Favorite, More)
         Row(
-            modifier = Modifier.fillMaxWidth(0.88f),
+            modifier = Modifier.fillMaxWidth(contentWidth),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = mediaMetadata.title,
@@ -242,8 +282,8 @@ fun CinematicPlayerView(
                 Text(
                     text = artistLine,
                     color = textBackgroundColor.copy(alpha = 0.70f),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Start,
@@ -271,110 +311,135 @@ fun CinematicPlayerView(
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            // Right 3 transparent action buttons: Share, Heart, More
+            // Right 3 individual rounded rectangle glass buttons: Share, Heart, More
+            val actionShape = RoundedCornerShape(14.dp)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(actionButtonGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Share
-                Box(
+                Surface(
+                    onClick = {
+                        val intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = "text/plain"
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "https://music.youtube.com/watch?v=${mediaMetadata.id}"
+                            )
+                        }
+                        context.startActivity(Intent.createChooser(intent, null))
+                    },
+                    shape = actionShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
                     modifier = Modifier
-                        .size(24.dp)
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = {
-                                val intent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    type = "text/plain"
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "https://music.youtube.com/watch?v=${mediaMetadata.id}"
-                                    )
-                                }
-                                context.startActivity(Intent.createChooser(intent, null))
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
+                        .size(actionButtonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = actionShape,
+                                    baseColor = textBackgroundColor.copy(alpha = 0.12f)
+                                )
+                            } else Modifier
+                        )
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.share),
-                        contentDescription = "Share",
-                        tint = textBackgroundColor.copy(alpha = 0.85f),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            painter = painterResource(R.drawable.share),
+                            contentDescription = "Share",
+                            tint = textBackgroundColor.copy(alpha = 0.85f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
 
                 // Favorite / Heart
-                Box(
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        playerConnection.toggleLike()
+                    },
+                    shape = actionShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
                     modifier = Modifier
-                        .size(24.dp)
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                playerConnection.toggleLike()
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
+                        .size(actionButtonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = actionShape,
+                                    baseColor = textBackgroundColor.copy(alpha = 0.12f)
+                                )
+                            } else Modifier
+                        )
                 ) {
-                    Icon(
-                        painter = painterResource(
-                            if (currentSongLiked) R.drawable.favorite else R.drawable.favorite_border
-                        ),
-                        contentDescription = "Favorite",
-                        tint = if (currentSongLiked) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.85f),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            painter = painterResource(
+                                if (currentSongLiked) R.drawable.favorite else R.drawable.favorite_border
+                            ),
+                            contentDescription = "Favorite",
+                            tint = if (currentSongLiked) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.85f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
 
-                // More (...)
-                Box(
+                // More Options (...)
+                Surface(
+                    onClick = {
+                        menuState.show {
+                            PlayerMenu(
+                                mediaMetadata = mediaMetadata,
+                                navController = navController,
+                                playerBottomSheetState = state,
+                                onShowDetailsDialog = {
+                                    bottomSheetPageState.show {
+                                        ShowMediaInfo(mediaMetadata.id)
+                                    }
+                                },
+                                onDismiss = menuState::dismiss
+                            )
+                        }
+                    },
+                    shape = actionShape,
+                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
                     modifier = Modifier
-                        .size(24.dp)
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = {
-                                menuState.show {
-                                    PlayerMenu(
-                                        mediaMetadata = mediaMetadata,
-                                        navController = navController,
-                                        playerBottomSheetState = state,
-                                        onShowDetailsDialog = {
-                                            bottomSheetPageState.show {
-                                                ShowMediaInfo(mediaMetadata.id)
-                                            }
-                                        },
-                                        onDismiss = menuState::dismiss
-                                    )
-                                }
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
+                        .size(actionButtonSize)
+                        .then(
+                            if (isGlassActive) {
+                                Modifier.glassmorphicButton(
+                                    isGlassActive = true,
+                                    shape = actionShape,
+                                    baseColor = textBackgroundColor.copy(alpha = 0.12f)
+                                )
+                            } else Modifier
+                        )
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_horiz),
-                        contentDescription = "More Options",
-                        tint = textBackgroundColor.copy(alpha = 0.85f),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_horiz),
+                            contentDescription = "More Options",
+                            tint = textBackgroundColor.copy(alpha = 0.85f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
 
-        // Uske niche 24px (~12dp) gap
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(metadataToSliderGap))
 
-        // 4. PROGRESS SLIDER (CapsulePlayerSlider with thick active track and | line vertical handle)
+        // 4. PROGRESS SLIDER — CapsulePlayerSlider, i.e. the same stock Material 3
+        // Expressive Slider the Equalizer's band sliders use. Its natural height is
+        // kept (the bar handle stands taller than the track and would be clipped by
+        // a forced height); only its position and width come from the reference.
         val safeDuration = if (duration <= 0L || duration == C.TIME_UNSET) 0f else duration.toFloat()
         val safePosition = (sliderPosition ?: position).toFloat().coerceIn(0f, safeDuration.coerceAtLeast(0f))
 
         Column(
-            modifier = Modifier.fillMaxWidth(0.88f)
+            modifier = Modifier.fillMaxWidth(contentWidth)
         ) {
             CapsulePlayerSlider(
                 value = safePosition,
@@ -382,43 +447,44 @@ fun CinematicPlayerView(
                 onValueChange = { onSliderValueChange(it.toLong()) },
                 onValueChangeFinished = onSliderValueChangeFinished,
                 activeColor = textButtonColor,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp)
+                modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(Modifier.height(sliderToTimeGap))
+
+            // Current position / total duration, flush with the content column edges
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp, vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = makeTimeString(sliderPosition ?: position),
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = textBackgroundColor.copy(alpha = 0.75f)
+                    fontWeight = FontWeight.Normal,
+                    color = textBackgroundColor.copy(alpha = 0.70f)
                 )
                 Text(
                     text = if (duration != C.TIME_UNSET) makeTimeString(duration) else "",
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = textBackgroundColor.copy(alpha = 0.75f)
+                    fontWeight = FontWeight.Normal,
+                    color = textBackgroundColor.copy(alpha = 0.70f)
                 )
             }
         }
 
-        // Uske niche 32px (~16dp) gap
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(timeToControlsGap))
 
-        // 5. PLAYBACK CONTROLS: Compact middle alignment with fixed 16dp spacing
+        // 5. PLAYBACK CONTROLS (Shuffle, Prev, Center Squircle Play/Pause, Next, Repeat)
+        // Centred as a group with explicit gaps: the reference's button centres are
+        // symmetric about the screen centre but the shuffle/previous gap is smaller
+        // than the previous/play gap, so SpaceBetween/SpaceEvenly cannot reproduce it.
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Shuffle (44dp)
-            val smallShape = RoundedCornerShape(14.dp)
+            // Shuffle
+            val smallShape = RoundedCornerShape(16.dp)
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -429,7 +495,7 @@ fun CinematicPlayerView(
                     alpha = if (shuffleModeEnabled) 0.22f else 0.12f
                 ),
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(sideControlSize)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
@@ -445,15 +511,15 @@ fun CinematicPlayerView(
                         painter = painterResource(R.drawable.shuffle),
                         contentDescription = "Shuffle",
                         tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.65f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(controlGapOuter))
 
-            // Previous (52dp)
-            val mediumShape = RoundedCornerShape(16.dp)
+            // Previous
+            val mediumShape = RoundedCornerShape(18.dp)
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -463,7 +529,7 @@ fun CinematicPlayerView(
                 shape = mediumShape,
                 color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(skipControlSize)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
@@ -483,15 +549,15 @@ fun CinematicPlayerView(
                         painter = painterResource(R.drawable.apple_skip_previous),
                         contentDescription = null,
                         tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(27.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(controlGapInner))
 
-            // Play / Pause (74dp wide × 70dp high Solid Pastel Accent Container)
-            val playShape = RoundedCornerShape(playPauseCorner)
+            // Play / Pause — the deliberately larger centre control
+            val playShape = RoundedCornerShape(28.dp)
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -505,7 +571,7 @@ fun CinematicPlayerView(
                 shape = playShape,
                 color = if (isGlassActive) Color.Transparent else textButtonColor,
                 modifier = Modifier
-                    .size(width = 74.dp, height = 70.dp)
+                    .size(playControlSize)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
@@ -522,7 +588,7 @@ fun CinematicPlayerView(
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     if (isLoading) {
-                        NocturneLoader(size = 32.dp, color = Color.Black)
+                        NocturneLoader(size = 36.dp, color = Color.Black)
                     } else {
                         Icon(
                             painter = painterResource(
@@ -534,15 +600,15 @@ fun CinematicPlayerView(
                             ),
                             contentDescription = null,
                             tint = if (isGlassActive) textBackgroundColor else Color.Black,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(40.dp)
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(controlGapInner))
 
-            // Next (52dp)
+            // Next
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -552,7 +618,7 @@ fun CinematicPlayerView(
                 shape = mediumShape,
                 color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(skipControlSize)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
@@ -572,14 +638,14 @@ fun CinematicPlayerView(
                         painter = painterResource(R.drawable.apple_skip_next),
                         contentDescription = null,
                         tint = textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.4f),
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(27.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(controlGapOuter))
 
-            // Repeat (44dp)
+            // Repeat
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -590,7 +656,7 @@ fun CinematicPlayerView(
                     alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.22f else 0.12f
                 ),
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(sideControlSize)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
@@ -611,39 +677,40 @@ fun CinematicPlayerView(
                         ),
                         contentDescription = "Repeat",
                         tint = textBackgroundColor.copy(alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.65f else 1f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
         }
 
-        // 32px (~16dp) gap
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(controlsToBottomGap))
 
-        // 6. BOTTOM ACTION ROW: [ Queue ]  (🌙)  [ Lyrics ] centered compactly with 12dp spacing
-        val bottomPillShape = RoundedCornerShape(50)
+        // 6. BOTTOM ACTION ROW: [ ≡ Queue ]  ( 🌙 )  [ 💬 Lyrics ]
+        // Wider than the content column in the reference — its pills sit ~20dp from
+        // the screen edges, outside the artwork's 30dp margins.
+        val bottomPillShape = RoundedCornerShape(24.dp)
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth(bottomRowWidth),
+            horizontalArrangement = Arrangement.spacedBy(bottomPillGap),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Queue Pill (width 110dp, height 40dp)
+            // Queue Pill
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     queueSheetState.expandSoft()
                 },
                 shape = bottomPillShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.13f),
                 modifier = Modifier
-                    .width(110.dp)
-                    .height(40.dp)
+                    .weight(1f)
+                    .height(bottomPillHeight)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = bottomPillShape,
-                                baseColor = textBackgroundColor.copy(alpha = 0.12f)
+                                baseColor = textBackgroundColor.copy(alpha = 0.13f)
                             )
                         } else Modifier
                     )
@@ -659,34 +726,33 @@ fun CinematicPlayerView(
                         tint = textBackgroundColor,
                         modifier = Modifier.size(18.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Queue",
                         color = textBackgroundColor,
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            // Sleep Timer Circle (40dp)
+            // Sleep Timer Squircle
+            val sleepShape = RoundedCornerShape(24.dp)
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onShowSleepTimer()
                 },
-                shape = CircleShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                shape = sleepShape,
+                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.13f),
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(bottomPillHeight)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
-                                shape = CircleShape,
-                                baseColor = textBackgroundColor.copy(alpha = 0.12f)
+                                shape = sleepShape,
+                                baseColor = textBackgroundColor.copy(alpha = 0.13f)
                             )
                         } else Modifier
                     )
@@ -696,30 +762,28 @@ fun CinematicPlayerView(
                         painter = painterResource(R.drawable.bedtime),
                         contentDescription = "Sleep Timer",
                         tint = textBackgroundColor,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            // Lyrics Pill (width 110dp, height 40dp)
+            // Lyrics Pill
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     lyricsSheetState.expandSoft()
                 },
                 shape = bottomPillShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.13f),
                 modifier = Modifier
-                    .width(110.dp)
-                    .height(40.dp)
+                    .weight(1f)
+                    .height(bottomPillHeight)
                     .then(
                         if (isGlassActive) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = bottomPillShape,
-                                baseColor = textBackgroundColor.copy(alpha = 0.12f)
+                                baseColor = textBackgroundColor.copy(alpha = 0.13f)
                             )
                         } else Modifier
                     )
@@ -735,18 +799,19 @@ fun CinematicPlayerView(
                         tint = textBackgroundColor,
                         modifier = Modifier.size(18.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Lyrics",
                         color = textBackgroundColor,
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
         }
 
-        // Bottom system gesture / navigation padding
-        Spacer(Modifier.navigationBarsPadding().height(16.dp))
+        // Bottom action row -> navigation / gesture inset. The player background
+        // itself keeps running behind the navigation bar; only content is inset.
+        Spacer(Modifier.navigationBarsPadding().height(bottomGestureGap))
     }
 }

@@ -60,7 +60,7 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = "fixed bugs and playback improvements"
+    const val GenericReleaseNotes = "• Production-grade playback improvements and automatic failure recovery\n• Refined default Cinematic Player layout\n• Bug and crash fixes"
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L

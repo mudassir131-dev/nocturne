@@ -143,7 +143,7 @@ fun AppearanceSettings(
     )
     val (appleMusicInspired, onAppleMusicInspiredChange) = rememberPreference(
         AppleMusicInspiredKey,
-        defaultValue = true,
+        defaultValue = false,
     )
     val (applePlayerBackground, onApplePlayerBackgroundChange) = rememberEnumPreference(
         ApplePlayerBackgroundStyleKey,

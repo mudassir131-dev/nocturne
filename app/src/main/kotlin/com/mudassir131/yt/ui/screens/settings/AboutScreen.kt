@@ -229,7 +229,7 @@ private fun AboutAppCard() {
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AboutBadge(BuildConfig.VERSION_NAME)
-                    AboutBadge(if (BuildConfig.DEBUG) "DEBUG" else "STABLE")
+                    AboutBadge(if (BuildConfig.DEBUG) "DEBUG" else "UNIVERSAL")
                 }
             }
         }

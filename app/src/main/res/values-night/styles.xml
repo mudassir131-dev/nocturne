@@ -1,5 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.NocturneApp" parent="android:Theme.Material.NoActionBar">
+        <!-- See values/styles.xml: keeps the system bars transparent so the player's
+             dynamic background runs edge-to-edge behind them. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceStatusBarContrast" tools:ignore="NewApi">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:ignore="NewApi">false</item>
     </style>
     <style name="Theme.VeluneApp" parent="Theme.NocturneApp">
         <item name="android:windowContentOverlay">@null</item>

@@ -822,7 +822,7 @@ class MainActivity : ComponentActivity() {
                     val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                     val (appleMusicInspired) = rememberPreference(
                         AppleMusicInspiredKey,
-                        defaultValue = true,
+                        defaultValue = false,
                     )
                     val defaultOpenTab by rememberEnumPreference(DefaultOpenTabKey, NavigationTab.HOME)
                     val (appIconStyle) = rememberPreference(AppIconStyleKey, defaultValue = "eclipse")
@@ -1851,14 +1851,8 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = !isDark
             isAppearanceLightNavigationBars = !isDark
         }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            window.statusBarColor =
-                (if (isDark) Color.Transparent else Color.Black.copy(alpha = 0.2f)).toArgb()
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            window.navigationBarColor =
-                (if (isDark) Color.Transparent else Color.Black.copy(alpha = 0.2f)).toArgb()
-        }
+        window.statusBarColor = Color.Transparent.toArgb()
+        window.navigationBarColor = Color.Transparent.toArgb()
     }
 
     private fun initializeTelemetryConfig() {

@@ -1,6 +1,16 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="Theme.NocturneApp" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Edge-to-edge: the activity draws behind both system bars
+             (WindowCompat.setDecorFitsSystemWindows(window, false)), so the bars must
+             not paint their own background over it. Without these, Theme.Material's
+             default opaque status/navigation bar colours appear as black strips on top
+             of the player's dynamic background. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceStatusBarContrast" tools:ignore="NewApi">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:ignore="NewApi">false</item>
     </style>
     <style name="Theme.VeluneApp" parent="Theme.NocturneApp">
         <item name="android:windowContentOverlay">@null</item>
