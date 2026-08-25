@@ -58,15 +58,7 @@ fun AppleLyricsView(
     if (loading || result == null) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (loading) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    VeluneLoader(size = 52.dp, color = Color.White)
-                    Spacer(Modifier.height(18.dp))
-                    Text(
-                        text = "Loading lyrics…",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = .82f),
-                    )
-                }
+                VeluneLoader(size = 52.dp, color = Color.White)
             } else {
                 Text("Lyrics unavailable", color = Color.White.copy(alpha = .7f))
             }

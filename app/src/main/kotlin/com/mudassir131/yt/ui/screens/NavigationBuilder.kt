@@ -57,6 +57,7 @@ import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.rememberBottomSheetState
 import com.mudassir131.yt.ui.screens.BrowseScreen
 import com.mudassir131.yt.ui.screens.artist.ArtistAlbumsScreen
+import com.mudassir131.yt.ui.screens.BroadcastScreen
 import com.mudassir131.yt.ui.screens.artist.ArtistItemsScreen
 import com.mudassir131.yt.ui.screens.artist.ArtistScreen
 import com.mudassir131.yt.ui.screens.artist.ArtistSongsScreen
@@ -400,5 +401,8 @@ fun NavGraphBuilder.navigationBuilder(
     }
     composable("login") {
         LoginScreen(navController)
+    }
+    composable("broadcast") {
+        BroadcastScreen(navController)
     }
 }

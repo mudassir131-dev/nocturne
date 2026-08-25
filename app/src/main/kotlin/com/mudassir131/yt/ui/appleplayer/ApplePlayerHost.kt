@@ -961,10 +961,9 @@ private fun AppleQualityBadge(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(11.dp),
+                com.mudassir131.yt.ui.component.NocturneLoader(
+                    size = 13.dp,
                     color = Color.White.copy(alpha = 0.82f),
-                    strokeWidth = 1.4.dp,
                 )
                 Text(
                     text = "Loading",

@@ -131,6 +131,12 @@ fun HomePersonalizedHeader(
             )
         }
         AnimatedHeaderAction(
+            icon = R.drawable.broadcast,
+            contentDescription = "Announcements",
+            onClick = { navController.navigate("broadcast") },
+        )
+        Spacer(Modifier.width(8.dp))
+        AnimatedHeaderAction(
             icon = R.drawable.favorite_border,
             contentDescription = "Favorites",
             onClick = { navController.navigate("auto_playlist/liked") },
