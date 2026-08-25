@@ -63,27 +63,5 @@
     "title": "",
     "content": "hello testing!",
     "timestamp": 1787652346733
-  },
-  {
-    "authorRole": "App developer",
-    "isVerified": true,
-    "authorName": "Mudassir",
-    "reactions": {},
-    "id": "msg-187a189c",
-    "tag": "ANNOUNCEMENT",
-    "title": "",
-    "content": "hellooo!",
-    "timestamp": 1787652453328
-  },
-  {
-    "authorRole": "App developer",
-    "isVerified": true,
-    "authorName": "Mudassir",
-    "reactions": {},
-    "id": "msg-5c0ff485",
-    "tag": "ANNOUNCEMENT",
-    "title": "",
-    "content": "testinggg",
-    "timestamp": 1787652455725
   }
 ]
