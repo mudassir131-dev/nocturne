@@ -1,5 +1,24 @@
 [
   {
+    "id": "msg-v2.22.27-release",
+    "authorName": "Mudassir",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "title": "Nocturne v2.22.27 is officially out! 🚀",
+    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.27** with full Live Cloud Announcements sync & publishing, unified grouped-list design, and performance improvements!\n\n• **Live Cloud Broadcasts**: Real-time announcements synced worldwide across all devices.\n• **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n• **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n• **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
+    "tag": "RELEASE",
+    "actionText": "Check for Update",
+    "actionUrl": "nocturne://settings/update",
+    "timestamp": 1771930000000,
+    "reactions": {
+      "❤️": 312,
+      "🔥": 520,
+      "🚀": 440,
+      "💯": 290
+    }
+  },
+  {
     "id": "msg-v2.22.26-release",
     "authorName": "Mudassir",
     "authorRole": "App developer",

@@ -60,15 +60,15 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.26
+    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.27
 
-* **Unified Grouped-List UI Design**: Modernized Settings and sub-screens (Appearance, Content, Backup & Restore, Nocturne Settings, Privacy, Music Together) into sleek connected containers with smooth rounded top/bottom corners and subtle dividers.
-* **Connected Library Auto-Playlists**: Liked, Downloaded, Top 50, and Cached playlists now render inside a continuous unified card.
-* **Apple Music Inspired Lyrics & Sliders**: Fully wired lyrics animation styles (Apple style, Fade, Glow, Slide, Karaoke) and custom sliders to Apple-inspired and Cinematic players.
-* **Battery Optimization Management**: Added background battery optimization controls in Player & Audio settings to prevent background playback termination.
-* **Lock Screen Announcement Notifications**: Announcements now support rich image attachments and high-priority heads-up / lock-screen delivery.
-* **Expanded Smooth Update Sheet**: Enhanced updater dialog with a slide-up bottom sheet to easily read detailed release notes.
-* **Performance & Smoothness**: 60fps fluid UI animations and micro-interaction polish across the app."""
+* **Live Cloud Announcement System**: Broadcast announcements now sync in real-time across all users worldwide via cloud repository feeds and GitHub Issues.
+* **Developer In-App Cloud Publishing**: Developer console with direct GitHub publishing for instant worldwide broadcasts and 1-tap JSON export.
+* **Unified Grouped-List UI System**: Modernized Settings and sub-screens (Appearance, Content, Backup & Restore, Nocturne Settings, Music Together) into sleek connected containers.
+* **Connected Library Auto-Playlists**: Liked, Downloaded, Top 50, and Cached playlists render inside a continuous unified card.
+* **Apple Music Inspired Lyrics & Custom Sliders**: Integrated lyrics animations (Apple style, Fade, Glow, Slide, Karaoke) and custom player sliders.
+* **Battery Optimization Management**: Added background battery optimization controls in Player & Audio settings.
+* **Lock Screen Announcement Notifications**: Announcements now support rich media attachments and high-priority lock-screen delivery."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
