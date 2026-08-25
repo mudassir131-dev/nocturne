@@ -125,5 +125,17 @@
     "title": "",
     "content": "",
     "timestamp": 1787676463877
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1787677164762.jpg",
+    "reactions": {},
+    "id": "msg-9ba70fa2",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "🚨 Nocturne 2.22.29 Crash Bug Fixed! 🎉\n\nThe crash issue affecting some Vivo and iQOO devices has been fixed in the latest update. 🛠️✨\n\nPlease update Nocturne to version 2.22.29 to get the latest fixes and stability improvements.\n\nTo update:\n\nNocturne → Settings → Check for Updates → Update\n\n👉 If an update is available, please install it and restart the app afterward.\n\nWe highly recommend updating, especially if you were experiencing crashes or issues with the Force 90/120Hz setting.\n\nThank you for your patience and continued support! ❤️🎵",
+    "timestamp": 1787677167003
   }
 ]
