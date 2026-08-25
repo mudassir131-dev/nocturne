@@ -1,102 +1,148 @@
 [
   {
-    "id": "msg-v2.22.29-release",
-    "authorName": "Mudassir",
     "authorRole": "App developer",
     "isVerified": true,
-    "title": "Nocturne v2.22.29 is out! 🚀",
-    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.29** with GitHub security hardening, chronological announcement chat ordering, and Vivo/iQOO Force 90/120Hz stability!\n\n• **GitHub Security Hardening**: Strict zero-embedded credential architecture with runtime token protection.\n• **Announcement Chat Ordering**: Chronological ordering with smart auto-scroll and jump indicators.\n• **Vivo & iQOO Stability Shield**: Safe display mode resolution matching and crash fallbacks.\n• **Production APK Hardening**: Unexported internal components and enhanced ProGuard/R8 protection.\n\nUpdate now from Settings -> Check for update!",
-    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
-    "tag": "RELEASE",
-    "actionText": "Check for Update",
-    "actionUrl": "nocturne://settings/update",
-    "timestamp": 1787680000000,
-    "reactions": {
-      "❤️": 510,
-      "🔥": 820,
-      "🚀": 690,
-      "💯": 450
-    }
-  },
-  {
-    "id": "msg-c9957376",
     "authorName": "Mudassir",
-    "authorRole": "App developer",
-    "isVerified": true,
-    "title": "Important Notice for Vivo & iQOO Users",
-    "content": "🚨 Important Notice for Vivo & iQOO Users\n\nIf Nocturne is crashing on your Vivo or iQOO device, please try the following workaround:\n\nGo to Nocturne → Settings → Appearance → Force 90/120Hz\n\n👉 Turn OFF “Force 90/120Hz” and then restart the app.\n\nThis setting may be causing crashes on some Vivo and iQOO devices. We’re investigating the issue and working towards a proper fix. 🛠️\n\nIf you’re experiencing crashes, please try this workaround first and let us know if it resolves the problem.\n\nThank you for your patience and continued support! ❤️🎵",
-    "tag": "ANNOUNCEMENT",
-    "timestamp": 1787671395410,
     "reactions": {
-      "❤️": 12,
-      "🔥": 25,
-      "👍": 18
-    }
-  },
-  {
-    "id": "msg-4891f258",
-    "authorName": "Mudassir",
-    "authorRole": "App developer",
-    "isVerified": true,
-    "title": "",
-    "content": "Once Again Enjoy this seamless music experience with nocturne \n                           -Mudassir  Nocturne Developer",
-    "tag": "ANNOUNCEMENT",
-    "timestamp": 1787653929172,
-    "reactions": {
-      "❤️": 45,
-      "🔥": 62,
-      "🎉": 30
-    }
-  },
-  {
-    "id": "msg-8e88f84f",
-    "authorName": "Mudassir",
-    "authorRole": "App developer",
-    "isVerified": true,
-    "title": "Message from the Developer",
-    "content": "Dear App Users, ❤️🎧\n\nFirst of all, I genuinely want to say I’m sorry for pushing so many updates all at once. 🙏😅 I know getting multiple updates within a short period can feel annoying or confusing, especially when you just want to open the app and enjoy your music without having to worry about another update.\n\nBut there was a reason behind all of it. ❤️‍🩹\n\nOver the past few days, some of you experienced playback errors, random glitches, crashes, unexpected behavior, or issues while using different parts of the app. 🐛⚠️ And honestly, I didn’t want to simply leave those problems there and move on.\n\nEvery update was made with one goal in mind: to make the app better, more stable, smoother, and more reliable for everyone. 🚀✨\n\nI’ve been working on fixing the underlying issues, improving playback stability, polishing different parts of the experience, and making sure the app feels much more consistent than before. 🔧🎶\n\nAnd now, after all these improvements, I’m 100% confident that the major issues that were affecting users have been addressed. 💯🔥\n\nOf course, no software is ever truly perfect, and if you somehow come across a problem, please don’t hesitate to report it. Your feedback is extremely valuable because it helps me understand what needs to be improved next. 🫶\n\nSo once again, thank you for your patience, your feedback, your bug reports, and most importantly, your support. ❤️\n\nI know the updates came one after another, but every single one of them was made because I genuinely want this app to become something better with every release. 🌙✨\n\nNow the hard part is done. 😭😂\nAll I need from here is YOUR support. ❤️‍🔥\n\nKeep using the app, keep sharing your feedback, and keep supporting the journey. There’s still a lot more to come. 🚀🎧\n\nThank you for being here. ❤️\nThank you for trusting the app. 🤝\nAnd thank you for supporting the journey. 🌟\n\nMore improvements. More features. More stability.\nAnd a much better experience ahead. 🚀🔥\n\n— The Developer ❤️",
-    "tag": "GENERAL",
-    "timestamp": 1787653211405,
-    "reactions": {
-      "❤️": 88,
-      "🔥": 120,
-      "🚀": 95,
-      "💯": 70
-    }
-  },
-  {
-    "id": "msg-v2.22.28-release",
-    "authorName": "Mudassir",
-    "authorRole": "App developer",
-    "isVerified": true,
-    "title": "Nocturne v2.22.28 is out! 🚀",
-    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.28** with Zero-Cache Real-Time Live Cloud Announcements!\n\n• **Instant Live Announcements**: Real-time broadcasts delivered with zero delay.\n• **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n• **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n• **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
-    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
-    "tag": "RELEASE",
-    "actionText": "Check for Update",
-    "actionUrl": "nocturne://settings/update",
-    "timestamp": 1771940000000,
-    "reactions": {
-      "❤️": 420,
-      "🔥": 680,
-      "🚀": 560,
-      "💯": 340
-    }
-  },
-  {
+      "🔥": 210,
+      "🎉": 77,
+      "🚀": 94,
+      "❤️": 128
+    },
     "id": "msg-welcome-01",
-    "authorName": "Mudassir",
-    "authorRole": "App developer",
-    "isVerified": true,
+    "tag": "ANNOUNCEMENT",
     "title": "Welcome to Nocturne Broadcast! 🚀",
     "content": "Hey everyone! 👋 Welcome to the official Nocturne Announcements channel.\n\nHere you'll get direct updates on upcoming features, releases, hotfixes, and changelogs straight from the developer. React to this message to show your excitement!",
-    "tag": "ANNOUNCEMENT",
-    "timestamp": 1771900000000,
+    "timestamp": 1771900000000
+  },
+  {
+    "actionText": "Check for Update",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
+    "actionUrl": "nocturne://settings/update",
     "reactions": {
-      "❤️": 128,
-      "🚀": 94,
-      "🔥": 210,
-      "🎉": 77
-    }
+      "🔥": 680,
+      "🚀": 560,
+      "💯": 340,
+      "❤️": 420
+    },
+    "id": "msg-v2.22.28-release",
+    "tag": "ANNOUNCEMENT",
+    "title": "Nocturne v2.22.28 is out! 🚀",
+    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.28** with Zero-Cache Real-Time Live Cloud Announcements!\n\n\u2022 **Instant Live Announcements**: Real-time broadcasts delivered with zero delay.\n\u2022 **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n\u2022 **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n\u2022 **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
+    "timestamp": 1771940000000
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-e94ab711",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "testinggg",
+    "timestamp": 1787652892785
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-38d77fed",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "testinggg!",
+    "timestamp": 1787653031623
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {
+      "🔥": 120,
+      "🚀": 95,
+      "💯": 70,
+      "❤️": 88
+    },
+    "id": "msg-8e88f84f",
+    "tag": "GENERAL",
+    "title": "Message from the Developer",
+    "content": "Dear App Users, ❤️🎧\n\nFirst of all, I genuinely want to say I\u2019m sorry for pushing so many updates all at once. 🙏😅 I know getting multiple updates within a short period can feel annoying or confusing, especially when you just want to open the app and enjoy your music without having to worry about another update.\n\nBut there was a reason behind all of it. ❤️\u200d🩹\n\nOver the past few days, some of you experienced playback errors, random glitches, crashes, unexpected behavior, or issues while using different parts of the app. 🐛⚠️ And honestly, I didn\u2019t want to simply leave those problems there and move on.\n\nEvery update was made with one goal in mind: to make the app better, more stable, smoother, and more reliable for everyone. 🚀✨\n\nI\u2019ve been working on fixing the underlying issues, improving playback stability, polishing different parts of the experience, and making sure the app feels much more consistent than before. 🔧🎶\n\nAnd now, after all these improvements, I\u2019m 100% confident that the major issues that were affecting users have been addressed. 💯🔥\n\nOf course, no software is ever truly perfect, and if you somehow come across a problem, please don\u2019t hesitate to report it. Your feedback is extremely valuable because it helps me understand what needs to be improved next. 🫶\n\nSo once again, thank you for your patience, your feedback, your bug reports, and most importantly, your support. ❤️\n\nI know the updates came one after another, but every single one of them was made because I genuinely want this app to become something better with every release. 🌙✨\n\nNow the hard part is done. 😭😂\nAll I need from here is YOUR support. ❤️\u200d🔥\n\nKeep using the app, keep sharing your feedback, and keep supporting the journey. There\u2019s still a lot more to come. 🚀🎧\n\nThank you for being here. ❤️\nThank you for trusting the app. 🤝\nAnd thank you for supporting the journey. 🌟\n\nMore improvements. More features. More stability.\nAnd a much better experience ahead. 🚀🔥\n\n\u2014 The Developer ❤️",
+    "timestamp": 1787653211405
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {
+      "🔥": 62,
+      "🎉": 30,
+      "❤️": 45
+    },
+    "id": "msg-4891f258",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "Once Again Enjoy this seamless music experience with nocturne \n                           -Mudassir  Nocturne Developer",
+    "timestamp": 1787653929172
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1787654543330.gif",
+    "reactions": {},
+    "id": "msg-20d50270",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1787654555345
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {
+      "🔥": 25,
+      "👍": 18,
+      "❤️": 12
+    },
+    "id": "msg-c9957376",
+    "tag": "ANNOUNCEMENT",
+    "title": "Important Notice for Vivo & iQOO Users",
+    "content": "🚨 Important Notice for Vivo & iQOO Users\n\nIf Nocturne is crashing on your Vivo or iQOO device, please try the following workaround:\n\nGo to Nocturne → Settings → Appearance → Force 90/120Hz\n\n👉 Turn OFF \u201cForce 90/120Hz\u201d and then restart the app.\n\nThis setting may be causing crashes on some Vivo and iQOO devices. We\u2019re investigating the issue and working towards a proper fix. 🛠️\n\nIf you\u2019re experiencing crashes, please try this workaround first and let us know if it resolves the problem.\n\nThank you for your patience and continued support! ❤️🎵",
+    "timestamp": 1787671395410
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1787676462430.gif",
+    "reactions": {},
+    "id": "msg-3cd0380d",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1787676463877
+  },
+  {
+    "actionText": "Check for Update",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
+    "actionUrl": "nocturne://settings/update",
+    "reactions": {
+      "🔥": 820,
+      "🚀": 690,
+      "💯": 450,
+      "❤️": 510
+    },
+    "id": "msg-v2.22.29-release",
+    "tag": "ANNOUNCEMENT",
+    "title": "Nocturne v2.22.29 is out! 🚀",
+    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.29** with GitHub security hardening, chronological announcement chat ordering, and Vivo/iQOO Force 90/120Hz stability!\n\n\u2022 **GitHub Security Hardening**: Strict zero-embedded credential architecture with runtime token protection.\n\u2022 **Announcement Chat Ordering**: Chronological ordering with smart auto-scroll and jump indicators.\n\u2022 **Vivo & iQOO Stability Shield**: Safe display mode resolution matching and crash fallbacks.\n\u2022 **Production APK Hardening**: Unexported internal components and enhanced ProGuard/R8 protection.\n\nUpdate now from Settings -> Check for update!",
+    "timestamp": 1787680000000
   }
 ]
