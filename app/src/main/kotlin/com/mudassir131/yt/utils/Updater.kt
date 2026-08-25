@@ -60,15 +60,13 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.28
+    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.29
 
-* **Instant Zero-Cache Live Announcements**: Instantaneous real-time announcement delivery using direct GitHub Contents API with zero CDN cache delay.
-* **Developer In-App Cloud Publishing**: Developer console with direct GitHub publishing for instant worldwide broadcasts and 1-tap JSON export.
-* **Unified Grouped-List UI System**: Modernized Settings and sub-screens (Appearance, Content, Backup & Restore, Nocturne Settings, Music Together) into sleek connected containers.
-* **Connected Library Auto-Playlists**: Liked, Downloaded, Top 50, and Cached playlists render inside a continuous unified card.
-* **Apple Music Inspired Lyrics & Custom Sliders**: Integrated lyrics animations (Apple style, Fade, Glow, Slide, Karaoke) and custom player sliders.
-* **Battery Optimization Management**: Added background battery optimization controls in Player & Audio settings.
-* **Lock Screen Announcement Notifications**: Announcements now support rich media attachments and high-priority lock-screen delivery."""
+* **GitHub Developer Console Security Hardening**: Strict zero-embedded credential architecture, runtime-only developer token input, and immediate token purging on developer session exit.
+* **Chronological Announcements & Smart Chat Ordering**: Fixed message ordering bugs so announcements always render chronologically with intelligent auto-scroll and interactive "New announcement" jump indicators.
+* **Vivo & iQOO Force 90/120Hz Stability & Crash Shield**: Completely redesigned refresh-rate engine with device-aware safeguards, strict resolution-matching display mode filtering, and graceful fallbacks preventing crashes across Android 11 to 16.
+* **Production Security Hardening**: Tightened Android exported components and release obfuscation.
+* **Instant Zero-Cache Live Announcements**: Instantaneous real-time announcement delivery using direct GitHub Contents API with zero CDN cache delay."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L

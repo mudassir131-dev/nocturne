@@ -72,6 +72,7 @@ import com.mudassir131.yt.ui.component.RichGifInputTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -152,10 +153,44 @@ fun BroadcastScreen(navController: NavController) {
         }
     }
 
-    // Scroll to bottom on initial load / new messages
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+    var hasInitialScrolled by remember { mutableStateOf(false) }
+    var lastKnownMessageId by remember { mutableStateOf<String?>(null) }
+    var showNewAnnouncementPill by remember { mutableStateOf(false) }
+
+    val isNearBottom by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            if (totalItems == 0) true
+            else {
+                val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                lastVisible >= totalItems - 2 || !listState.canScrollForward
+            }
+        }
+    }
+
+    LaunchedEffect(isNearBottom) {
+        if (isNearBottom) {
+            showNewAnnouncementPill = false
+        }
+    }
+
+    // Scroll to bottom on initial load and handle new incoming announcements intelligently
+    LaunchedEffect(messages) {
+        if (messages.isEmpty()) return@LaunchedEffect
+        val currentLastId = messages.lastOrNull()?.id
+
+        if (!hasInitialScrolled) {
+            listState.scrollToItem(messages.size - 1)
+            hasInitialScrolled = true
+            lastKnownMessageId = currentLastId
+        } else if (currentLastId != null && currentLastId != lastKnownMessageId) {
+            lastKnownMessageId = currentLastId
+            if (isNearBottom) {
+                listState.animateScrollToItem(messages.size - 1)
+            } else {
+                showNewAnnouncementPill = true
+            }
         }
     }
 
@@ -339,6 +374,53 @@ fun BroadcastScreen(navController: NavController) {
                         }
                     }
                 }
+
+                // Floating "New announcement" pill button
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                ) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showNewAnnouncementPill,
+                        enter = fadeIn() + slideInVertically { it },
+                        exit = fadeOut() + slideOutVertically { it }
+                    ) {
+                        Surface(
+                            onClick = {
+                                showNewAnnouncementPill = false
+                                scope.launch {
+                                    if (messages.isNotEmpty()) {
+                                        listState.animateScrollToItem(messages.size - 1)
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shadowElevation = 6.dp,
+                            tonalElevation = 6.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.arrow_downward),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "New announcement",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             // Google Messages Bottom Composer Bar (Only visible when authenticated as Developer)
@@ -411,13 +493,13 @@ fun BroadcastScreen(navController: NavController) {
         DeveloperAuthDialog(
             isCurrentlyDev = isDeveloperMode,
             onDismiss = { showDeveloperAuthDialog = false },
-            onLogin = { passkey ->
-                val ok = BroadcastManager.verifyAndLoginDeveloper(passkey)
+            onLogin = { email, password ->
+                val ok = BroadcastManager.verifyAndLoginDeveloper(email, password)
                 if (ok) {
                     Toast.makeText(context, "Developer Mode Unlocked! 🚀", Toast.LENGTH_SHORT).show()
                     showDeveloperAuthDialog = false
                 } else {
-                    Toast.makeText(context, "Invalid Developer Passkey", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Invalid Developer Credentials", Toast.LENGTH_SHORT).show()
                 }
             },
             onLogout = {
@@ -952,12 +1034,13 @@ private fun DeveloperComposerBar(
 private fun DeveloperAuthDialog(
     isCurrentlyDev: Boolean,
     onDismiss: () -> Unit,
-    onLogin: (String) -> Unit,
+    onLogin: (String, String) -> Unit,
     onLogout: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var passkey by remember { mutableStateOf("") }
+    var devEmail by remember { mutableStateOf("") }
+    var devPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
     var githubToken by remember { mutableStateOf("") }
@@ -1065,14 +1148,25 @@ private fun DeveloperAuthDialog(
                     }
                 } else {
                     Text(
-                        text = "Enter the Developer Master Passkey to unlock posting tools:",
+                        text = "Sign in with your Developer credentials to unlock broadcasting tools:",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
                     OutlinedTextField(
-                        value = passkey,
-                        onValueChange = { passkey = it },
-                        placeholder = { Text("Enter Passkey") },
+                        value = devEmail,
+                        onValueChange = { devEmail = it },
+                        placeholder = { Text("Developer Email") },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = devPassword,
+                        onValueChange = { devPassword = it },
+                        placeholder = { Text("Developer Password") },
+                        label = { Text("Password") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -1099,8 +1193,8 @@ private fun DeveloperAuthDialog(
                 }
             } else {
                 Button(
-                    onClick = { onLogin(passkey) },
-                    enabled = passkey.isNotBlank()
+                    onClick = { onLogin(devEmail, devPassword) },
+                    enabled = devEmail.isNotBlank() && devPassword.isNotBlank()
                 ) {
                     Text("Unlock")
                 }
@@ -1156,12 +1250,28 @@ private fun AttachmentDialog(
                 OutlinedTextField(
                     value = mediaUrl,
                     onValueChange = onMediaUrlChange,
-                    placeholder = { Text("Or direct URL (https://...)") },
-                    label = { Text("Media URL") },
+                    placeholder = { Text("https://... (Direct Image/GIF link)") },
+                    label = { Text("Image / Animated GIF URL") },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (mediaUrl.isNotBlank()) {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                    ) {
+                        AsyncImage(
+                            model = mediaUrl,
+                            contentDescription = "Preview",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
 
                 OutlinedTextField(
                     value = actionText,

@@ -508,34 +508,13 @@ class MainActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
+            val defaultRate = com.mudassir131.yt.utils.DisplayRefreshRateManager.getDefaultPeakRefreshRate()
             dataStore.data
-                .map { it[com.mudassir131.yt.constants.ForcePeakRefreshRateKey] ?: true }
+                .map { it[com.mudassir131.yt.constants.ForcePeakRefreshRateKey] ?: defaultRate }
                 .distinctUntilChanged()
                 .collectLatest { forceHighRate ->
                     withContext(Dispatchers.Main) {
-                        try {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                val display = window.context.display
-                                if (forceHighRate && display != null) {
-                                    val maxMode = display.supportedModes.maxByOrNull { it.refreshRate }
-                                    if (maxMode != null) {
-                                        val params = window.attributes
-                                        params.preferredDisplayModeId = maxMode.modeId
-                                        window.attributes = params
-                                    }
-                                } else {
-                                    val params = window.attributes
-                                    params.preferredDisplayModeId = 0
-                                    window.attributes = params
-                                }
-                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                val params = window.attributes
-                                params.preferredRefreshRate = if (forceHighRate) 120f else 0f
-                                window.attributes = params
-                            }
-                        } catch (e: Exception) {
-                            reportException(e)
-                        }
+                        com.mudassir131.yt.utils.DisplayRefreshRateManager.applyPeakRefreshRate(this@MainActivity, forceHighRate)
                     }
                 }
         }

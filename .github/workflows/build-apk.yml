@@ -106,7 +106,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Nocturne v${{ env.APP_VERSION }}
-          body_path: .github/release-notes/V2.22.26.md
+          body_path: .github/release-notes/V${{ env.APP_VERSION }}.md
           files: |
             release-artifacts/*.apk
             release-artifacts/SHA256SUMS.txt

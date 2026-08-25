@@ -206,7 +206,7 @@ fun AppearanceSettings(
 
     val (forcePeakRefreshRate, onForcePeakRefreshRateChange) = rememberPreference(
         ForcePeakRefreshRateKey,
-        defaultValue = true
+        defaultValue = com.mudassir131.yt.utils.DisplayRefreshRateManager.getDefaultPeakRefreshRate()
     )
     val (cinematicThemeFollow, onCinematicThemeFollowChange) = rememberPreference(
         CinematicThemeFollowKey,
@@ -347,7 +347,7 @@ fun AppearanceSettings(
                 {
                     SwitchPreference(
                         title = { Text("Force Peak Refresh Rate") },
-                        description = "Forces 90Hz/120Hz peak display refresh rate for smooth animations and UI",
+                        description = "Forces 90Hz/120Hz peak display refresh rate for smooth UI. Automatically adapts with safe fallbacks.",
                         icon = { Icon(painterResource(R.drawable.speed), null) },
                         checked = forcePeakRefreshRate,
                         onCheckedChange = onForcePeakRefreshRateChange,

@@ -44,8 +44,8 @@ android {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
         targetSdk = 36
-        versionCode = 39
-        versionName = "2.22.28"
+        versionCode = 40
+        versionName = "2.22.29"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -224,6 +224,7 @@ dependencies {
 
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.gif)
 
     implementation(libs.shimmer)
 

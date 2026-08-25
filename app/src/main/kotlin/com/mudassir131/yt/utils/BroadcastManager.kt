@@ -58,8 +58,8 @@ object BroadcastManager {
     val DeveloperGitHubTokenKey = stringPreferencesKey("developer_github_token")
     private val UserReactionsJsonKey = stringPreferencesKey("broadcast_user_reactions_json")
 
-    // Default Developer Master Passkey (255242)
-    private val ValidDevPasskeys = setOf("255242", "nocturne2026")
+    // Cryptographic one-way hash for developer authentication (No plain text credentials in APK)
+    private const val DEV_AUTH_HASH = "1b00ffc4c40487336aebb79993e8b32065616f10a229d6a03970bf69649c528c"
 
     private val _messages = MutableStateFlow<List<BroadcastMessage>>(emptyList())
     val messages: StateFlow<List<BroadcastMessage>> = _messages.asStateFlow()
@@ -213,11 +213,11 @@ object BroadcastManager {
         if (loaded.isNullOrEmpty()) {
             val defaultsWithReactions = defaultAnnouncements.map { msg ->
                 msg.copy(userReactions = userReactionsMap[msg.id] ?: emptySet())
-            }
+            }.sortedBy { it.timestamp }
             _messages.value = defaultsWithReactions
             saveMessagesToDataStore(defaultsWithReactions)
         } else {
-            _messages.value = loaded
+            _messages.value = loaded.sortedBy { it.timestamp }
         }
     }
 
@@ -292,10 +292,31 @@ object BroadcastManager {
             }
 
             if (fetchedRemoteMessages.isNotEmpty()) {
-                val currentExistingIds = _messages.value.map { it.id }.toSet()
+                val currentExistingMap = _messages.value.associateBy { it.id }
+                val currentExistingIds = currentExistingMap.keys
+
                 val combined = (fetchedRemoteMessages + _messages.value)
                     .distinctBy { it.id }
-                    .sortedByDescending { it.timestamp }
+                    .map { msg ->
+                        val localMsg = currentExistingMap[msg.id]
+                        val userReactions = userReactionsMap[msg.id]
+                            ?: localMsg?.userReactions
+                            ?: emptySet()
+
+                        val mergedReactions = msg.reactions.toMutableMap()
+                        userReactions.forEach { emoji ->
+                            val currentCount = mergedReactions[emoji] ?: 0
+                            val localCount = localMsg?.reactions?.get(emoji) ?: 0
+                            mergedReactions[emoji] = maxOf(currentCount, localCount, 1)
+                        }
+
+                        msg.copy(
+                            reactions = mergedReactions,
+                            userReactions = userReactions
+                        )
+                    }
+                    .sortedBy { it.timestamp }
+
                 _messages.value = combined
                 saveMessagesToDataStore(combined)
 
@@ -314,9 +335,12 @@ object BroadcastManager {
         }
     }
 
-    fun verifyAndLoginDeveloper(passkey: String): Boolean {
-        val trimmed = passkey.trim().lowercase()
-        val isValid = trimmed in ValidDevPasskeys || trimmed == "nocturne2026"
+    fun verifyAndLoginDeveloper(email: String, password: String): Boolean {
+        val cleanEmail = email.trim().lowercase(Locale.ROOT)
+        val cleanPass = password.trim()
+        val payload = "nocturne_dev_v2:$cleanEmail:$cleanPass"
+        val computedHash = sha256Hex(payload)
+        val isValid = computedHash.equals(DEV_AUTH_HASH, ignoreCase = true)
         if (isValid) {
             _isDeveloperMode.value = true
             scope.launch {
@@ -326,10 +350,21 @@ object BroadcastManager {
         return isValid
     }
 
+    private fun sha256Hex(input: String): String {
+        return runCatching {
+            val md = java.security.MessageDigest.getInstance("SHA-256")
+            val bytes = md.digest(input.toByteArray(Charsets.UTF_8))
+            bytes.joinToString("") { "%02x".format(it) }
+        }.getOrDefault("")
+    }
+
     fun logoutDeveloper() {
         _isDeveloperMode.value = false
         scope.launch {
-            App.instance.dataStore.edit { it[DeveloperAuthTokenKey] = false }
+            App.instance.dataStore.edit {
+                it[DeveloperAuthTokenKey] = false
+                it.remove(DeveloperGitHubTokenKey)
+            }
         }
     }
 
@@ -416,7 +451,7 @@ object BroadcastManager {
 
             val allMessages = (listOf(message) + remoteList + _messages.value)
                 .distinctBy { it.id }
-                .sortedByDescending { it.timestamp }
+                .sortedBy { it.timestamp }
 
             val jsonArray = serializeMessagesToJson(allMessages)
             val jsonString = jsonArray.toString(2)

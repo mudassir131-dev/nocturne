@@ -291,6 +291,13 @@ class App : Application(), SingletonImageLoader.Factory {
         return ImageLoader.Builder(this)
             .crossfade(true)
             .allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            .components {
+                if (Build.VERSION.SDK_INT >= 28) {
+                    add(coil3.gif.AnimatedImageDecoder.Factory())
+                } else {
+                    add(coil3.gif.GifDecoder.Factory())
+                }
+            }
             .diskCache(diskCache)
             .diskCachePolicy(imageCacheConfig.policy)
             .build()
