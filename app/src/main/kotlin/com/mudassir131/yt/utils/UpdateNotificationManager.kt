@@ -86,6 +86,9 @@ object UpdateNotificationManager {
     fun checkForUpdates(context: Context) {
         scope.launch {
             try {
+                // Sync remote announcements in background
+                BroadcastManager.syncRemoteAnnouncements()
+
                 val dataStore = context.dataStore
 
                 // Always query the latest version first to see if they are running an older version

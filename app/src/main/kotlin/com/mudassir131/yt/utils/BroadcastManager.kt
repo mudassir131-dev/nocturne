@@ -13,6 +13,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.util.Base64
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -30,7 +31,13 @@ import com.mudassir131.yt.models.BroadcastMessage
 import com.mudassir131.yt.models.BroadcastTag
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,12 +46,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 
 object BroadcastManager {
     private const val TAG = "BroadcastManager"
     private val BroadcastJsonStorageKey = stringPreferencesKey("broadcast_messages_json")
     private val DeveloperAuthTokenKey = booleanPreferencesKey("developer_authenticated_session")
+    val DeveloperGitHubTokenKey = stringPreferencesKey("developer_github_token")
     private val UserReactionsJsonKey = stringPreferencesKey("broadcast_user_reactions_json")
 
     // Default Developer Master Passkey (255242)
@@ -210,25 +221,68 @@ object BroadcastManager {
         }
     }
 
+    suspend fun getGitHubToken(): String? {
+        return App.instance.dataStore.getAsync(DeveloperGitHubTokenKey)
+    }
+
+    suspend fun saveGitHubToken(token: String) {
+        App.instance.dataStore.edit {
+            if (token.isBlank()) {
+                it.remove(DeveloperGitHubTokenKey)
+            } else {
+                it[DeveloperGitHubTokenKey] = token.trim()
+            }
+        }
+    }
+
     suspend fun syncRemoteAnnouncements() {
         _isLoading.value = true
         try {
-            // Optional remote endpoint from GitHub raw or Gist if online
+            val userReactionsJson = App.instance.dataStore.getAsync(UserReactionsJsonKey)
+            val userReactionsMap = parseUserReactionsMap(userReactionsJson)
+            val fetchedRemoteMessages = mutableListOf<BroadcastMessage>()
+
+            // 1. Fetch from raw announcements.json on main branch
             val rawUrl = "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/announcements.json"
-            val response = runCatching {
-                client.get(rawUrl).bodyAsText()
+            val rawResponse = runCatching {
+                client.get(rawUrl) {
+                    header("User-Agent", "Nocturne-Android")
+                }.bodyAsText()
             }.getOrNull()
 
-            if (!response.isNullOrBlank()) {
-                val userReactionsJson = App.instance.dataStore.getAsync(UserReactionsJsonKey)
-                val userReactionsMap = parseUserReactionsMap(userReactionsJson)
-                val remoteList = parseBroadcastMessages(response, userReactionsMap)
-                if (remoteList.isNotEmpty()) {
-                    // Merge remote with local posts
-                    val combined = (remoteList + _messages.value).distinctBy { it.id }
-                        .sortedBy { it.timestamp }
-                    _messages.value = combined
-                    saveMessagesToDataStore(combined)
+            if (!rawResponse.isNullOrBlank() && rawResponse.trim().startsWith("[")) {
+                val list = parseBroadcastMessages(rawResponse, userReactionsMap)
+                fetchedRemoteMessages.addAll(list)
+            }
+
+            // 2. Fetch from GitHub Issues labeled 'announcement'
+            val issuesUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/issues?labels=announcement&state=all&per_page=30"
+            val issuesResponse = runCatching {
+                client.get(issuesUrl) {
+                    header("Accept", "application/vnd.github+json")
+                    header("User-Agent", "Nocturne-Android")
+                }.bodyAsText()
+            }.getOrNull()
+
+            if (!issuesResponse.isNullOrBlank() && issuesResponse.trim().startsWith("[")) {
+                val issueList = parseGitHubIssuesToBroadcastMessages(issuesResponse, userReactionsMap)
+                fetchedRemoteMessages.addAll(issueList)
+            }
+
+            if (fetchedRemoteMessages.isNotEmpty()) {
+                val currentExistingIds = _messages.value.map { it.id }.toSet()
+                val combined = (fetchedRemoteMessages + _messages.value)
+                    .distinctBy { it.id }
+                    .sortedBy { it.timestamp }
+                _messages.value = combined
+                saveMessagesToDataStore(combined)
+
+                // Trigger heads-up notification for new broadcast messages
+                val newItems = fetchedRemoteMessages.filter { it.id !in currentExistingIds }
+                if (newItems.isNotEmpty() && currentExistingIds.isNotEmpty()) {
+                    newItems.maxByOrNull { it.timestamp }?.let { latest ->
+                        showAnnouncementNotification(App.instance, latest)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -265,6 +319,7 @@ object BroadcastManager {
         tag: BroadcastTag = BroadcastTag.ANNOUNCEMENT,
         actionText: String? = null,
         actionUrl: String? = null,
+        onPublishResult: ((Result<String>) -> Unit)? = null,
     ) {
         val newMsg = BroadcastMessage(
             id = "msg-" + UUID.randomUUID().toString().take(8),
@@ -282,12 +337,73 @@ object BroadcastManager {
             userReactions = emptySet()
         )
 
-        val updatedList = _messages.value + newMsg
+        val updatedList = (_messages.value + newMsg).distinctBy { it.id }.sortedBy { it.timestamp }
         _messages.value = updatedList
         scope.launch {
             saveMessagesToDataStore(updatedList)
+
+            val token = getGitHubToken()
+            if (!token.isNullOrBlank()) {
+                val cloudResult = publishAnnouncementToGitHub(newMsg, token)
+                onPublishResult?.invoke(cloudResult)
+            } else {
+                onPublishResult?.invoke(Result.success("Saved locally. (Add GitHub token in developer settings to push live to all users)"))
+            }
         }
         showAnnouncementNotification(App.instance, newMsg)
+    }
+
+    suspend fun publishAnnouncementToGitHub(message: BroadcastMessage, token: String? = null): Result<String> {
+        val githubToken = token ?: getGitHubToken()
+        if (githubToken.isNullOrBlank()) {
+            return Result.failure(IllegalStateException("GitHub Token not configured. Please add your GitHub Personal Access Token."))
+        }
+
+        return runCatching {
+            val repoUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/contents/announcements.json"
+            val getResponse = client.get(repoUrl) {
+                header("Authorization", "Bearer $githubToken")
+                header("Accept", "application/vnd.github+json")
+                header("User-Agent", "Nocturne-Android")
+            }
+
+            val currentSha = if (getResponse.status == HttpStatusCode.OK) {
+                val json = JSONObject(getResponse.bodyAsText())
+                json.optString("sha")
+            } else null
+
+            val allMessages = (_messages.value + message).distinctBy { it.id }.sortedBy { it.timestamp }
+            val jsonArray = serializeMessagesToJson(allMessages)
+            val jsonString = jsonArray.toString(2)
+            val base64Content = Base64.encodeToString(jsonString.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+
+            val putBody = JSONObject().apply {
+                put("message", "Broadcast: ${message.title.ifBlank { "Announcement" }}")
+                put("content", base64Content)
+                if (!currentSha.isNullOrBlank()) {
+                    put("sha", currentSha)
+                }
+                put("branch", "main")
+            }
+
+            val putResponse = client.put(repoUrl) {
+                header("Authorization", "Bearer $githubToken")
+                header("Accept", "application/vnd.github+json")
+                header("User-Agent", "Nocturne-Android")
+                contentType(ContentType.Application.Json)
+                setBody(putBody.toString())
+            }
+
+            if (putResponse.status.value in 200..299) {
+                "Announcement published live to all users across the world! 🚀"
+            } else {
+                throw Exception("GitHub API Error (${putResponse.status.value}): ${putResponse.bodyAsText()}")
+            }
+        }
+    }
+
+    fun exportAnnouncementsJsonString(): String {
+        return serializeMessagesToJson(_messages.value).toString(2)
     }
 
     fun deleteAnnouncement(messageId: String) {
@@ -295,6 +411,36 @@ object BroadcastManager {
         _messages.value = updatedList
         scope.launch {
             saveMessagesToDataStore(updatedList)
+            val token = getGitHubToken()
+            if (!token.isNullOrBlank()) {
+                val repoUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/contents/announcements.json"
+                val getResponse = runCatching {
+                    client.get(repoUrl) {
+                        header("Authorization", "Bearer $token")
+                        header("Accept", "application/vnd.github+json")
+                        header("User-Agent", "Nocturne-Android")
+                    }
+                }.getOrNull()
+
+                if (getResponse?.status == HttpStatusCode.OK) {
+                    val currentSha = JSONObject(getResponse.bodyAsText()).optString("sha")
+                    val jsonArray = serializeMessagesToJson(updatedList)
+                    val base64Content = Base64.encodeToString(jsonArray.toString(2).toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                    val putBody = JSONObject().apply {
+                        put("message", "Broadcast: Delete announcement $messageId")
+                        put("content", base64Content)
+                        put("sha", currentSha)
+                        put("branch", "main")
+                    }
+                    client.put(repoUrl) {
+                        header("Authorization", "Bearer $token")
+                        header("Accept", "application/vnd.github+json")
+                        header("User-Agent", "Nocturne-Android")
+                        contentType(ContentType.Application.Json)
+                        setBody(putBody.toString())
+                    }
+                }
+            }
         }
     }
 
@@ -307,7 +453,6 @@ object BroadcastManager {
 
                 val mutReactions = msg.reactions.toMutableMap()
 
-                // Remove previous reaction count if any
                 if (previousReaction != null) {
                     val prevCount = mutReactions[previousReaction] ?: 0
                     if (prevCount <= 1) {
@@ -317,7 +462,6 @@ object BroadcastManager {
                     }
                 }
 
-                // If user selected a new reaction, add it
                 val newUserReactions = if (!isSameReaction) {
                     val newCount = (mutReactions[emoji] ?: 0) + 1
                     mutReactions[emoji] = newCount
@@ -339,33 +483,36 @@ object BroadcastManager {
         }
     }
 
+    private fun serializeMessagesToJson(messages: List<BroadcastMessage>): JSONArray {
+        val jsonArray = JSONArray()
+        messages.forEach { msg ->
+            val obj = JSONObject()
+            obj.put("id", msg.id)
+            obj.put("authorName", msg.authorName)
+            obj.put("authorRole", msg.authorRole)
+            obj.put("isVerified", msg.isVerified)
+            obj.put("title", msg.title)
+            obj.put("content", msg.content)
+            msg.imageUrl?.let { obj.put("imageUrl", it) }
+            msg.gifUrl?.let { obj.put("gifUrl", it) }
+            obj.put("tag", msg.tag.name)
+            msg.actionText?.let { obj.put("actionText", it) }
+            msg.actionUrl?.let { obj.put("actionUrl", it) }
+            obj.put("timestamp", msg.timestamp)
+
+            val reactionsObj = JSONObject()
+            msg.reactions.forEach { (emoji, count) ->
+                reactionsObj.put(emoji, count)
+            }
+            obj.put("reactions", reactionsObj)
+            jsonArray.put(obj)
+        }
+        return jsonArray
+    }
+
     private suspend fun saveMessagesToDataStore(messages: List<BroadcastMessage>) {
         runCatching {
-            val jsonArray = JSONArray()
-            messages.forEach { msg ->
-                val obj = JSONObject()
-                obj.put("id", msg.id)
-                obj.put("authorName", msg.authorName)
-                obj.put("authorRole", msg.authorRole)
-                obj.put("isVerified", msg.isVerified)
-                obj.put("title", msg.title)
-                obj.put("content", msg.content)
-                msg.imageUrl?.let { obj.put("imageUrl", it) }
-                msg.gifUrl?.let { obj.put("gifUrl", it) }
-                obj.put("tag", msg.tag.name)
-                msg.actionText?.let { obj.put("actionText", it) }
-                msg.actionUrl?.let { obj.put("actionUrl", it) }
-                obj.put("timestamp", msg.timestamp)
-
-                val reactionsObj = JSONObject()
-                msg.reactions.forEach { (emoji, count) ->
-                    reactionsObj.put(emoji, count)
-                }
-                obj.put("reactions", reactionsObj)
-
-                jsonArray.put(obj)
-            }
-
+            val jsonArray = serializeMessagesToJson(messages)
             App.instance.dataStore.edit { prefs ->
                 prefs[BroadcastJsonStorageKey] = jsonArray.toString()
             }
@@ -407,6 +554,66 @@ object BroadcastManager {
         }.getOrDefault(emptyMap())
     }
 
+    private fun parseGitHubIssuesToBroadcastMessages(
+        jsonStr: String,
+        userReactionsMap: Map<String, Set<String>>,
+    ): List<BroadcastMessage> {
+        val list = mutableListOf<BroadcastMessage>()
+        val jsonArray = JSONArray(jsonStr)
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        for (i in 0 until jsonArray.length()) {
+            val issue = jsonArray.getJSONObject(i)
+            // Skip pull requests
+            if (issue.has("pull_request")) continue
+
+            val issueId = "gh-issue-" + issue.optLong("id", i.toLong())
+            val title = issue.optString("title", "")
+            val body = issue.optString("body", "")
+            val createdAtStr = issue.optString("created_at", "")
+            val time = runCatching { isoFormat.parse(createdAtStr)?.time }.getOrNull() ?: System.currentTimeMillis()
+
+            val userObj = issue.optJSONObject("user")
+            val author = userObj?.optString("login", "Mudassir") ?: "Mudassir"
+
+            val reactionsObj = issue.optJSONObject("reactions")
+            val reactionsMap = mutableMapOf<String, Int>()
+            if (reactionsObj != null) {
+                val heart = reactionsObj.optInt("heart", 0)
+                val rocket = reactionsObj.optInt("rocket", 0)
+                val fire = reactionsObj.optInt("eyes", 0)
+                val plusOne = reactionsObj.optInt("+1", 0)
+                val tada = reactionsObj.optInt("hooray", 0)
+
+                if (heart > 0) reactionsMap["❤️"] = heart
+                if (rocket > 0) reactionsMap["🚀"] = rocket
+                if (fire > 0) reactionsMap["🔥"] = fire
+                if (plusOne > 0) reactionsMap["👍"] = plusOne
+                if (tada > 0) reactionsMap["🎉"] = tada
+            }
+
+            val userReactions = userReactionsMap[issueId] ?: emptySet()
+
+            list.add(
+                BroadcastMessage(
+                    id = issueId,
+                    authorName = author,
+                    authorRole = "App developer",
+                    isVerified = true,
+                    title = title,
+                    content = body,
+                    tag = BroadcastTag.ANNOUNCEMENT,
+                    timestamp = time,
+                    reactions = reactionsMap,
+                    userReactions = userReactions
+                )
+            )
+        }
+        return list
+    }
+
     private fun parseBroadcastMessages(
         jsonStr: String,
         userReactionsMap: Map<String, Set<String>>,
@@ -435,7 +642,7 @@ object BroadcastManager {
                 BroadcastMessage(
                     id = id,
                     authorName = obj.optString("authorName", "Mudassir"),
-                    authorRole = obj.optString("authorRole", "Developer • Nocturne"),
+                    authorRole = obj.optString("authorRole", "App developer"),
                     isVerified = obj.optBoolean("isVerified", true),
                     title = obj.optString("title", ""),
                     content = obj.optString("content", ""),

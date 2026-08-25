@@ -23,6 +23,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -359,19 +360,37 @@ fun BroadcastScreen(navController: NavController) {
                     onSend = {
                         if (composerContent.isNotBlank() || composerMediaUriOrUrl.isNotBlank()) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            BroadcastManager.postAnnouncement(
-                                title = composerTitle,
-                                content = composerContent,
-                                imageUrl = composerMediaUriOrUrl,
-                                tag = composerTag,
-                                actionText = composerActionText,
-                                actionUrl = composerActionUrl
-                            )
+                            val titleToSend = composerTitle
+                            val contentToSend = composerContent
+                            val mediaToSend = composerMediaUriOrUrl
+                            val tagToSend = composerTag
+                            val actionTextToSend = composerActionText
+                            val actionUrlToSend = composerActionUrl
+
                             composerTitle = ""
                             composerContent = ""
                             composerMediaUriOrUrl = ""
                             composerActionText = ""
                             composerActionUrl = ""
+
+                            BroadcastManager.postAnnouncement(
+                                title = titleToSend,
+                                content = contentToSend,
+                                imageUrl = mediaToSend,
+                                tag = tagToSend,
+                                actionText = actionTextToSend,
+                                actionUrl = actionUrlToSend
+                            ) { result ->
+                                result.onSuccess { msg ->
+                                    scope.launch(Dispatchers.Main) {
+                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                    }
+                                }.onFailure { err ->
+                                    scope.launch(Dispatchers.Main) {
+                                        Toast.makeText(context, "Cloud sync notice: ${err.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
                         }
                     }
                 )
@@ -919,7 +938,7 @@ private fun DeveloperComposerBar(
 }
 
 /**
- * Developer Passkey Auth Dialog
+ * Developer Passkey Auth & Cloud Configuration Dialog
  */
 @Composable
 private fun DeveloperAuthDialog(
@@ -928,8 +947,20 @@ private fun DeveloperAuthDialog(
     onLogin: (String) -> Unit,
     onLogout: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var passkey by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+
+    var githubToken by remember { mutableStateOf("") }
+    var isTokenLoaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isCurrentlyDev) {
+        if (isCurrentlyDev && !isTokenLoaded) {
+            githubToken = BroadcastManager.getGitHubToken().orEmpty()
+            isTokenLoaded = true
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -943,16 +974,87 @@ private fun DeveloperAuthDialog(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
-                Text("Developer Authentication")
+                Text(if (isCurrentlyDev) "Developer & Cloud Console" else "Developer Authentication")
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 if (isCurrentlyDev) {
                     Text(
-                        text = "You are authenticated in Developer Mode (Mudassir). You have full access to broadcast announcements and media.",
+                        text = "Authenticated in Developer Mode (Mudassir). You have full access to broadcast announcements and media.",
                         style = MaterialTheme.typography.bodyMedium
                     )
+
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "GitHub Cloud Live Publishing",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Add your GitHub Personal Access Token below to automatically publish announcements live to GitHub for all users when you tap Send:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            OutlinedTextField(
+                                value = githubToken,
+                                onValueChange = { githubToken = it },
+                                placeholder = { Text("ghp_... (GitHub Token)") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            BroadcastManager.saveGitHubToken(githubToken)
+                                            Toast.makeText(context, "GitHub Token Saved! ☁️", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("Save Token")
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val jsonText = BroadcastManager.exportAnnouncementsJsonString()
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Nocturne Announcements JSON", jsonText))
+                            Toast.makeText(context, "Announcements JSON copied to clipboard! 📋", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.copy),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Copy announcements.json")
+                    }
                 } else {
                     Text(
                         text = "Enter the Developer Master Passkey to unlock posting tools:",
@@ -998,7 +1100,7 @@ private fun DeveloperAuthDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Close")
             }
         }
     )

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "msg-v2.22.26-release",
+    "authorName": "Mudassir",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "title": "Nocturne v2.22.26 is officially out! 🚀",
+    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.26** with major improvements:\n\n• **Grouped-List UI Design**: Redesigned all Settings and sub-screens with connected rounded containers.\n• **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached playlists now seamlessly grouped in Library.\n• **Apple Music Lyrics & Sliders**: Fully wired lyrics animations and custom sliders.\n• **Battery Optimization**: Added background battery optimization settings to prevent audio interruptions.\n• **New Announcement Feed**: Real-time broadcast channel with rich reactions & announcements!\n\nUpdate now from Settings -> Check for update!",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
+    "tag": "RELEASE",
+    "actionText": "Check for Update",
+    "actionUrl": "nocturne://settings/update",
+    "timestamp": 1771920000000,
+    "reactions": {
+      "❤️": 245,
+      "🔥": 412,
+      "🚀": 350,
+      "💯": 180
+    }
+  },
+  {
+    "id": "msg-welcome-01",
+    "authorName": "Mudassir",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "title": "Welcome to Nocturne Broadcast! 🚀",
+    "content": "Hey everyone! 👋 Welcome to the official Nocturne Announcements channel.\n\nHere you'll get direct updates on upcoming features, releases, hotfixes, and changelogs straight from the developer. React to this message to show your excitement!",
+    "tag": "ANNOUNCEMENT",
+    "timestamp": 1771900000000,
+    "reactions": {
+      "❤️": 128,
+      "🚀": 94,
+      "🔥": 210,
+      "🎉": 77
+    }
+  }
+]
