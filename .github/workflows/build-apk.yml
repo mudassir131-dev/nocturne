@@ -8,6 +8,7 @@ on:
     tags:
       - 'v*'
       - 'V*'
+      - '[0-9]+.*'
   workflow_dispatch:
 
 concurrency:
@@ -39,6 +40,13 @@ jobs:
 
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x gradlew
+
+      - name: Extract app version
+        shell: bash
+        run: |
+          VERSION_NAME="$(grep 'versionName =' app/build.gradle.kts | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
+          echo "APP_VERSION=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "APP_TAG=v$VERSION_NAME" >> "$GITHUB_ENV"
 
       - name: Validate and prepare release signing
         shell: bash
@@ -72,41 +80,35 @@ jobs:
           mkdir -p release-artifacts
           universal_apk="$(find app/build/outputs/apk/universal/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
           test -n "$universal_apk" && test -s "$universal_apk"
-          cp "$universal_apk" release-artifacts/Nocturne-V2.22.25-universal-release.apk
-          unzip -tq release-artifacts/Nocturne-V2.22.25-universal-release.apk
+          apk_target="release-artifacts/Nocturne-V${APP_VERSION}-universal-release.apk"
+          cp "$universal_apk" "$apk_target"
+          unzip -tq "$apk_target"
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
-          "$build_tools/apksigner" verify --verbose --print-certs release-artifacts/Nocturne-V2.22.25-universal-release.apk
+          "$build_tools/apksigner" verify --verbose --print-certs "$apk_target"
           apkanalyzer_bin="$(command -v apkanalyzer || find "$ANDROID_HOME/cmdline-tools" -type f -path '*/bin/apkanalyzer' -print -quit)"
           test -n "$apkanalyzer_bin"
-          app_id="$("$apkanalyzer_bin" manifest application-id release-artifacts/Nocturne-V2.22.25-universal-release.apk)"
+          app_id="$("$apkanalyzer_bin" manifest application-id "$apk_target")"
           test "$app_id" = "com.mudassir131.nocturne"
           sha256sum release-artifacts/*.apk > release-artifacts/SHA256SUMS.txt
 
       - name: Upload production APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Nocturne-V2.22.25-production-apks
+          name: Nocturne-production-apks
           path: |
-            release-artifacts/Nocturne-V2.22.25-universal-release.apk
+            release-artifacts/*.apk
             release-artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
-
-      - name: Verify tag matches application version
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "${GITHUB_REF_NAME,,}" = "v2.22.25"
 
       - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: Nocturne V2.22.25
-          body_path: .github/release-notes/V2.22.25.md
+          name: Nocturne v${{ env.APP_VERSION }}
+          body_path: .github/release-notes/V2.22.26.md
           files: |
-            release-artifacts/Nocturne-V2.22.25-universal-release.apk
+            release-artifacts/*.apk
             release-artifacts/SHA256SUMS.txt
           fail_on_unmatched_files: true
           draft: false
