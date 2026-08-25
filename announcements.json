@@ -52,5 +52,16 @@
     "title": "Nocturne v2.22.28 is out! 🚀",
     "content": "Hey everyone! 👋 We just released Nocturne **v2.22.28** with Zero-Cache Real-Time Live Cloud Announcements!\n\n\u2022 **Instant Live Announcements**: Real-time broadcasts delivered with zero delay.\n\u2022 **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n\u2022 **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n\u2022 **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
     "timestamp": 1771940000000
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-dc856b4c",
+    "tag": "HOTFIX",
+    "title": "",
+    "content": "testing!",
+    "timestamp": 1787652488843
   }
 ]
