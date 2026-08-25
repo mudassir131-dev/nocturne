@@ -71,6 +71,7 @@ fun NocturneSettingsScreen(navController: NavController) {
             SettingsDestination(R.drawable.security, "Privacy", "History and tracking", "settings/privacy"),
             SettingsDestination(R.drawable.storage, "Storage", "Cache and downloads", "settings/storage"),
             SettingsDestination(R.drawable.backup, "Backup and restore", "Export or restore your library", "settings/backup_restore"),
+            SettingsDestination(R.drawable.update, "Check for update", "Check GitHub releases for latest versions", "settings/update"),
             SettingsDestination(R.drawable.info, "About", "Project, contributors, and app info", "settings/about"),
         )
     }

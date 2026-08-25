@@ -230,20 +230,20 @@ object Updater {
     private fun parseSingleReleaseJson(item: JSONObject): ReleaseInfo =
         parseReleaseJson(item, requireCompatibleApk = true)
 
-    suspend fun getLatestVersionName(): Result<String> =
-        getLatestReleaseInfo().map { latest -> latest.tagName }
+    suspend fun getLatestVersionName(forceRefresh: Boolean = false): Result<String> =
+        getLatestReleaseInfo(forceRefresh).map { latest -> latest.tagName }
 
-    suspend fun getLatestReleaseNotes(): Result<String?> =
-        getLatestReleaseInfo().map { it.body }
+    suspend fun getLatestReleaseNotes(forceRefresh: Boolean = false): Result<String?> =
+        getLatestReleaseInfo(forceRefresh).map { it.body }
 
-    suspend fun getLatestReleaseInfo(): Result<ReleaseInfo> {
+    suspend fun getLatestReleaseInfo(forceRefresh: Boolean = false): Result<ReleaseInfo> {
         val cached = cachedReleaseInfo
-        if (hasCheckedThisSession && cached != null) {
+        if (!forceRefresh && hasCheckedThisSession && cached != null) {
             Log.d("NocturneUpdater", "Update check skipped: already checked this session. Cache hit.")
             return Result.success(cached)
         }
 
-        Log.d("NocturneUpdater", "Update check started. Fetching latest release...")
+        Log.d("NocturneUpdater", "Update check started (forceRefresh=$forceRefresh). Fetching latest release...")
         val networkResult = runCatching {
             val response: HttpResponse = client.get("https://api.github.com/repos/mudassir131-dev/nocturne/releases/latest") {
                 headers {

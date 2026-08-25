@@ -287,10 +287,22 @@
     <string name="glass_blur_intensity">Blur intensity</string>
     <string name="glass_transparency">Transparency</string>
     <string name="glass_dynamic_tint">Dynamic glass tint</string>
-    <string name="glass_performance_mode">Performance optimization</string>
-    <string name="glass_quality_mode">Glass Quality</string>
-    <string name="glass_quality_auto">Auto</string>
-    <string name="glass_quality_low">Low</string>
-    <string name="glass_quality_medium">Medium</string>
-    <string name="glass_quality_high">High</string>
+    <!-- Update strings -->
+    <string name="check_for_update">Check for update</string>
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="check_for_update_desc">Check GitHub releases for latest versions</string>
+    <string name="checking_for_updates">Checking GitHub for updates…</string>
+    <string name="up_to_date_title">You\'re up to date!</string>
+    <string name="up_to_date_desc">Nocturne %s is the latest version available.</string>
+    <string name="update_available_title">New version available!</string>
+    <string name="update_available_desc">Nocturne %s is ready to download.</string>
+    <string name="download_and_install">Download &amp; Install</string>
+    <string name="view_on_github">View on GitHub</string>
+    <string name="check_again">Check Again</string>
+    <string name="last_checked">Last checked</string>
+    <string name="error_checking_updates">Could not check for updates</string>
+    <string name="error_checking_updates_desc">Please check your internet connection and try again.</string>
+    <string name="install_update">Install Update</string>
+    <string name="download_apk">Download APK</string>
+    <string name="assets">Assets</string>
 </resources>

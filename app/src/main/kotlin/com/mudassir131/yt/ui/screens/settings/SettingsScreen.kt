@@ -545,6 +545,24 @@ fun SettingsScreen(
 
                     add(
                         PremiumSettingsItem(
+                            icon = painterResource(R.drawable.update),
+                            title = stringResource(R.string.check_for_update),
+                            subtitle = stringResource(R.string.check_for_update_desc),
+                            accentColor = MaterialTheme.colorScheme.primary,
+                            keywords = listOf(
+                                "update",
+                                "check for update",
+                                "version",
+                                "github",
+                                "releases",
+                                "download",
+                            ),
+                            onClick = { navController.navigate("settings/update") },
+                        ),
+                    )
+
+                    add(
+                        PremiumSettingsItem(
                             icon = painterResource(R.drawable.info),
                             title = stringResource(R.string.about),
                             subtitle = "Nocturne",

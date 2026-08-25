@@ -144,11 +144,18 @@ fun AboutScreen(
             item {
                 Column {
                     AboutLinkCard(
+                        iconRes = R.drawable.update,
+                        title = "Check for Updates",
+                        subtitle = "Check GitHub releases for latest versions",
+                        onClick = { navController.navigate("settings/update") },
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.FIRST,
+                    )
+                    AboutLinkCard(
                         iconRes = R.drawable.github,
                         title = "GitHub Repository",
                         subtitle = "View source code",
                         onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.FIRST,
+                        position = com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE,
                     )
                     AboutLinkCard(
                         iconRes = R.drawable.telegram,

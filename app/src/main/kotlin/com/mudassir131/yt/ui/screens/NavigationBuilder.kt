@@ -92,6 +92,7 @@ import com.mudassir131.yt.ui.screens.settings.PrivacySettings
 import com.mudassir131.yt.ui.screens.settings.SettingsScreen
 import com.mudassir131.yt.ui.screens.settings.StorageSettings
 import com.mudassir131.yt.ui.screens.settings.ThemeCreatorScreen
+import com.mudassir131.yt.ui.screens.settings.UpdateScreen
 import com.mudassir131.yt.ui.utils.ShowMediaInfo
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
@@ -381,6 +382,12 @@ fun NavGraphBuilder.navigationBuilder(
     }
     composable("settings/discord/login") {
         DiscordLoginScreen(navController)
+    }
+    composable("settings/update") {
+        UpdateScreen(navController, scrollBehavior)
+    }
+    composable("settings/check_for_update") {
+        UpdateScreen(navController, scrollBehavior)
     }
     composable("settings/about") {
         AboutScreen(navController, scrollBehavior)
