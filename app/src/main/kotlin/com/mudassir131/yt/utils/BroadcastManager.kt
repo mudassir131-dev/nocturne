@@ -5,11 +5,27 @@
 
 package com.mudassir131.yt.utils
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.mudassir131.yt.App
+import com.mudassir131.yt.MainActivity
+import com.mudassir131.yt.R
 import com.mudassir131.yt.models.BroadcastMessage
 import com.mudassir131.yt.models.BroadcastTag
 import io.ktor.client.HttpClient
@@ -52,11 +68,13 @@ object BroadcastManager {
         }
     }
 
+    private val ANNOUNCEMENT_CHANNEL_ID = "nocturne_broadcast_channel"
+
     private val defaultAnnouncements = listOf(
         BroadcastMessage(
             id = "msg-welcome-01",
             authorName = "Mudassir",
-            authorRole = "Lead Developer • Nocturne",
+            authorRole = "App developer",
             title = "Welcome to Nocturne Broadcast! 🚀",
             content = "Hey everyone! 👋 Welcome to the official Nocturne Announcements channel.\n\nHere you'll get direct updates on upcoming features, releases, hotfixes, and changelogs straight from the developer. React to this message to show your excitement!",
             tag = BroadcastTag.ANNOUNCEMENT,
@@ -66,7 +84,7 @@ object BroadcastManager {
         BroadcastMessage(
             id = "msg-update-02",
             authorName = "Mudassir",
-            authorRole = "Lead Developer • Nocturne",
+            authorRole = "App developer",
             title = "Check for Update & Android 16 Loading Icon! ✨",
             content = "We have added a brand new dedicated **'Check for Update'** screen in Settings with real-time GitHub Releases integration and the iconic **Android 16 / Pixel Material 3 Expressive morphing flower loader**!\n\nMake sure to check it out in Settings -> Check for update.",
             tag = BroadcastTag.UPDATE,
@@ -76,6 +94,97 @@ object BroadcastManager {
             reactions = mapOf("🔥" to 342, "❤️" to 189, "🚀" to 256, "💯" to 95)
         )
     )
+
+    fun showAnnouncementNotification(context: Context, message: BroadcastMessage) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                ANNOUNCEMENT_CHANNEL_ID,
+                "Nocturne Announcements",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for developer broadcasts and announcements"
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+                enableVibration(true)
+            }
+            val nm = context.getSystemService(NotificationManager::class.java)
+            nm?.createNotificationChannel(channel)
+        }
+
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("navigate_to", "broadcast")
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            message.id.hashCode(),
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val isDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val notificationIcon = if (isDark) R.drawable.ic_nocturne_notification_dark else R.drawable.ic_nocturne_notification_light
+
+        val avatarBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.developer_mudassir)
+
+        val notifBuilder = NotificationCompat.Builder(context, ANNOUNCEMENT_CHANNEL_ID)
+            .setSmallIcon(notificationIcon)
+            .setLargeIcon(avatarBitmap)
+            .setContentTitle(if (message.title.isNotBlank()) message.title else "Announcement from Mudassir")
+            .setContentText(message.content)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        val imageTarget = message.imageUrl ?: message.gifUrl
+        if (!imageTarget.isNullOrBlank()) {
+            scope.launch(Dispatchers.IO) {
+                val bitmap = runCatching {
+                    if (imageTarget.startsWith("content://") || imageTarget.startsWith("file://")) {
+                        val uri = Uri.parse(imageTarget)
+                        context.contentResolver.openInputStream(uri)?.use { stream ->
+                            BitmapFactory.decodeStream(stream)
+                        }
+                    } else {
+                        val req = ImageRequest.Builder(context)
+                            .data(imageTarget)
+                            .allowHardware(false)
+                            .build()
+                        val result = context.imageLoader.execute(req)
+                        result.image?.toBitmap()
+                    }
+                }.getOrNull()
+
+                if (bitmap != null) {
+                    notifBuilder.setStyle(
+                        NotificationCompat.BigPictureStyle()
+                            .bigPicture(bitmap)
+                            .setBigContentTitle(if (message.title.isNotBlank()) message.title else "Announcement from Mudassir")
+                            .setSummaryText(message.content)
+                    )
+                } else {
+                    notifBuilder.setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .setBigContentTitle(if (message.title.isNotBlank()) message.title else "Announcement from Mudassir")
+                            .bigText(message.content)
+                    )
+                }
+
+                try {
+                    NotificationManagerCompat.from(context).notify(message.id.hashCode(), notifBuilder.build())
+                } catch (_: SecurityException) {}
+            }
+        } else {
+            notifBuilder.setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(if (message.title.isNotBlank()) message.title else "Announcement from Mudassir")
+                    .bigText(message.content)
+            )
+            try {
+                NotificationManagerCompat.from(context).notify(message.id.hashCode(), notifBuilder.build())
+            } catch (_: SecurityException) {}
+        }
+    }
 
     suspend fun loadPersistedMessages() {
         val cachedJson = App.instance.dataStore.getAsync(BroadcastJsonStorageKey)
@@ -160,7 +269,7 @@ object BroadcastManager {
         val newMsg = BroadcastMessage(
             id = "msg-" + UUID.randomUUID().toString().take(8),
             authorName = "Mudassir",
-            authorRole = "Developer • Nocturne",
+            authorRole = "App developer",
             title = title.trim(),
             content = content.trim(),
             imageUrl = imageUrl?.trim()?.takeIf { it.isNotBlank() },
@@ -178,6 +287,7 @@ object BroadcastManager {
         scope.launch {
             saveMessagesToDataStore(updatedList)
         }
+        showAnnouncementNotification(App.instance, newMsg)
     }
 
     fun deleteAnnouncement(messageId: String) {

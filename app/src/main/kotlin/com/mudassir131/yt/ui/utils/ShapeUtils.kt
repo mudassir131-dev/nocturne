@@ -52,3 +52,6 @@ fun isCornerZero(cornerSize: CornerSize): Boolean {
 
 val LocalListItemShape = androidx.compose.runtime.staticCompositionLocalOf<Shape?> { null }
 val LocalPreferenceShape = androidx.compose.runtime.staticCompositionLocalOf<Shape?> { null }
+val LocalPreferencePosition = androidx.compose.runtime.staticCompositionLocalOf { PreferencePosition.SINGLE }
+val LocalInsidePreferenceGroup = androidx.compose.runtime.staticCompositionLocalOf { false }
+

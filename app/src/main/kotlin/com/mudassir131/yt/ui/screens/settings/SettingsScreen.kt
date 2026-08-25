@@ -808,10 +808,10 @@ fun SettingsScreen(
                 item(key = "account") {
                     AnimatedVisibility(
                         visible = heroVisible,
-                        enter = fadeIn(spring(stiffness = Spring.StiffnessLow)) +
+                        enter = fadeIn(spring(stiffness = Spring.StiffnessMediumLow)) +
                                 slideInVertically(
-                                    initialOffsetY = { it / 5 },
-                                    animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = 0.85f),
+                                    initialOffsetY = { it / 6 },
+                                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.85f),
                                 ),
                     ) {
                         SettingsAccountCard(
@@ -828,7 +828,8 @@ fun SettingsScreen(
                             },
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
-                                .padding(bottom = 14.dp),
+                                .padding(bottom = 1.dp),
+                            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
                         )
                     }
                 }
@@ -930,19 +931,29 @@ fun SettingsScreen(
                         key = { categoriesToShow[it].title },
                     ) { index ->
                         val category = categoriesToShow[index]
+                        val isFirst = index == 0 && (queryText.isNotBlank() || !heroVisible)
+                        val isLast = index == categoriesToShow.size - 1
+                        val sectionShape = when {
+                            isFirst && isLast -> RoundedCornerShape(24.dp)
+                            isFirst -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                            isLast -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                            else -> RoundedCornerShape(0.dp)
+                        }
                         AnimatedVisibility(
                             visible = categoriesVisible,
-                            enter = fadeIn(tween(420, delayMillis = index * 60)) +
+                            enter = fadeIn(spring(stiffness = Spring.StiffnessMediumLow)) +
                                     slideInVertically(
-                                        initialOffsetY = { it / 5 },
-                                        animationSpec = tween(420, delayMillis = index * 60),
+                                        initialOffsetY = { it / 6 },
+                                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.85f),
                                     ),
                         ) {
                             PremiumSettingsSection(
                                 category = category,
+                                shape = sectionShape,
+                                isLastCategory = isLast,
                                 modifier = Modifier
                                     .padding(horizontal = 16.dp)
-                                    .padding(bottom = 12.dp),
+                                    .padding(bottom = if (isLast) 16.dp else 1.dp),
                             )
                         }
                     }
@@ -1132,7 +1143,7 @@ private fun EmptyResultsCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
@@ -1183,7 +1194,7 @@ private fun PremiumPermissionCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
@@ -1277,7 +1288,7 @@ private fun SettingsQuickActionsGrid(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
@@ -1434,7 +1445,7 @@ private fun SettingsIntegrationsRow(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
@@ -1539,28 +1550,30 @@ private fun IntegrationChip(
 private fun PremiumSettingsSection(
     category: SettingsCategory,
     modifier: Modifier = Modifier,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(0.dp),
+    isLastCategory: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = category.title.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-        )
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
+            shape = shape,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Column(modifier = Modifier.padding(vertical = 2.dp)) {
                 category.items.forEachIndexed { index, item ->
+                    val isLastItem = isLastCategory && (index == category.items.size - 1)
+                    val rowShape = if (isLastItem) {
+                        RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                    } else {
+                        RoundedCornerShape(0.dp)
+                    }
                     PremiumSettingsItemRow(
                         item = item,
-                        showDivider = index < category.items.size - 1,
+                        showDivider = true,
+                        shape = rowShape,
                     )
                 }
             }
@@ -1572,6 +1585,7 @@ private fun PremiumSettingsSection(
 private fun PremiumSettingsItemRow(
     item: PremiumSettingsItem,
     showDivider: Boolean,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(18.dp),
 ) {
     val effectiveAccent = if (item.accentColor.isSpecified) {
         item.accentColor
@@ -1591,7 +1605,7 @@ private fun PremiumSettingsItemRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
+                .clip(shape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -1717,6 +1731,7 @@ private fun SettingsAccountCard(
     onAccountClick: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
 ) {
     val cardColor by animateColorAsState(
         targetValue = if (isLoggedIn)
@@ -1730,9 +1745,9 @@ private fun SettingsAccountCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(shape)
             .clickable(onClick = onAccountClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {

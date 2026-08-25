@@ -37,9 +37,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.mudassir131.yt.LocalPlayerAwareWindowInsets
 import com.mudassir131.yt.R
+import com.mudassir131.yt.constants.BatteryOptimizationKey
 import com.mudassir131.yt.constants.ArtistSeparatorsKey
 import com.mudassir131.yt.constants.AudioNormalizationKey
 import com.mudassir131.yt.constants.AudioOffload
@@ -84,6 +88,11 @@ fun PlayerSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
+    val context = LocalContext.current
+    val (batteryOptimization, onBatteryOptimizationChange) = rememberPreference(
+        BatteryOptimizationKey,
+        defaultValue = true
+    )
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
         defaultValue = AudioQuality.OPUS
@@ -374,6 +383,41 @@ fun PlayerSettings(
                         icon = { Icon(painterResource(R.drawable.bluetooth), null) },
                         checked = autoStartOnBluetooth,
                         onCheckedChange = onAutoStartOnBluetoothChange
+                    )
+                }
+            )
+        )
+
+        PreferenceGroup(
+            title = "Battery & Power Saving",
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text("Battery Optimization") },
+                        description = "Optimize audio decoders, pause background visual rendering, and reduce CPU usage to save battery",
+                        icon = { Icon(painterResource(R.drawable.bedtime), null) },
+                        checked = batteryOptimization,
+                        onCheckedChange = onBatteryOptimizationChange
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("App Battery Optimization Settings") },
+                        description = "Configure system battery optimization and unrestricted background playback",
+                        icon = { Icon(painterResource(R.drawable.security), null) },
+                        onClick = {
+                            try {
+                                val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                try {
+                                    val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {}
+                            }
+                        }
                     )
                 }
             )

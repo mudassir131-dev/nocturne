@@ -172,46 +172,78 @@ fun BackupAndRestore(
                         WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
                     )
                 ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp),
         ) {
             item {
-                BackupSettingsItemStyle(
-                    icon = painterResource(R.drawable.backup),
-                    title = "Backup",
-                    onClick = {
-                        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                        backupLauncher.launch(
-                            "${context.getString(R.string.app_name)}_${
-                                LocalDateTime.now().format(formatter)
-                            }.backup"
+                androidx.compose.material3.Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxWidth()) {
+                        val items = listOf(
+                            Triple(painterResource(R.drawable.backup), "Backup", {
+                                val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+                                backupLauncher.launch(
+                                    "${context.getString(R.string.app_name)}_${
+                                        LocalDateTime.now().format(formatter)
+                                    }.backup"
+                                )
+                            }),
+                            Triple(painterResource(R.drawable.restore), "Restore", {
+                                restoreLauncher.launch(arrayOf("application/octet-stream"))
+                            }),
+                            Triple(painterResource(R.drawable.playlist_add), "Import a \"m3u\" playlists", {
+                                importM3uLauncherOnline.launch(arrayOf("audio/*"))
+                            }),
+                            Triple(painterResource(R.drawable.playlist_add), "Import a \"csv\" playlist", {
+                                importPlaylistFromCsv.launch(CSV_MIME_TYPES)
+                            })
                         )
+
+                        items.forEachIndexed { index, (icon, title, onClick) ->
+                            val isFirst = index == 0
+                            val isLast = index == items.size - 1
+                            val shape = when {
+                                isFirst && isLast -> RoundedCornerShape(24.dp)
+                                isFirst -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                                isLast -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                                else -> androidx.compose.ui.graphics.RectangleShape
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(shape)
+                                    .clickable(onClick = onClick)
+                                    .padding(vertical = 16.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            if (index < items.size - 1) {
+                                androidx.compose.material3.HorizontalDivider(
+                                    modifier = Modifier.padding(start = 56.dp, end = 16.dp),
+                                    thickness = 0.5.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                                )
+                            }
+                        }
                     }
-                )
-            }
-            
-            item {
-                BackupSettingsItemStyle(
-                    icon = painterResource(R.drawable.restore),
-                    title = "Restore",
-                    onClick = { restoreLauncher.launch(arrayOf("application/octet-stream")) }
-                )
-            }
-            
-            item {
-                BackupSettingsItemStyle(
-                    icon = painterResource(R.drawable.playlist_add),
-                    title = "Import a \"m3u\" playlists",
-                    onClick = { importM3uLauncherOnline.launch(arrayOf("audio/*")) }
-                )
-            }
-            
-            item {
-                BackupSettingsItemStyle(
-                    icon = painterResource(R.drawable.playlist_add),
-                    title = "Import a \"csv\" playlist",
-                    onClick = { importPlaylistFromCsv.launch(CSV_MIME_TYPES) }
-                )
+                }
             }
         }
     }
@@ -244,33 +276,4 @@ fun BackupAndRestore(
         stepText = backupRestoreProgress?.step ?: progressStatus,
         indeterminate = backupRestoreProgress?.indeterminate ?: false,
     )
-}
-
-@Composable
-private fun BackupSettingsItemStyle(
-    icon: Painter,
-    title: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 20.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painter = icon,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.width(20.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
 }

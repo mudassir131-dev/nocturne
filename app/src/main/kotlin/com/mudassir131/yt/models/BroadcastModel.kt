@@ -16,7 +16,7 @@ enum class BroadcastTag(val label: String, val emoji: String) {
 data class BroadcastMessage(
     val id: String,
     val authorName: String = "Mudassir",
-    val authorRole: String = "Developer • Nocturne",
+    val authorRole: String = "Lead Developer • Nocturne",
     val authorAvatarUrl: String? = null,
     val isVerified: Boolean = true,
     val title: String = "",

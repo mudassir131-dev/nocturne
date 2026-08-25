@@ -52,6 +52,7 @@ val CropThumbnailToSquareKey = booleanPreferencesKey("cropThumbnailToSquare")
 val SeekExtraSeconds = booleanPreferencesKey("seekExtraSeconds")
 val DisableBlurKey = booleanPreferencesKey("disableBlur")
 val DataSaverKey = booleanPreferencesKey("data_saver_mode")
+val BatteryOptimizationKey = booleanPreferencesKey("battery_optimization")
 
 enum class SliderStyle {
     Standard,

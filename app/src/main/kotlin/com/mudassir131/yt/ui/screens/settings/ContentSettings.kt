@@ -99,286 +99,367 @@ fun ContentSettings(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState()),
     ) {
-        PreferenceGroupTitle(title = stringResource(R.string.general))
-        ListPreference(
-            title = { Text(stringResource(R.string.content_language)) },
-            icon = { Icon(painterResource(R.drawable.language), null) },
-            selectedValue = contentLanguage,
-            values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
-            valueText = {
-                LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
-            },
-            onValueSelected = { newValue ->
-                val locale = Locale.getDefault()
-                val languageTag = locale.toLanguageTag().replace("-Hant", "")
- 
-                YouTube.locale = YouTube.locale.copy(
-                    hl = newValue.takeIf { it != SYSTEM_DEFAULT }
-                        ?: locale.language.takeIf { it in LanguageCodeToName }
-                        ?: languageTag.takeIf { it in LanguageCodeToName }
-                        ?: "en"
-                )
- 
-                onContentLanguageChange(newValue)
-            }
-        )
-        ListPreference(
-            title = { Text(stringResource(R.string.content_country)) },
-            icon = { Icon(painterResource(R.drawable.location_on), null) },
-            selectedValue = contentCountry,
-            values = listOf(SYSTEM_DEFAULT) + CountryCodeToName.keys.toList(),
-            valueText = {
-                CountryCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
-            },
-            onValueSelected = { newValue ->
-                val locale = Locale.getDefault()
- 
-                YouTube.locale = YouTube.locale.copy(
-                    gl = newValue.takeIf { it != SYSTEM_DEFAULT }
-                        ?: locale.country.takeIf { it in CountryCodeToName }
-                        ?: "US"
-                )
- 
-                onContentCountryChange(newValue)
-           }
-        )
+        PreferenceGroup(
+            title = stringResource(R.string.general),
+            items = listOf(
+                {
+                    ListPreference(
+                        title = { Text(stringResource(R.string.content_language)) },
+                        icon = { Icon(painterResource(R.drawable.language), null) },
+                        selectedValue = contentLanguage,
+                        values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
+                        valueText = {
+                            LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
+                        },
+                        onValueSelected = { newValue ->
+                            val locale = Locale.getDefault()
+                            val languageTag = locale.toLanguageTag().replace("-Hant", "")
 
-        SwitchPreference(
-            title = { Text(stringResource(R.string.hide_explicit)) },
-            icon = { Icon(painterResource(R.drawable.explicit), null) },
-            checked = hideExplicit,
-            onCheckedChange = onHideExplicitChange,
-        )
+                            YouTube.locale = YouTube.locale.copy(
+                                hl = newValue.takeIf { it != SYSTEM_DEFAULT }
+                                    ?: locale.language.takeIf { it in LanguageCodeToName }
+                                    ?: languageTag.takeIf { it in LanguageCodeToName }
+                                    ?: "en"
+                            )
 
-        SwitchPreference(
-            title = { Text(stringResource(R.string.hide_video)) },
-            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
-            checked = hideVideo,
-            onCheckedChange = onHideVideoChange,
-        )
+                            onContentLanguageChange(newValue)
+                        }
+                    )
+                },
+                {
+                    ListPreference(
+                        title = { Text(stringResource(R.string.content_country)) },
+                        icon = { Icon(painterResource(R.drawable.location_on), null) },
+                        selectedValue = contentCountry,
+                        values = listOf(SYSTEM_DEFAULT) + CountryCodeToName.keys.toList(),
+                        valueText = {
+                            CountryCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
+                        },
+                        onValueSelected = { newValue ->
+                            val locale = Locale.getDefault()
 
-        EnumListPreference(
-            title = { Text("Content Filter Mode") },
-            icon = { Icon(painterResource(R.drawable.filter_alt), null) },
-            selectedValue = contentFilterMode,
-            onValueSelected = onContentFilterModeChange,
-            valueText = {
-                when (it) {
-                    ContentFilterMode.GLOBAL -> "Global (All Songs)"
-                    ContentFilterMode.QURANIC -> "Quranic (Quran Only)"
-                    ContentFilterMode.NASHEED -> "Nasheed (Nasheeds Only)"
-                }
-            },
-        )
+                            YouTube.locale = YouTube.locale.copy(
+                                gl = newValue.takeIf { it != SYSTEM_DEFAULT }
+                                    ?: locale.country.takeIf { it in CountryCodeToName }
+                                    ?: "US"
+                            )
 
-        PreferenceGroupTitle(title = stringResource(R.string.app_language))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.app_language)) },
-                icon = { Icon(painterResource(R.drawable.language), null) },
-                onClick = {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_APP_LOCALE_SETTINGS,
-                            "package:${context.packageName}".toUri()
-                        )
+                            onContentCountryChange(newValue)
+                        }
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.hide_explicit)) },
+                        icon = { Icon(painterResource(R.drawable.explicit), null) },
+                        checked = hideExplicit,
+                        onCheckedChange = onHideExplicitChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.hide_video)) },
+                        icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+                        checked = hideVideo,
+                        onCheckedChange = onHideVideoChange,
+                    )
+                },
+                {
+                    EnumListPreference(
+                        title = { Text("Content Filter Mode") },
+                        icon = { Icon(painterResource(R.drawable.filter_alt), null) },
+                        selectedValue = contentFilterMode,
+                        onValueSelected = onContentFilterModeChange,
+                        valueText = {
+                            when (it) {
+                                ContentFilterMode.GLOBAL -> "Global (All Songs)"
+                                ContentFilterMode.QURANIC -> "Quranic (Quran Only)"
+                                ContentFilterMode.NASHEED -> "Nasheed (Nasheeds Only)"
+                            }
+                        },
                     )
                 }
             )
-        }
-        // Support for Android versions before Android 13
-        else {
-            ListPreference(
-                title = { Text(stringResource(R.string.app_language)) },
-                icon = { Icon(painterResource(R.drawable.language), null) },
-                selectedValue = appLanguage,
-                values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
-                valueText = {
-                    LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
+        )
+
+        PreferenceGroup(
+            title = stringResource(R.string.app_language),
+            items = listOf(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    {
+                        PreferenceEntry(
+                            title = { Text(stringResource(R.string.app_language)) },
+                            icon = { Icon(painterResource(R.drawable.language), null) },
+                            onClick = {
+                                context.startActivity(
+                                    Intent(
+                                        Settings.ACTION_APP_LOCALE_SETTINGS,
+                                        "package:${context.packageName}".toUri()
+                                    )
+                                )
+                            }
+                        )
+                    }
+                } else {
+                    {
+                        ListPreference(
+                            title = { Text(stringResource(R.string.app_language)) },
+                            icon = { Icon(painterResource(R.drawable.language), null) },
+                            selectedValue = appLanguage,
+                            values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
+                            valueText = {
+                                LanguageCodeToName.getOrElse(it) { stringResource(R.string.system_default) }
+                            },
+                            onValueSelected = { langTag ->
+                                val newLocale = langTag
+                                    .takeUnless { it == SYSTEM_DEFAULT }
+                                    ?.let { Locale.forLanguageTag(it) }
+                                    ?: Locale.getDefault()
+
+                                onAppLanguageChange(langTag)
+                                setAppLocale(context, newLocale)
+                            }
+                        )
+                    }
+                }
+            )
+        )
+
+        PreferenceGroup(
+            title = stringResource(R.string.proxy),
+            items = listOfNotNull(
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.enable_proxy)) },
+                        icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
+                        checked = proxyEnabled,
+                        onCheckedChange = onProxyEnabledChange,
+                    )
                 },
-                onValueSelected = { langTag ->
-                    val newLocale = langTag
-                        .takeUnless { it == SYSTEM_DEFAULT }
-                        ?.let { Locale.forLanguageTag(it) }
-                        ?: Locale.getDefault()
+                if (proxyEnabled) {
+                    {
+                        ListPreference(
+                            title = { Text(stringResource(R.string.proxy_type)) },
+                            selectedValue = proxyType,
+                            values = listOf(Proxy.Type.HTTP, Proxy.Type.SOCKS),
+                            valueText = { it.name },
+                            onValueSelected = onProxyTypeChange,
+                        )
+                    }
+                } else null,
+                if (proxyEnabled) {
+                    {
+                        EditTextPreference(
+                            title = { Text(stringResource(R.string.proxy_url)) },
+                            value = proxyUrl,
+                            onValueChange = onProxyUrlChange,
+                        )
+                    }
+                } else null,
+                if (proxyEnabled) {
+                    {
+                        SwitchPreference(
+                            title = { Text(stringResource(R.string.stream_bypass_proxy)) },
+                            description = stringResource(R.string.stream_bypass_proxy_desc),
+                            icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
+                            checked = streamBypassProxy,
+                            onCheckedChange = {
+                                onStreamBypassProxyChange(it)
+                                YouTube.streamBypassProxy = it
+                            },
+                        )
+                    }
+                } else null
+            )
+        )
 
-                    onAppLanguageChange(langTag)
-                    setAppLocale(context, newLocale)
+        PreferenceGroup(
+            title = stringResource(R.string.lyrics),
+            items = listOfNotNull(
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.enable_lrclib)) },
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = enableLrclib,
+                        onCheckedChange = onEnableLrclibChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.enable_kugou)) },
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = enableKugou,
+                        onCheckedChange = onEnableKugouChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.enable_betterlyrics)) },
+                        description = "Use BetterLyrics for word-by-word synced lyrics",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = enableBetterLyrics,
+                        onCheckedChange = onEnableBetterLyricsChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Enable SimpMusic Lyrics") },
+                        description = "Use SimpMusic Lyrics for synced lyrics",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = enableSimpMusicLyrics,
+                        onCheckedChange = onEnableSimpMusicLyricsChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("YouLyPlus") },
+                        description = "LyricsPlus multi-server provider (YouLy+ extension backend)",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = enableYouLyPlus,
+                        onCheckedChange = onEnableYouLyPlusChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("PaxSenix") },
+                        description = "Apple Music quality synced lyrics with syllable-level timing",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = enablePaxSenix,
+                        onCheckedChange = onEnablePaxSenixChange,
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("Lyrics provider priority") },
+                        description = "Drag to reorder which provider is tried first",
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        onClick = { navController.navigate("settings/content/lyrics_priority") },
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("Lyrics romanization") },
+                        description = "Japanese and Korean lyric conversion",
+                        icon = { Icon(painterResource(R.drawable.language), null) },
+                        onClick = { navController.navigate("settings/content/lyrics_romanization") },
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.preload_queue_lyrics)) },
+                        icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                        checked = preloadQueueLyricsEnabled,
+                        onCheckedChange = onPreloadQueueLyricsEnabledChange,
+                    )
+                },
+                if (preloadQueueLyricsEnabled) {
+                    {
+                        NumberPickerPreference(
+                            title = { Text(stringResource(R.string.queue_lyrics_preload_count)) },
+                            icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                            value = queueLyricsPreloadCount,
+                            onValueChange = onQueueLyricsPreloadCountChange,
+                            minValue = 0,
+                            maxValue = 10,
+                            valueText = { if (it == 0) "Off" else it.toString() },
+                        )
+                    }
+                } else null
+            )
+        )
 
+        PreferenceGroup(
+            title = "Artist page",
+            items = listOf(
+                {
+                    SwitchPreference(
+                        title = { Text("Show artist description") },
+                        icon = { Icon(painterResource(R.drawable.info), null) },
+                        checked = showArtistDescription,
+                        onCheckedChange = onShowArtistDescriptionChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Show subscriber count") },
+                        icon = { Icon(painterResource(R.drawable.person), null) },
+                        checked = showArtistSubscriberCount,
+                        onCheckedChange = onShowArtistSubscriberCountChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Show monthly listeners") },
+                        description = "Shown only when the music service supplies a real value",
+                        icon = { Icon(painterResource(R.drawable.person), null) },
+                        checked = showArtistMonthlyListeners,
+                        onCheckedChange = onShowArtistMonthlyListenersChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Show artist canvas video") },
+                        description = "Display available looping motion art next to the artist name",
+                        icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+                        checked = showArtistCanvasVideo,
+                        onCheckedChange = onShowArtistCanvasVideoChange,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Show artist background video") },
+                        description = "Display available looping motion art behind the artist image",
+                        icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+                        checked = showArtistBackgroundVideo,
+                        onCheckedChange = onShowArtistBackgroundVideoChange,
+                    )
                 }
             )
-        }
-
-        PreferenceGroupTitle(title = stringResource(R.string.proxy))
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_proxy)) },
-            icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
-            checked = proxyEnabled,
-            onCheckedChange = onProxyEnabledChange,
-        )
-        if (proxyEnabled) {
-            Column {
-                ListPreference(
-                    title = { Text(stringResource(R.string.proxy_type)) },
-                    selectedValue = proxyType,
-                    values = listOf(Proxy.Type.HTTP, Proxy.Type.SOCKS),
-                    valueText = { it.name },
-                    onValueSelected = onProxyTypeChange,
-                )
-                EditTextPreference(
-                    title = { Text(stringResource(R.string.proxy_url)) },
-                    value = proxyUrl,
-                    onValueChange = onProxyUrlChange,
-                )
-                SwitchPreference(
-                    title = { Text(stringResource(R.string.stream_bypass_proxy)) },
-                    description = stringResource(R.string.stream_bypass_proxy_desc),
-                    icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
-                    checked = streamBypassProxy,
-                    onCheckedChange = {
-                        onStreamBypassProxyChange(it)
-                        YouTube.streamBypassProxy = it
-                    },
-                )
-            }
-        }
-
-        PreferenceGroupTitle(title = stringResource(R.string.lyrics))
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_lrclib)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableLrclib,
-            onCheckedChange = onEnableLrclibChange,
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_kugou)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableKugou,
-            onCheckedChange = onEnableKugouChange,
-        )
-        SwitchPreference(
-            title = { Text(stringResource(R.string.enable_betterlyrics)) },
-            description = "Use BetterLyrics for word-by-word synced lyrics",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableBetterLyrics,
-            onCheckedChange = onEnableBetterLyricsChange,
-        )
-        SwitchPreference(
-            title = { Text("Enable SimpMusic Lyrics") },
-            description = "Use SimpMusic Lyrics for synced lyrics",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableSimpMusicLyrics,
-            onCheckedChange = onEnableSimpMusicLyricsChange,
-        )
-        SwitchPreference(
-            title = { Text("YouLyPlus") },
-            description = "LyricsPlus multi-server provider (YouLy+ extension backend)",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enableYouLyPlus,
-            onCheckedChange = onEnableYouLyPlusChange,
-        )
-        SwitchPreference(
-            title = { Text("PaxSenix") },
-            description = "Apple Music quality synced lyrics with syllable-level timing",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = enablePaxSenix,
-            onCheckedChange = onEnablePaxSenixChange,
-        )
-        PreferenceEntry(
-            title = { Text("Lyrics provider priority") },
-            description = "Drag to reorder which provider is tried first",
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            onClick = { navController.navigate("settings/content/lyrics_priority") },
-        )
-        PreferenceEntry(
-            title = { Text("Lyrics romanization") },
-            description = "Japanese and Korean lyric conversion",
-            icon = { Icon(painterResource(R.drawable.language), null) },
-            onClick = { navController.navigate("settings/content/lyrics_romanization") },
-        )
-        // Queue lyrics pre-load settings
-        SwitchPreference(
-            title = { Text(stringResource(R.string.preload_queue_lyrics)) },
-            icon = { Icon(painterResource(R.drawable.lyrics), null) },
-            checked = preloadQueueLyricsEnabled,
-            onCheckedChange = onPreloadQueueLyricsEnabledChange,
-        )
-        if (preloadQueueLyricsEnabled) {
-            NumberPickerPreference(
-                title = { Text(stringResource(R.string.queue_lyrics_preload_count)) },
-                icon = { Icon(painterResource(R.drawable.lyrics), null) },
-                value = queueLyricsPreloadCount,
-                onValueChange = onQueueLyricsPreloadCountChange,
-                minValue = 0,
-                maxValue = 10,
-                valueText = { if (it == 0) "Off" else it.toString() },
-            )
-        }
-
-        PreferenceGroupTitle(title = "Artist page")
-        SwitchPreference(
-            title = { Text("Show artist description") },
-            icon = { Icon(painterResource(R.drawable.info), null) },
-            checked = showArtistDescription,
-            onCheckedChange = onShowArtistDescriptionChange,
-        )
-        SwitchPreference(
-            title = { Text("Show subscriber count") },
-            icon = { Icon(painterResource(R.drawable.person), null) },
-            checked = showArtistSubscriberCount,
-            onCheckedChange = onShowArtistSubscriberCountChange,
-        )
-        SwitchPreference(
-            title = { Text("Show monthly listeners") },
-            description = "Shown only when the music service supplies a real value",
-            icon = { Icon(painterResource(R.drawable.person), null) },
-            checked = showArtistMonthlyListeners,
-            onCheckedChange = onShowArtistMonthlyListenersChange,
-        )
-        SwitchPreference(
-            title = { Text("Show artist canvas video") },
-            description = "Display available looping motion art next to the artist name",
-            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
-            checked = showArtistCanvasVideo,
-            onCheckedChange = onShowArtistCanvasVideoChange,
-        )
-        SwitchPreference(
-            title = { Text("Show artist background video") },
-            description = "Display available looping motion art behind the artist image",
-            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
-            checked = showArtistBackgroundVideo,
-            onCheckedChange = onShowArtistBackgroundVideoChange,
         )
 
-        PreferenceGroupTitle(title = "Album")
-        SwitchPreference(
-            title = { Text("Show Album Canvas") },
-            description = "Display animated canvas in albums when real motion art is available",
-            icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
-            checked = showAlbumCanvas,
-            onCheckedChange = onShowAlbumCanvasChange,
-        )
-
-        PreferenceGroupTitle(title = stringResource(R.string.misc))
-        EditTextPreference(
-            title = { Text(stringResource(R.string.top_length)) },
-            icon = { Icon(painterResource(R.drawable.trending_up), null) },
-            value = lengthTop,
-            isInputValid = { it.toIntOrNull()?.let { num -> num > 0 } == true },
-            onValueChange = onLengthTopChange,
-        )
-        ListPreference(
-            title = { Text(stringResource(R.string.set_quick_picks)) },
-            icon = { Icon(painterResource(R.drawable.home_outlined), null) },
-            selectedValue = quickPicks,
-            values = listOf(QuickPicks.QUICK_PICKS, QuickPicks.LAST_LISTEN),
-            valueText = {
-                when (it) {
-                    QuickPicks.QUICK_PICKS -> stringResource(R.string.quick_picks)
-                    QuickPicks.LAST_LISTEN -> stringResource(R.string.last_song_listened)
+        PreferenceGroup(
+            title = "Album",
+            items = listOf(
+                {
+                    SwitchPreference(
+                        title = { Text("Show Album Canvas") },
+                        description = "Display animated canvas in albums when real motion art is available",
+                        icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+                        checked = showAlbumCanvas,
+                        onCheckedChange = onShowAlbumCanvasChange,
+                    )
                 }
-            },
-            onValueSelected = onQuickPicksChange,
+            )
+        )
+
+        PreferenceGroup(
+            title = stringResource(R.string.misc),
+            items = listOf(
+                {
+                    EditTextPreference(
+                        title = { Text(stringResource(R.string.top_length)) },
+                        icon = { Icon(painterResource(R.drawable.trending_up), null) },
+                        value = lengthTop,
+                        isInputValid = { it.toIntOrNull()?.let { num -> num > 0 } == true },
+                        onValueChange = onLengthTopChange,
+                    )
+                },
+                {
+                    ListPreference(
+                        title = { Text(stringResource(R.string.set_quick_picks)) },
+                        icon = { Icon(painterResource(R.drawable.home_outlined), null) },
+                        selectedValue = quickPicks,
+                        values = listOf(QuickPicks.QUICK_PICKS, QuickPicks.LAST_LISTEN),
+                        valueText = {
+                            when (it) {
+                                QuickPicks.QUICK_PICKS -> stringResource(R.string.quick_picks)
+                                QuickPicks.LAST_LISTEN -> stringResource(R.string.last_song_listened)
+                            }
+                        },
+                        onValueSelected = onQuickPicksChange,
+                    )
+                }
+            )
         )
     }
 

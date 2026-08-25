@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -31,6 +33,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -66,63 +69,121 @@ fun PreferenceEntry(
     trailingContent: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     isEnabled: Boolean = true,
-    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
+    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.LocalPreferencePosition.current,
 ) {
-    val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
-    val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+    val isInsideGroup = com.mudassir131.yt.ui.utils.LocalInsidePreferenceGroup.current
+    val effectiveShape = com.mudassir131.yt.ui.utils.LocalPreferenceShape.current ?: com.mudassir131.yt.ui.utils.getPreferenceShape(position)
 
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = 12.dp, end = 12.dp, top = topPadding, bottom = bottomPadding)
-            .alpha(if (isEnabled) 1f else 0.5f),
-        shape = com.mudassir131.yt.ui.utils.getPreferenceShape(position),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
+    if (isInsideGroup) {
+        Surface(
+            onClick = onClick ?: {},
+            enabled = isEnabled && onClick != null,
+            shape = effectiveShape,
+            color = Color.Transparent,
+            modifier = modifier
                 .fillMaxWidth()
-                .clickable(
-                    enabled = isEnabled && onClick != null,
-                    onClick = onClick ?: {},
-                )
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .alpha(if (isEnabled) 1f else 0.5f),
         ) {
-            if (icon != null) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(52.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) { icon() }
-                }
-                Spacer(Modifier.width(14.dp))
-            }
-
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(1f),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
             ) {
-                ProvideTextStyle(
-                    MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                ) {
-                    title()
+                if (icon != null) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { icon() }
+                    }
+                    Spacer(Modifier.width(14.dp))
                 }
-                if (description != null) {
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                content?.invoke()
-            }
 
-            if (trailingContent != null) {
-                Spacer(Modifier.width(12.dp))
-                trailingContent()
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    ProvideTextStyle(
+                        MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    ) {
+                        title()
+                    }
+                    if (description != null) {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    content?.invoke()
+                }
+
+                if (trailingContent != null) {
+                    Spacer(Modifier.width(12.dp))
+                    trailingContent()
+                }
+            }
+        }
+    } else {
+        val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+        val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+
+        Surface(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = topPadding, bottom = bottomPadding)
+                .alpha(if (isEnabled) 1f else 0.5f),
+            shape = effectiveShape,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        enabled = isEnabled && onClick != null,
+                        onClick = onClick ?: {},
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            ) {
+                if (icon != null) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { icon() }
+                    }
+                    Spacer(Modifier.width(14.dp))
+                }
+
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    ProvideTextStyle(
+                        MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    ) {
+                        title()
+                    }
+                    if (description != null) {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    content?.invoke()
+                }
+
+                if (trailingContent != null) {
+                    Spacer(Modifier.width(12.dp))
+                    trailingContent()
+                }
             }
         }
     }
@@ -566,7 +627,70 @@ fun PreferenceGroupTitle(
 fun PreferenceGroup(
     modifier: Modifier = Modifier,
     title: String? = null,
-    items: List<@Composable () -> Unit>
+    description: String? = null,
+    items: List<@Composable () -> Unit>,
+) {
+    if (items.isEmpty()) return
+    Column(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        if (title != null) {
+            PreferenceGroupTitle(title = title)
+        }
+        if (description != null) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                items.forEachIndexed { index, item ->
+                    val isFirst = index == 0
+                    val isLast = index == items.size - 1
+                    val pos = when {
+                        isFirst && isLast -> com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE
+                        isFirst -> com.mudassir131.yt.ui.utils.PreferencePosition.FIRST
+                        isLast -> com.mudassir131.yt.ui.utils.PreferencePosition.LAST
+                        else -> com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE
+                    }
+                    val shape = com.mudassir131.yt.ui.utils.getPreferenceShape(pos, 24.dp)
+
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.mudassir131.yt.ui.utils.LocalPreferencePosition provides pos,
+                        com.mudassir131.yt.ui.utils.LocalPreferenceShape provides shape,
+                        com.mudassir131.yt.ui.utils.LocalInsidePreferenceGroup provides true,
+                    ) {
+                        item()
+                    }
+
+                    if (index < items.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PreferenceGroup(
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    description: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -574,15 +698,27 @@ fun PreferenceGroup(
         if (title != null) {
             PreferenceGroupTitle(title = title)
         }
-        items.forEachIndexed { index, item ->
-            val position = when {
-                items.size == 1 -> com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE
-                index == 0 -> com.mudassir131.yt.ui.utils.PreferencePosition.FIRST
-                index == items.size - 1 -> com.mudassir131.yt.ui.utils.PreferencePosition.LAST
-                else -> com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE
-            }
-            androidx.compose.runtime.CompositionLocalProvider(com.mudassir131.yt.ui.utils.LocalPreferenceShape provides com.mudassir131.yt.ui.utils.getPreferenceShape(position)) {
-                item()
+        if (description != null) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.mudassir131.yt.ui.utils.LocalInsidePreferenceGroup provides true,
+                ) {
+                    content()
+                }
             }
         }
     }

@@ -26,11 +26,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -420,6 +424,15 @@ fun LibraryPlaylistsScreen(
     ) {
         when (viewType) {
             LibraryViewType.LIST -> {
+                val autoPlaylists = remember(showLiked, showDownloaded, showTop, showCached, likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, topSize) {
+                    listOfNotNull(
+                        if (showLiked) (likedPlaylist to "auto_playlist/liked") else null,
+                        if (showDownloaded) (downloadPlaylist to "auto_playlist/downloaded") else null,
+                        if (showTop) (topPlaylist to "top_playlist/$topSize") else null,
+                        if (showCached) (cachePlaylist to "cache_playlist/cached") else null,
+                    )
+                }
+
                 LazyColumn(
                     state = lazyListState,
                     contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom).asPaddingValues(),
@@ -438,79 +451,50 @@ fun LibraryPlaylistsScreen(
                         headerContent()
                     }
 
-                    if (showLiked) {
+                    if (autoPlaylists.isNotEmpty()) {
                         item(
-                            key = "likedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
+                            key = "autoPlaylistsGroup",
+                            contentType = CONTENT_TYPE_PLAYLIST,
                         ) {
-                            PlaylistListItem(
-                                playlist = likedPlaylist,
-                                autoPlaylist = true,
-                                modifier =
-                                Modifier
+                            Surface(
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        navController.navigate("auto_playlist/liked")
-                                    }
-                                    .animateItem(),
-                            )
-                        }
-                    }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .animateItem()
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    autoPlaylists.forEachIndexed { index, (playlist, route) ->
+                                        val isFirst = index == 0
+                                        val isLast = index == autoPlaylists.size - 1
+                                        val itemShape = when {
+                                            isFirst && isLast -> RoundedCornerShape(24.dp)
+                                            isFirst -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                                            isLast -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                                            else -> androidx.compose.ui.graphics.RectangleShape
+                                        }
 
-                    if (showDownloaded) {
-                        item(
-                            key = "downloadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = downloadPlaylist,
-                                autoPlaylist = true,
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        navController.navigate("auto_playlist/downloaded")
-                                    }
-                                    .animateItem(),
-                            )
-                        }
-                    }
+                                        PlaylistListItem(
+                                            playlist = playlist,
+                                            autoPlaylist = true,
+                                            shape = itemShape,
+                                            containerColor = Color.Transparent,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { navController.navigate(route) },
+                                        )
 
-                    if (showTop) {
-                        item(
-                            key = "TopPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = topPlaylist,
-                                autoPlaylist = true,
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        navController.navigate("top_playlist/$topSize")
+                                        if (index < autoPlaylists.size - 1) {
+                                            HorizontalDivider(
+                                                modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                                                thickness = 0.5.dp,
+                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                                            )
+                                        }
                                     }
-                                    .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showCached) {
-                        item(
-                            key = "cachePlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = cachePlaylist,
-                                autoPlaylist = true,
-                                modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        navController.navigate("cache_playlist/cached")
-                                    }
-                                    .animateItem(),
-                            )
+                                }
+                            }
                         }
                     }
 

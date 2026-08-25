@@ -1,6 +1,5 @@
 /*
  * Nocturne - by Mudassir
-
  * Licensed Under GPL-3.0
  */
 
@@ -8,27 +7,63 @@ package com.mudassir131.yt.ui.component
 
 import android.app.DownloadManager
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -98,146 +133,211 @@ fun UpdateDialog(
         return
     }
 
-    
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = true,
-            dismissOnClickOutside = false
+            dismissOnClickOutside = true,
         )
     ) {
+        var visible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { visible = true }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f)),
+                .background(Color.Black.copy(alpha = 0.65f)),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = Color(0xFF0F0F0F),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(380, easing = FastOutSlowInEasing)
+                ) + fadeIn(tween(300)),
+                exit = slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(250)
+                ) + fadeOut(tween(200))
             ) {
-                // Top Circular Badge Icon
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(Color(0xFF1C1C1E), shape = CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.update),
-                        contentDescription = "Update Available",
-                        tint = Color(0xFFD2C795),
-                        modifier = Modifier.size(30.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Title
-                Text(
-                    text = "New Update Available!",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Subtitle / Version
-                Text(
-                    text = "Version ${latestVersion.trim().removePrefix("v").removePrefix("V")}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFD2C795)
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Nested Content Card ("What's New:")
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF141414), shape = RoundedCornerShape(16.dp))
-                        .padding(16.dp)
+                        .fillMaxHeight(0.78f) // Expanded to ~78% screen height for ample reading space
+                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 22.dp, vertical = 18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "What's New:",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    // Top drag pill handle
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 200.dp)
-                            .verticalScroll(rememberScrollState())
+                            .width(38.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Top Header Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        val notes = releaseNotes.ifBlank { com.mudassir131.yt.utils.Updater.GenericReleaseNotes }
-                        MarkdownText(
-                            markdown = notes,
-                            color = Color.White.copy(alpha = 0.9f),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                        Box(
+                            modifier = Modifier
+                                .size(54.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.update),
+                                contentDescription = "Update Available",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Bottom Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onLater) {
-                        Text(
-                            text = "Later",
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            try {
-                                val fileName = "Nocturne-${latestVersion.trim().replace(' ', '-')}.apk"
-                                val request = DownloadManager.Request(Uri.parse(downloadUrl))
-                                    .setTitle("Nocturne $latestVersion")
-                                    .setDescription("Downloading app update")
-                                    .setMimeType("application/vnd.android.package-archive")
-                                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                                downloadId = downloadManager.enqueue(request)
-                                Log.d("NocturneUpdater", "In-app download enqueued: $downloadUrl")
-                            } catch (e: Exception) {
-                                Log.e("NocturneUpdater", "Unable to start in-app download", e)
-                                downloadFailed = true
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "New Update Available! 🚀",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ) {
+                                    Text(
+                                        text = "v${latestVersion.trim().removePrefix("v").removePrefix("V")}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                                if (currentVersion.isNotBlank()) {
+                                    Text(
+                                        text = "Current: v${currentVersion.trim().removePrefix("v").removePrefix("V")}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFD2C795),
-                            contentColor = Color.Black
-                        ),
-                        shape = RoundedCornerShape(50),
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // What's New Description Card (Expanded & Scrollable)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .padding(16.dp)
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.download),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Download Now",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.labelLarge
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.auto_awesome),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "What's New & Changelog",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            val notes = releaseNotes.ifBlank { com.mudassir131.yt.utils.Updater.GenericReleaseNotes }
+                            MarkdownText(
+                                markdown = notes,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Action Buttons (Sticky at Bottom)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledTonalButton(
+                            onClick = onLater,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = "Later",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                try {
+                                    val fileName = "Nocturne-${latestVersion.trim().replace(' ', '-')}.apk"
+                                    val request = DownloadManager.Request(Uri.parse(downloadUrl))
+                                        .setTitle("Nocturne $latestVersion")
+                                        .setDescription("Downloading app update")
+                                        .setMimeType("application/vnd.android.package-archive")
+                                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                                    downloadId = downloadManager.enqueue(request)
+                                    Log.d("NocturneUpdater", "In-app download enqueued: $downloadUrl")
+                                } catch (e: Exception) {
+                                    Log.e("NocturneUpdater", "Unable to start in-app download", e)
+                                    downloadFailed = true
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.weight(1.5f),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.download),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Download Now",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
                     }
                 }
             }
@@ -258,84 +358,95 @@ private fun UpdateDownloadProgressDialog(
     val context = LocalContext.current
     Dialog(
         onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = isComplete || isFailed,
+            dismissOnClickOutside = false
+        )
     ) {
         Box(
-            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.62f)),
-            contentAlignment = Alignment.BottomCenter,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.65f)),
+            contentAlignment = Alignment.BottomCenter
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF0F0F0F), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier.size(64.dp).background(Color(0xFF1C1C1E), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(if (isComplete) R.drawable.check else R.drawable.download),
-                        contentDescription = null,
-                        tint = Color(0xFFD2C795),
-                        modifier = Modifier.size(30.dp),
-                    )
-                }
-                Spacer(Modifier.height(18.dp))
                 Text(
                     text = when {
-                        isFailed -> "Download failed"
-                        isComplete -> "Update ready to install"
-                        else -> "Downloading Nocturne"
+                        isComplete -> "Download Complete! 🎉"
+                        isFailed -> "Download Failed"
+                        else -> "Downloading Update…"
                     },
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
-                    text = "Version ${latestVersion.trim().removePrefix("v").removePrefix("V")}",
+                    text = "Nocturne v${latestVersion.trim().removePrefix("v").removePrefix("V")}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFD2C795),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(28.dp))
-                WavyDownloadProgress(progress)
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = when {
-                        isFailed -> "Please close this screen and try the download again."
-                        isComplete -> "100%  Download complete"
-                        else -> "${(progress * 100).toInt()}%  Keep Nocturne open while downloading"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.78f),
-                )
-                Spacer(Modifier.height(28.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = onClose, modifier = Modifier.weight(1f)) {
-                        Text("Close")
-                    }
-                    if (isComplete) {
-                        Button(
-                            onClick = {
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                if (!isComplete && !isFailed) {
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(CircleShape),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (isComplete) {
+                    Button(
+                        onClick = {
+                            try {
                                 val uri = downloadManager.getUriForDownloadedFile(downloadId)
                                 if (uri != null) {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, "application/vnd.android.package-archive")
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                                    )
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                        setDataAndType(uri, "application/vnd.android.package-archive")
+                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    }
+                                    context.startActivity(intent)
                                 }
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFD2C795),
-                                contentColor = Color.Black,
-                            ),
-                        ) {
-                            Text("Install Update", fontWeight = FontWeight.Bold)
-                        }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                            onClose()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Install Update", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (isFailed) "Close" else "Run in Background")
                     }
                 }
             }
@@ -344,32 +455,9 @@ private fun UpdateDownloadProgressDialog(
 }
 
 @Composable
-private fun WavyDownloadProgress(progress: Float) {
-    val primary = Color(0xFFD2C795)
-    val track = Color.White.copy(alpha = 0.18f)
-    Canvas(modifier = Modifier.fillMaxWidth().height(32.dp)) {
-        val amplitude = 3.dp.toPx()
-        val period = 18.dp.toPx()
-        val centerY = size.height / 2f
-        val path = Path()
-        var x = 0f
-        while (x <= size.width + 2f) {
-            val y = centerY + sin((x / period) * 2f * PI.toFloat()) * amplitude
-            if (x == 0f) path.moveTo(x, y) else path.lineTo(x, y)
-            x += 2f
-        }
-        val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-        drawPath(path, track, style = stroke)
-        clipRect(right = size.width * progress.coerceIn(0f, 1f)) {
-            drawPath(path, primary, style = stroke)
-        }
-    }
-}
-
-@Composable
 fun WelcomeUpdateDialog(
-    versionName: String,
-    releaseNotes: String,
+    versionName: String = "",
+    releaseNotes: String = "",
     onDismissRequest: () -> Unit,
 ) {
     Dialog(
@@ -380,100 +468,120 @@ fun WelcomeUpdateDialog(
             dismissOnClickOutside = true
         )
     ) {
+        var visible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { visible = true }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f)),
+                .background(Color.Black.copy(alpha = 0.65f)),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = Color(0xFF0F0F0F),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(380, easing = FastOutSlowInEasing)
+                ) + fadeIn(tween(300)),
+                exit = slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(250)
+                ) + fadeOut(tween(200))
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(Color(0xFF1C1C1E), shape = CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.update),
-                        contentDescription = "Welcome to Nocturne",
-                        tint = Color(0xFFD2C795),
-                        modifier = Modifier.size(30.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Welcome to Nocturne $versionName",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Thank you for updating Nocturne.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF8E8E93)
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF141414), shape = RoundedCornerShape(16.dp))
-                        .padding(16.dp)
+                        .fillMaxHeight(0.70f)
+                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "What's New:",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 200.dp)
-                            .verticalScroll(rememberScrollState())
+                            .width(38.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        val notes = releaseNotes.ifBlank { com.mudassir131.yt.utils.Updater.GenericReleaseNotes }
-                        MarkdownText(
-                            markdown = notes,
-                            color = Color.White.copy(alpha = 0.9f),
-                            style = MaterialTheme.typography.bodyMedium
+                        Icon(
+                            painter = painterResource(R.drawable.auto_awesome),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                Button(
-                    onClick = onDismissRequest,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD2C795),
-                        contentColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
                     Text(
-                        text = "Awesome",
+                        text = "Updated Successfully! 🎉",
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelLarge
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = if (versionName.isNotBlank()) "Nocturne v${versionName.trim().removePrefix("v").removePrefix("V")}" else "You are now running the latest version of Nocturne.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    if (releaseNotes.isNotBlank()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .padding(14.dp)
+                        ) {
+                            Text(
+                                text = "What's New in this update:",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                MarkdownText(
+                                    markdown = releaseNotes,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    Button(
+                        onClick = onDismissRequest,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Awesome!", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

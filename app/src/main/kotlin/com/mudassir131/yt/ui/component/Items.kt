@@ -150,23 +150,25 @@ inline fun ListItem(
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
     isActive: Boolean = false,
-    shape: Shape = RoundedCornerShape(18.dp)
+    shape: Shape = RoundedCornerShape(18.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
 ) {
     val localShape = com.mudassir131.yt.ui.utils.LocalListItemShape.current
     val resolvedShape = if (shape != RoundedCornerShape(18.dp)) shape else (localShape ?: shape)
 
-    val topPadding = if (resolvedShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(resolvedShape.topStart)) 2.dp else 0.5.dp
-    val bottomPadding = if (resolvedShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(resolvedShape.bottomStart)) 2.dp else 0.5.dp
+    val isTransparent = containerColor == Color.Transparent
+    val topPadding = if (isTransparent) 0.dp else if (resolvedShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(resolvedShape.topStart)) 2.dp else 0.5.dp
+    val bottomPadding = if (isTransparent) 0.dp else if (resolvedShape is RoundedCornerShape && !com.mudassir131.yt.ui.utils.isCornerZero(resolvedShape.bottomStart)) 2.dp else 0.5.dp
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .height(ListItemHeight)
-            .padding(start = 8.dp, end = 8.dp, top = topPadding, bottom = bottomPadding)
+            .padding(start = if (isTransparent) 0.dp else 8.dp, end = if (isTransparent) 0.dp else 8.dp, top = topPadding, bottom = bottomPadding)
             .clip(resolvedShape)
             .background(
                 if (isActive) MaterialTheme.colorScheme.secondaryContainer
-                else MaterialTheme.colorScheme.surfaceContainer,
+                else containerColor,
             )
             .padding(horizontal = 4.dp)
     ) {
@@ -191,12 +193,14 @@ fun ListItem(
     thumbnailContent: @Composable () -> Unit,
     trailingContent: @Composable RowScope.() -> Unit = {},
     isActive: Boolean = false,
-    shape: Shape = RoundedCornerShape(18.dp)
+    shape: Shape = RoundedCornerShape(18.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
 ) = ListItem(
     title = title,
     modifier = modifier,
     isActive = isActive,
     shape = shape,
+    containerColor = containerColor,
     subtitle = {
         badges()
         if (!subtitle.isNullOrEmpty()) {
@@ -648,6 +652,7 @@ fun PlaylistListItem(
     autoPlaylist: Boolean = false,
     badges: @Composable RowScope.() -> Unit = {},
     shape: Shape = RoundedCornerShape(18.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     trailingContent: @Composable RowScope.() -> Unit = {}
 ) = ListItem(
     title = playlist.playlist.name,
@@ -693,6 +698,7 @@ fun PlaylistListItem(
     trailingContent = trailingContent,
     modifier = modifier,
     shape = shape,
+    containerColor = containerColor,
 )
 
 @Composable

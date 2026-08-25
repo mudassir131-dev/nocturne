@@ -500,7 +500,7 @@ private fun OnlineParticipantsCard(
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {

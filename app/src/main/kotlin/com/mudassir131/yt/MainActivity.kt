@@ -887,6 +887,13 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    LaunchedEffect(Unit) {
+                        val navigateTo = intent?.getStringExtra("navigate_to")
+                        if (!navigateTo.isNullOrBlank()) {
+                            runCatching { navController.navigate(navigateTo) }
+                        }
+                    }
+
                     LaunchedEffect(currentRoute) {
                         if (currentRoute == "search") {
                             active = false
@@ -1737,6 +1744,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
+        val navigateTo = intent.getStringExtra("navigate_to")
+        if (!navigateTo.isNullOrBlank()) {
+            runCatching { navController.navigate(navigateTo) }
+            return
+        }
         val uri = intent.data ?: intent.extras?.getString(Intent.EXTRA_TEXT)?.toUri() ?: return
         val coroutineScope = lifecycleScope
 

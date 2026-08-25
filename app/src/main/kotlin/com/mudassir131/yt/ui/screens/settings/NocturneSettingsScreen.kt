@@ -176,11 +176,34 @@ fun NocturneSettingsScreen(navController: NavController) {
                     }
                 }
             } else {
-                items(filteredDestinations, key = { it.route }) { destination ->
-                    SettingsDestinationCard(
-                        destination = destination,
-                        onClick = { navController.navigate(destination.route) },
-                    )
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        androidx.compose.foundation.layout.Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            filteredDestinations.forEachIndexed { index, destination ->
+                                val isFirst = index == 0
+                                val isLast = index == filteredDestinations.size - 1
+                                val itemShape = when {
+                                    isFirst && isLast -> RoundedCornerShape(24.dp)
+                                    isFirst -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                                    isLast -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                                    else -> androidx.compose.ui.graphics.RectangleShape
+                                }
+
+                                SettingsDestinationRow(
+                                    destination = destination,
+                                    shape = itemShape,
+                                    showDivider = index < filteredDestinations.size - 1,
+                                    onClick = { navController.navigate(destination.route) },
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -190,53 +213,64 @@ fun NocturneSettingsScreen(navController: NavController) {
 }
 
 @Composable
-private fun SettingsDestinationCard(
+private fun SettingsDestinationRow(
     destination: SettingsDestination,
+    shape: androidx.compose.ui.graphics.Shape,
+    showDivider: Boolean,
     onClick: () -> Unit,
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp),
-            verticalAlignment = Alignment.CenterVertically,
+    androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            onClick = onClick,
+            shape = shape,
+            color = androidx.compose.ui.graphics.Color.Transparent,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(54.dp),
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(destination.iconRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(25.dp),
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(destination.iconRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.width(16.dp))
+                androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+                    Text(
+                        text = destination.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = destination.subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-            Spacer(Modifier.width(16.dp))
-            androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-                Text(
-                    text = destination.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = destination.subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Icon(
+                    painter = painterResource(R.drawable.navigate_next),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 )
             }
-            Icon(
-                painter = painterResource(R.drawable.navigate_next),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        }
+        if (showDivider) {
+            androidx.compose.material3.HorizontalDivider(
+                modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
             )
         }
     }
