@@ -49,6 +49,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.mudassir131.yt.constants.SliderStyle
+import com.mudassir131.yt.constants.SliderStyleKey
+import com.mudassir131.yt.ui.player.StyledPlaybackSlider
+import com.mudassir131.yt.utils.rememberEnumPreference
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -576,37 +580,52 @@ private fun AppleExpandedPlayer(
                 label = "appleProgressTrackHeight",
             )
 
-            Slider(
-                value = position.coerceIn(0L, duration.coerceAtLeast(1L)).toFloat(),
-                onValueChange = { onSeek(it.toLong()) },
-                onValueChangeFinished = onSeekFinished,
-                valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                enabled = duration > 0L,
-                interactionSource = trackInteractionSource,
-                colors = SliderDefaults.colors(
-                    activeTrackColor = Color.White.copy(alpha = 0.7f),
-                    activeTickColor = Color.White.copy(alpha = 0.7f),
-                    thumbColor = Color.White.copy(alpha = 0.7f),
-                    inactiveTrackColor = Color.White.copy(alpha = 0.4f),
-                    disabledActiveTrackColor = Color.White.copy(alpha = 0.7f),
-                    disabledInactiveTrackColor = Color.White.copy(alpha = 0.4f),
-                    disabledThumbColor = Color.White.copy(alpha = 0.7f),
-                ),
-                thumb = { Spacer(Modifier.size(0.dp)) },
-                track = { sliderState ->
-                    PlayerSliderTrack(
-                        sliderState = sliderState,
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = Color.White.copy(alpha = 0.7f),
-                            activeTickColor = Color.White.copy(alpha = 0.7f),
-                            inactiveTrackColor = Color.White.copy(alpha = 0.4f),
-                            inactiveTickColor = Color.White.copy(alpha = 0.4f),
-                        ),
-                        trackHeight = trackHeight,
-                    )
-                },
-                modifier = Modifier.padding(horizontal = 32.dp),
-            )
+            val (sliderStyle) = rememberEnumPreference(SliderStyleKey, SliderStyle.Standard)
+
+            if (sliderStyle != SliderStyle.Standard) {
+                StyledPlaybackSlider(
+                    sliderStyle = sliderStyle,
+                    value = position.coerceIn(0L, duration.coerceAtLeast(1L)).toFloat(),
+                    valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
+                    onValueChange = { onSeek(it.toLong()) },
+                    onValueChangeFinished = onSeekFinished,
+                    activeColor = Color.White,
+                    isPlaying = isPlaying,
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                )
+            } else {
+                Slider(
+                    value = position.coerceIn(0L, duration.coerceAtLeast(1L)).toFloat(),
+                    onValueChange = { onSeek(it.toLong()) },
+                    onValueChangeFinished = onSeekFinished,
+                    valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
+                    enabled = duration > 0L,
+                    interactionSource = trackInteractionSource,
+                    colors = SliderDefaults.colors(
+                        activeTrackColor = Color.White.copy(alpha = 0.7f),
+                        activeTickColor = Color.White.copy(alpha = 0.7f),
+                        thumbColor = Color.White.copy(alpha = 0.7f),
+                        inactiveTrackColor = Color.White.copy(alpha = 0.4f),
+                        disabledActiveTrackColor = Color.White.copy(alpha = 0.7f),
+                        disabledInactiveTrackColor = Color.White.copy(alpha = 0.4f),
+                        disabledThumbColor = Color.White.copy(alpha = 0.7f),
+                    ),
+                    thumb = { Spacer(Modifier.size(0.dp)) },
+                    track = { sliderState ->
+                        PlayerSliderTrack(
+                            sliderState = sliderState,
+                            colors = SliderDefaults.colors(
+                                activeTrackColor = Color.White.copy(alpha = 0.7f),
+                                activeTickColor = Color.White.copy(alpha = 0.7f),
+                                inactiveTrackColor = Color.White.copy(alpha = 0.4f),
+                                inactiveTickColor = Color.White.copy(alpha = 0.4f),
+                            ),
+                            trackHeight = trackHeight,
+                        )
+                    },
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                )
+            }
 
             Spacer(Modifier.height(4.dp))
 

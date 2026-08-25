@@ -441,12 +441,14 @@ fun CinematicPlayerView(
         Column(
             modifier = Modifier.fillMaxWidth(contentWidth)
         ) {
-            CapsulePlayerSlider(
+            StyledPlaybackSlider(
+                sliderStyle = activeSliderStyle,
                 value = safePosition,
                 valueRange = 0f..safeDuration.coerceAtLeast(0f),
                 onValueChange = { onSliderValueChange(it.toLong()) },
                 onValueChangeFinished = onSliderValueChangeFinished,
                 activeColor = textButtonColor,
+                isPlaying = isPlaying,
                 modifier = Modifier.fillMaxWidth()
             )
 

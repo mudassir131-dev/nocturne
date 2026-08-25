@@ -2,16 +2,18 @@ package com.mudassir131.yt.ui.appleplayer.lyrics
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -30,15 +32,31 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mudassir131.yt.LocalPlayerConnection
+import com.mudassir131.yt.constants.LyricsAnimationStyle
+import com.mudassir131.yt.constants.LyricsAnimationStyleKey
+import com.mudassir131.yt.constants.LyricsClickKey
+import com.mudassir131.yt.constants.LyricsLineSpacingKey
+import com.mudassir131.yt.ui.screens.settings.LyricsPosition
+import com.mudassir131.yt.constants.LyricsScrollKey
+import com.mudassir131.yt.constants.LyricsTextPositionKey
+import com.mudassir131.yt.constants.LyricsTextSizeKey
 import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.utils.rememberEnumPreference
+import com.mudassir131.yt.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
@@ -55,6 +73,14 @@ fun AppleLyricsView(
     modifier: Modifier = Modifier,
     onSeek: (Long) -> Unit,
 ) {
+    // Dynamic preferences from Appearance Settings
+    val (lyricsPosition) = rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.LEFT)
+    val (lyricsAnimation) = rememberEnumPreference(LyricsAnimationStyleKey, LyricsAnimationStyle.APPLE)
+    val (lyricsClick) = rememberPreference(LyricsClickKey, true)
+    val (lyricsScroll) = rememberPreference(LyricsScrollKey, true)
+    val (lyricsTextSize) = rememberPreference(LyricsTextSizeKey, 26f)
+    val (lyricsLineSpacing) = rememberPreference(LyricsLineSpacingKey, 1.3f)
+
     if (loading || result == null) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (loading) {
@@ -107,8 +133,8 @@ fun AppleLyricsView(
     }
 
     // Playback ticks only update the active line. Scrolling is launched when the index changes.
-    LaunchedEffect(activeIndex, autoFollow, result.isLineSynced) {
-        if (!result.isLineSynced || !autoFollow || activeIndex !in lines.indices) return@LaunchedEffect
+    LaunchedEffect(activeIndex, autoFollow, result.isLineSynced, lyricsScroll) {
+        if (!lyricsScroll || !result.isLineSynced || !autoFollow || activeIndex !in lines.indices) return@LaunchedEffect
         val distance = if (lastFollowedIndex < 0) Int.MAX_VALUE else abs(activeIndex - lastFollowedIndex)
         if (distance > LargeSeekDistance) {
             // A large seek should not animate through every intervening lyric.
@@ -134,18 +160,25 @@ fun AppleLyricsView(
                     line = line,
                     active = active,
                     activePositionMs = renderedPositionMs.takeIf { active },
-                    onClick = line.startMs?.let { start ->
-                        {
-                            autoFollow = true
-                            lastFollowedIndex = -1
-                            onSeek(start)
+                    positionStyle = lyricsPosition,
+                    animationStyle = lyricsAnimation,
+                    textSizeSp = lyricsTextSize,
+                    lineSpacing = lyricsLineSpacing,
+                    clickableEnabled = lyricsClick,
+                    onClick = if (lyricsClick) {
+                        line.startMs?.let { start ->
+                            {
+                                autoFollow = true
+                                lastFollowedIndex = -1
+                                onSeek(start)
+                            }
                         }
-                    },
+                    } else null,
                 )
             }
         }
 
-        if (!autoFollow && result.isLineSynced) {
+        if (!autoFollow && result.isLineSynced && lyricsScroll) {
             FilledTonalButton(
                 onClick = {
                     autoFollow = true
@@ -164,21 +197,75 @@ private fun AppleLyricLine(
     line: AppleLyricsLine,
     active: Boolean,
     activePositionMs: Long?,
+    positionStyle: LyricsPosition,
+    animationStyle: LyricsAnimationStyle,
+    textSizeSp: Float,
+    lineSpacing: Float,
+    clickableEnabled: Boolean,
     onClick: (() -> Unit)?,
 ) {
+    // 1. Color animation based on style
     val color by animateColorAsState(
-        targetValue = if (active) Color.White else Color.White.copy(alpha = .38f),
-        animationSpec = tween(260, easing = AppleLyricsEasing),
+        targetValue = when {
+            active -> Color.White
+            animationStyle == LyricsAnimationStyle.FADE -> Color.White.copy(alpha = .22f)
+            animationStyle == LyricsAnimationStyle.GLOW -> Color.White.copy(alpha = .30f)
+            else -> Color.White.copy(alpha = .38f)
+        },
+        animationSpec = when (animationStyle) {
+            LyricsAnimationStyle.NONE -> tween(0)
+            LyricsAnimationStyle.FADE -> tween(380, easing = FastOutSlowInEasing)
+            else -> tween(260, easing = AppleLyricsEasing)
+        },
         label = "lyric-emphasis",
     )
+
+    // 2. Scale / emphasis based on style
     val emphasis by animateFloatAsState(
-        targetValue = if (active) 1f else .985f,
-        animationSpec = tween(280, easing = AppleLyricsEasing),
+        targetValue = when {
+            !active -> .98f
+            animationStyle == LyricsAnimationStyle.NONE -> 1f
+            animationStyle == LyricsAnimationStyle.APPLE -> 1.02f
+            animationStyle == LyricsAnimationStyle.GLOW -> 1.03f
+            else -> 1f
+        },
+        animationSpec = when (animationStyle) {
+            LyricsAnimationStyle.NONE -> tween(0)
+            else -> tween(280, easing = AppleLyricsEasing)
+        },
         label = "lyric-scale",
     )
 
+    // 3. Slide translation for slide animation style
+    val slideOffset by animateDpAsState(
+        targetValue = if (active && animationStyle == LyricsAnimationStyle.SLIDE) 8.dp else 0.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium),
+        label = "lyric-slide"
+    )
+
+    // Alignment and transform origin from user settings
+    val textAlign = when (positionStyle) {
+        LyricsPosition.LEFT -> TextAlign.Start
+        LyricsPosition.CENTER -> TextAlign.Center
+        LyricsPosition.RIGHT -> TextAlign.End
+    }
+
+    val transformOrigin = when (positionStyle) {
+        LyricsPosition.LEFT -> TransformOrigin(0f, .5f)
+        LyricsPosition.CENTER -> TransformOrigin(.5f, .5f)
+        LyricsPosition.RIGHT -> TransformOrigin(1f, .5f)
+    }
+
+    val textShadow = if (active && (animationStyle == LyricsAnimationStyle.GLOW || animationStyle == LyricsAnimationStyle.APPLE)) {
+        Shadow(
+            color = Color.White.copy(alpha = 0.45f),
+            offset = Offset(0f, 0f),
+            blurRadius = 14f
+        )
+    } else null
+
     Text(
-        text = remember(line, activePositionMs) {
+        text = remember(line, activePositionMs, animationStyle) {
             buildAnnotatedString {
                 if (line.words.isEmpty() || activePositionMs == null) {
                     append(line.text)
@@ -190,9 +277,14 @@ private fun AppleLyricLine(
                             activePositionMs >= word.endMs -> 1f
                             else -> (activePositionMs - word.startMs).toFloat() / (word.endMs - word.startMs)
                         }
+                        val wordAlpha = when (animationStyle) {
+                            LyricsAnimationStyle.KARAOKE -> if (progress > 0.05f) 1f else 0.28f
+                            LyricsAnimationStyle.NONE -> if (progress >= 0.5f) 1f else 0.35f
+                            else -> (.32f + .68f * progress).coerceIn(0.32f, 1f)
+                        }
                         pushStyle(
                             SpanStyle(
-                                color = Color.White.copy(alpha = .32f + .68f * progress),
+                                color = Color.White.copy(alpha = wordAlpha),
                                 fontWeight = if (progress > 0f) FontWeight.Bold else FontWeight.SemiBold,
                             ),
                         )
@@ -203,15 +295,22 @@ private fun AppleLyricLine(
             }
         },
         color = color,
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+        textAlign = textAlign,
+        style = TextStyle(
+            fontSize = textSizeSp.sp,
+            lineHeight = (textSizeSp * lineSpacing).sp,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+            shadow = textShadow
+        ),
         modifier = Modifier
-            .padding(vertical = 12.dp)
-            .let { base -> if (onClick != null) base.clickable(onClick = onClick) else base }
+            .fillMaxWidth()
+            .padding(vertical = (8f * lineSpacing).dp)
+            .padding(start = if (animationStyle == LyricsAnimationStyle.SLIDE) slideOffset else 0.dp)
+            .let { base -> if (clickableEnabled && onClick != null) base.clickable(onClick = onClick) else base }
             .graphicsLayer {
                 scaleX = emphasis
                 scaleY = emphasis
-                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, .5f)
+                this.transformOrigin = transformOrigin
             }
     )
 }

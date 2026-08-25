@@ -66,6 +66,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.mudassir131.yt.ui.component.RichGifInputTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -348,6 +349,13 @@ fun BroadcastScreen(navController: NavController) {
                     onRemoveMedia = { composerMediaUriOrUrl = "" },
                     onPickLocalMedia = { mediaPickerLauncher.launch("image/*") },
                     onCustomAttachmentClick = { showAttachmentDialog = true },
+                    onMediaReceivedFromKeyboard = { uri ->
+                        scope.launch {
+                            val savedUri = copyUriToInternalStorage(context, uri)
+                            composerMediaUriOrUrl = savedUri
+                            Toast.makeText(context, "GIF attached from Keyboard! 🎬", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     onSend = {
                         if (composerContent.isNotBlank() || composerMediaUriOrUrl.isNotBlank()) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -730,6 +738,7 @@ private fun DeveloperComposerBar(
     onRemoveMedia: () -> Unit,
     onPickLocalMedia: () -> Unit,
     onCustomAttachmentClick: () -> Unit,
+    onMediaReceivedFromKeyboard: (Uri) -> Unit,
     onSend: () -> Unit,
 ) {
     Surface(
@@ -877,21 +886,13 @@ private fun DeveloperComposerBar(
                     )
                 }
 
-                // Message Text Field
-                OutlinedTextField(
+                // Message Text Field with Gboard Rich Content & GIF support
+                RichGifInputTextField(
                     value = content,
                     onValueChange = onContentChange,
-                    placeholder = { Text("Broadcast announcement…") },
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 44.dp, max = 120.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent
-                    )
+                    placeholder = "Broadcast announcement…",
+                    onMediaReceived = onMediaReceivedFromKeyboard,
+                    modifier = Modifier.weight(1f)
                 )
 
                 // Send Button (Google Messages pill style)
