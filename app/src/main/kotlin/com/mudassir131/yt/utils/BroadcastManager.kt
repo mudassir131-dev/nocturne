@@ -241,26 +241,48 @@ object BroadcastManager {
             val userReactionsJson = App.instance.dataStore.getAsync(UserReactionsJsonKey)
             val userReactionsMap = parseUserReactionsMap(userReactionsJson)
             val fetchedRemoteMessages = mutableListOf<BroadcastMessage>()
+            val timestampNonce = System.currentTimeMillis()
 
-            // 1. Fetch from raw announcements.json on main branch
-            val rawUrl = "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/announcements.json"
-            val rawResponse = runCatching {
-                client.get(rawUrl) {
+            // 1. Try GitHub Contents API with raw header (Zero Fastly CDN cache, 100% instant)
+            val apiContentsUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/contents/announcements.json?ref=main&t=$timestampNonce"
+            val apiRawResponse = runCatching {
+                client.get(apiContentsUrl) {
+                    header("Accept", "application/vnd.github.raw+json")
                     header("User-Agent", "Nocturne-Android")
+                    header("Cache-Control", "no-cache")
+                    header("Pragma", "no-cache")
                 }.bodyAsText()
             }.getOrNull()
 
-            if (!rawResponse.isNullOrBlank() && rawResponse.trim().startsWith("[")) {
-                val list = parseBroadcastMessages(rawResponse, userReactionsMap)
+            if (!apiRawResponse.isNullOrBlank() && apiRawResponse.trim().startsWith("[")) {
+                val list = parseBroadcastMessages(apiRawResponse, userReactionsMap)
                 fetchedRemoteMessages.addAll(list)
             }
 
-            // 2. Fetch from GitHub Issues labeled 'announcement'
-            val issuesUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/issues?labels=announcement&state=all&per_page=30"
+            // 2. If contents API didn't return, fetch from raw GitHub URL with cache buster
+            if (fetchedRemoteMessages.isEmpty()) {
+                val rawUrl = "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/announcements.json?t=$timestampNonce"
+                val rawResponse = runCatching {
+                    client.get(rawUrl) {
+                        header("User-Agent", "Nocturne-Android")
+                        header("Cache-Control", "no-cache")
+                        header("Pragma", "no-cache")
+                    }.bodyAsText()
+                }.getOrNull()
+
+                if (!rawResponse.isNullOrBlank() && rawResponse.trim().startsWith("[")) {
+                    val list = parseBroadcastMessages(rawResponse, userReactionsMap)
+                    fetchedRemoteMessages.addAll(list)
+                }
+            }
+
+            // 3. Also fetch GitHub Issues labeled 'announcement' (instant web announcements)
+            val issuesUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/issues?labels=announcement&state=all&per_page=30&t=$timestampNonce"
             val issuesResponse = runCatching {
                 client.get(issuesUrl) {
                     header("Accept", "application/vnd.github+json")
                     header("User-Agent", "Nocturne-Android")
+                    header("Cache-Control", "no-cache")
                 }.bodyAsText()
             }.getOrNull()
 
@@ -273,7 +295,7 @@ object BroadcastManager {
                 val currentExistingIds = _messages.value.map { it.id }.toSet()
                 val combined = (fetchedRemoteMessages + _messages.value)
                     .distinctBy { it.id }
-                    .sortedBy { it.timestamp }
+                    .sortedByDescending { it.timestamp }
                 _messages.value = combined
                 saveMessagesToDataStore(combined)
 
@@ -354,31 +376,54 @@ object BroadcastManager {
     }
 
     suspend fun publishAnnouncementToGitHub(message: BroadcastMessage, token: String? = null): Result<String> {
-        val githubToken = token ?: getGitHubToken()
-        if (githubToken.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("GitHub Token not configured. Please add your GitHub Personal Access Token."))
+        val rawToken = token ?: getGitHubToken()
+        if (rawToken.isNullOrBlank()) {
+            return Result.failure(IllegalStateException("GitHub Token not configured. Please add your GitHub Personal Access Token in Developer console."))
+        }
+        val cleanToken = rawToken.trim()
+        val authHeaderVal = if (cleanToken.startsWith("ghp_") || cleanToken.startsWith("github_pat_")) {
+            "token $cleanToken"
+        } else if (cleanToken.startsWith("token ") || cleanToken.startsWith("Bearer ")) {
+            cleanToken
+        } else {
+            "token $cleanToken"
         }
 
         return runCatching {
             val repoUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/contents/announcements.json"
             val getResponse = client.get(repoUrl) {
-                header("Authorization", "Bearer $githubToken")
+                header("Authorization", authHeaderVal)
                 header("Accept", "application/vnd.github+json")
                 header("User-Agent", "Nocturne-Android")
+                header("X-GitHub-Api-Version", "2022-11-28")
             }
 
-            val currentSha = if (getResponse.status == HttpStatusCode.OK) {
-                val json = JSONObject(getResponse.bodyAsText())
-                json.optString("sha")
-            } else null
+            var currentSha: String? = null
+            var remoteList = emptyList<BroadcastMessage>()
 
-            val allMessages = (_messages.value + message).distinctBy { it.id }.sortedBy { it.timestamp }
+            if (getResponse.status == HttpStatusCode.OK) {
+                val getJson = JSONObject(getResponse.bodyAsText())
+                currentSha = getJson.optString("sha").takeIf { it.isNotBlank() }
+                val rawContent = getJson.optString("content", "")
+                val cleanContent = rawContent.replace("\n", "").replace("\r", "")
+                if (cleanContent.isNotBlank()) {
+                    val decoded = runCatching { String(Base64.decode(cleanContent, Base64.DEFAULT), Charsets.UTF_8) }.getOrNull()
+                    if (!decoded.isNullOrBlank() && decoded.trim().startsWith("[")) {
+                        remoteList = parseBroadcastMessages(decoded, emptyMap())
+                    }
+                }
+            }
+
+            val allMessages = (listOf(message) + remoteList + _messages.value)
+                .distinctBy { it.id }
+                .sortedByDescending { it.timestamp }
+
             val jsonArray = serializeMessagesToJson(allMessages)
             val jsonString = jsonArray.toString(2)
             val base64Content = Base64.encodeToString(jsonString.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
 
             val putBody = JSONObject().apply {
-                put("message", "Broadcast: ${message.title.ifBlank { "Announcement" }}")
+                put("message", "Broadcast: ${message.title.ifBlank { message.content.take(30) }}")
                 put("content", base64Content)
                 if (!currentSha.isNullOrBlank()) {
                     put("sha", currentSha)
@@ -387,17 +432,22 @@ object BroadcastManager {
             }
 
             val putResponse = client.put(repoUrl) {
-                header("Authorization", "Bearer $githubToken")
+                header("Authorization", authHeaderVal)
                 header("Accept", "application/vnd.github+json")
                 header("User-Agent", "Nocturne-Android")
+                header("X-GitHub-Api-Version", "2022-11-28")
                 contentType(ContentType.Application.Json)
                 setBody(putBody.toString())
             }
 
             if (putResponse.status.value in 200..299) {
+                _messages.value = allMessages
+                saveMessagesToDataStore(allMessages)
                 "Announcement published live to all users across the world! 🚀"
             } else {
-                throw Exception("GitHub API Error (${putResponse.status.value}): ${putResponse.bodyAsText()}")
+                val errorBody = putResponse.bodyAsText()
+                Log.e(TAG, "GitHub API publish failed with ${putResponse.status.value}: $errorBody")
+                throw Exception("GitHub API Error (${putResponse.status.value}): $errorBody")
             }
         }
     }
