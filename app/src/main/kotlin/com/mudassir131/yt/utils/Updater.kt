@@ -60,9 +60,9 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.27
+    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.28
 
-* **Live Cloud Announcement System**: Broadcast announcements now sync in real-time across all users worldwide via cloud repository feeds and GitHub Issues.
+* **Instant Zero-Cache Live Announcements**: Instantaneous real-time announcement delivery using direct GitHub Contents API with zero CDN cache delay.
 * **Developer In-App Cloud Publishing**: Developer console with direct GitHub publishing for instant worldwide broadcasts and 1-tap JSON export.
 * **Unified Grouped-List UI System**: Modernized Settings and sub-screens (Appearance, Content, Backup & Restore, Nocturne Settings, Music Together) into sleek connected containers.
 * **Connected Library Auto-Playlists**: Liked, Downloaded, Top 50, and Cached playlists render inside a continuous unified card.
