@@ -125,24 +125,5 @@
     "title": "",
     "content": "",
     "timestamp": 1787676463877
-  },
-  {
-    "actionText": "Check for Update",
-    "authorRole": "App developer",
-    "isVerified": true,
-    "authorName": "Mudassir",
-    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
-    "actionUrl": "nocturne://settings/update",
-    "reactions": {
-      "🔥": 820,
-      "🚀": 690,
-      "💯": 450,
-      "❤️": 510
-    },
-    "id": "msg-v2.22.29-release",
-    "tag": "ANNOUNCEMENT",
-    "title": "Nocturne v2.22.29 is out! 🚀",
-    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.29** with GitHub security hardening, chronological announcement chat ordering, and Vivo/iQOO Force 90/120Hz stability!\n\n\u2022 **GitHub Security Hardening**: Strict zero-embedded credential architecture with runtime token protection.\n\u2022 **Announcement Chat Ordering**: Chronological ordering with smart auto-scroll and jump indicators.\n\u2022 **Vivo & iQOO Stability Shield**: Safe display mode resolution matching and crash fallbacks.\n\u2022 **Production APK Hardening**: Unexported internal components and enhanced ProGuard/R8 protection.\n\nUpdate now from Settings -> Check for update!",
-    "timestamp": 1787680000000
   }
 ]
