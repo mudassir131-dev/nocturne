@@ -3,36 +3,12 @@
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
-    "reactions": {
-      "🔥": 210,
-      "🎉": 77,
-      "🚀": 94,
-      "❤️": 128
-    },
-    "id": "msg-welcome-01",
-    "tag": "ANNOUNCEMENT",
-    "title": "Welcome to Nocturne Broadcast! 🚀",
-    "content": "Hey everyone! 👋 Welcome to the official Nocturne Announcements channel.\n\nHere you'll get direct updates on upcoming features, releases, hotfixes, and changelogs straight from the developer. React to this message to show your excitement!",
-    "timestamp": 1771900000000
-  },
-  {
-    "actionText": "Check for Update",
-    "authorRole": "App developer",
-    "isVerified": true,
-    "authorName": "Mudassir",
-    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
-    "actionUrl": "nocturne://settings/update",
-    "reactions": {
-      "🔥": 520,
-      "🚀": 440,
-      "💯": 290,
-      "❤️": 312
-    },
-    "id": "msg-v2.22.27-release",
-    "tag": "ANNOUNCEMENT",
-    "title": "Nocturne v2.22.27 is officially out! 🚀",
-    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.27** with full Live Cloud Announcements sync & publishing, unified grouped-list design, and performance improvements!\n\n\u2022 **Live Cloud Broadcasts**: Real-time announcements synced worldwide across all devices.\n\u2022 **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n\u2022 **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n\u2022 **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
-    "timestamp": 1771930000000
+    "reactions": {},
+    "id": "msg-dc856b4c",
+    "tag": "HOTFIX",
+    "title": "",
+    "content": "testing!",
+    "timestamp": 1787652488843
   },
   {
     "actionText": "Check for Update",
@@ -57,11 +33,16 @@
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
-    "reactions": {},
-    "id": "msg-dc856b4c",
-    "tag": "HOTFIX",
-    "title": "",
-    "content": "testing!",
-    "timestamp": 1787652488843
+    "reactions": {
+      "🔥": 210,
+      "🎉": 77,
+      "🚀": 94,
+      "❤️": 128
+    },
+    "id": "msg-welcome-01",
+    "tag": "ANNOUNCEMENT",
+    "title": "Welcome to Nocturne Broadcast! 🚀",
+    "content": "Hey everyone! 👋 Welcome to the official Nocturne Announcements channel.\n\nHere you'll get direct updates on upcoming features, releases, hotfixes, and changelogs straight from the developer. React to this message to show your excitement!",
+    "timestamp": 1771900000000
   }
 ]
