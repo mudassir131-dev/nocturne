@@ -3,6 +3,17 @@
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-c9957376",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "🚨 Important Notice for Vivo & iQOO Users\n\nIf Nocturne is crashing on your Vivo or iQOO device, please try the following workaround:\n\nGo to Nocturne → Settings → Appearance → Force 90/120Hz\n\n👉 Turn OFF \u201cForce 90/120Hz\u201d and then restart the app.\n\nThis setting may be causing crashes on some Vivo and iQOO devices. We\u2019re investigating the issue and working towards a proper fix. 🛠️\n\nIf you\u2019re experiencing crashes, please try this workaround first and let us know if it resolves the problem.\n\nThank you for your patience and continued support! ❤️🎵",
+    "timestamp": 1787671395410
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
     "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1787654543330.gif",
     "reactions": {},
     "id": "msg-20d50270",
