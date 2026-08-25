@@ -53,16 +53,5 @@
     "title": "",
     "content": "testing!",
     "timestamp": 1787652620164
-  },
-  {
-    "authorRole": "App developer",
-    "isVerified": true,
-    "authorName": "Mudassir",
-    "reactions": {},
-    "id": "msg-dc856b4c",
-    "tag": "HOTFIX",
-    "title": "",
-    "content": "testing!",
-    "timestamp": 1787652488843
   }
 ]
