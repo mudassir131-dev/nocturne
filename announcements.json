@@ -149,5 +149,16 @@
     "title": "",
     "content": "nocturne-music.vercel.app",
     "timestamp": 1787746706899
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-ccff60f6",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "Dear users! 🎧✨\n\nWe\u2019re working on bringing Hi Res Lossless audio to the app, but running this at scale requires proper server funding and infrastructure. Without that, we unfortunately can\u2019t provide Apple Music level Hi Res Lossless quality. 💿🔥\n\nThat said, we\u2019ve also added support for self hosted servers, so you can set up and configure your own server according to your needs. 🖥️⚙️\n\nIn the meantime, we\u2019re continuously working on improving the YouTube client and optimizing audio quality so you can still get the cleanest and best sounding experience possible. 🎶🚀\n\nThank you for your support and understanding! ❤️",
+    "timestamp": 1787834227918
   }
 ]
