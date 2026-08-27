@@ -69,8 +69,12 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.analytics.PlaybackStats
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
+import androidx.media3.common.Tracks
+import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
+import com.mudassir131.yt.playback.alac.AudioFormatInfo
+import com.mudassir131.yt.playback.alac.AlacAudioRenderer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.extractor.ExtractorsFactory
@@ -87,6 +91,13 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.mudassir131.yt.MainActivity
 import com.mudassir131.yt.R
 import com.mudassir131.yt.constants.AudioCrossfadeDurationKey
+import com.mudassir131.yt.constants.AudioDspPreset
+import com.mudassir131.yt.constants.AudioEnhancementBassKey
+import com.mudassir131.yt.constants.AudioEnhancementClarityKey
+import com.mudassir131.yt.constants.AudioEnhancementEnabledKey
+import com.mudassir131.yt.constants.AudioEnhancementLoudnessKey
+import com.mudassir131.yt.constants.AudioEnhancementPresetKey
+import com.mudassir131.yt.constants.AudioEnhancementTrebleKey
 import com.mudassir131.yt.constants.AudioNormalizationKey
 import com.mudassir131.yt.constants.AudioOffload
 import com.mudassir131.yt.constants.AudioQualityKey
@@ -212,6 +223,7 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -354,6 +366,47 @@ class MusicService :
         currentMediaMetadata.flatMapLatest { mediaMetadata ->
             database.format(mediaMetadata?.id)
         }.flowOn(Dispatchers.IO)
+
+    val liveAudioFormat = MutableStateFlow<AudioFormatInfo?>(null)
+    private var activeAudioDecoderName: String? = null
+    private var lastAudioInputFormat: androidx.media3.common.Format? = null
+    val audioDspProcessor = AudioDspProcessor()
+
+    fun updateLiveAudioFormat(mediaId: String, format: androidx.media3.common.Format, decoderName: String?) {
+        lastAudioInputFormat = format
+        if (decoderName != null) {
+            activeAudioDecoderName = decoderName
+        }
+
+        scope.launch(Dispatchers.IO) {
+            val existingDbFormat = database.format(mediaId).first()
+            val info = AudioFormatInfo.resolve(
+                media3Format = format,
+                decoderName = activeAudioDecoderName,
+                formatEntity = existingDbFormat,
+            )
+            liveAudioFormat.value = info
+
+            if (info != null) {
+                database.query {
+                    upsert(
+                        FormatEntity(
+                            id = mediaId,
+                            itag = existingDbFormat?.itag ?: info.itag ?: 0,
+                            mimeType = info.mimeType ?: existingDbFormat?.mimeType ?: "audio/webm",
+                            codecs = if (info.isLossless) (if (info.isHiRes) "alac.24" else "alac") else info.codec.lowercase(),
+                            bitrate = info.bitrate ?: existingDbFormat?.bitrate ?: 0,
+                            sampleRate = info.sampleRate ?: existingDbFormat?.sampleRate,
+                            contentLength = existingDbFormat?.contentLength ?: C.LENGTH_UNSET.toLong(),
+                            loudnessDb = existingDbFormat?.loudnessDb,
+                            perceptualLoudnessDb = existingDbFormat?.perceptualLoudnessDb,
+                            playbackUrl = existingDbFormat?.playbackUrl,
+                        )
+                    )
+                }
+            }
+        }
+    }
 
     private val normalizeFactor = MutableStateFlow(1f)
     var playerVolume = MutableStateFlow(1f)
@@ -573,6 +626,54 @@ class MusicService :
                     sleepTimer = SleepTimer(scope, this)
                     addListener(sleepTimer)
                     addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
+                    addAnalyticsListener(object : AnalyticsListener {
+                        override fun onAudioInputFormatChanged(
+                            eventTime: AnalyticsListener.EventTime,
+                            format: androidx.media3.common.Format,
+                            decoderReuseEvaluation: DecoderReuseEvaluation?,
+                        ) {
+                            val currentMediaId = eventTime.timeline.takeIf { !it.isEmpty }
+                                ?.getWindow(eventTime.windowIndex, Timeline.Window())
+                                ?.mediaItem?.mediaId
+                                ?: player.currentMediaItem?.mediaId
+
+                            if (currentMediaId != null) {
+                                updateLiveAudioFormat(currentMediaId, format, activeAudioDecoderName)
+                            }
+                        }
+
+                        override fun onAudioDecoderInitialized(
+                            eventTime: AnalyticsListener.EventTime,
+                            decoderName: String,
+                            initializedTimestampMs: Long,
+                            initializationDurationMs: Long,
+                        ) {
+                            activeAudioDecoderName = decoderName
+                            val currentMediaId = player.currentMediaItem?.mediaId
+                            if (currentMediaId != null && lastAudioInputFormat != null) {
+                                updateLiveAudioFormat(currentMediaId, lastAudioInputFormat!!, decoderName)
+                            }
+                        }
+
+                        override fun onTracksChanged(
+                            eventTime: AnalyticsListener.EventTime,
+                            tracks: Tracks,
+                        ) {
+                            for (trackGroup in tracks.groups) {
+                                if (trackGroup.type == C.TRACK_TYPE_AUDIO && trackGroup.isSelected) {
+                                    for (i in 0 until trackGroup.length) {
+                                        if (trackGroup.isTrackSelected(i)) {
+                                            val format = trackGroup.getTrackFormat(i)
+                                            val currentMediaId = player.currentMediaItem?.mediaId
+                                            if (currentMediaId != null) {
+                                                updateLiveAudioFormat(currentMediaId, format, activeAudioDecoderName)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
                     setOffloadEnabled(false)
                 }
 
@@ -842,6 +943,30 @@ class MusicService :
                     1f
                 }
         }
+
+        dataStore.data
+            .map { prefs ->
+                DspState(
+                    enabled = prefs[AudioEnhancementEnabledKey] ?: false,
+                    presetName = prefs[AudioEnhancementPresetKey] ?: AudioDspPreset.BALANCED.name,
+                    bass = prefs[AudioEnhancementBassKey] ?: 2.0f,
+                    clarity = prefs[AudioEnhancementClarityKey] ?: 1.0f,
+                    treble = prefs[AudioEnhancementTrebleKey] ?: 0.5f,
+                    loudness = prefs[AudioEnhancementLoudnessKey] ?: false,
+                )
+            }
+            .distinctUntilChanged()
+            .collectLatest(scope) { state ->
+                val preset = runCatching { AudioDspPreset.valueOf(state.presetName) }.getOrDefault(AudioDspPreset.BALANCED)
+                audioDspProcessor.updateConfig(
+                    enabled = state.enabled,
+                    preset = preset,
+                    bassGainDb = state.bass,
+                    clarityGainDb = state.clarity,
+                    trebleGainDb = state.treble,
+                    loudnessEnabled = state.loudness,
+                )
+            }
 
         dataStore.data
             .map { it[DiscordTokenKey] to (it[EnableDiscordRPCKey] ?: true) }
@@ -3592,6 +3717,10 @@ class MusicService :
                             val cleanMime = rawMime.split(";").firstOrNull()?.trim() ?: "audio/webm"
                             val cleanCodecs = if (rawMime.contains("codecs=")) {
                                 rawMime.substringAfter("codecs=").removeSurrounding("\"").split(",").firstOrNull()?.trim() ?: "opus"
+                            } else if (cleanMime.contains("alac")) {
+                                "alac"
+                            } else if (cleanMime.contains("flac")) {
+                                "flac"
                             } else if (cleanMime.contains("opus")) {
                                 "opus"
                             } else if (cleanMime.contains("mp4") || cleanMime.contains("aac")) {
@@ -4321,6 +4450,10 @@ class MusicService :
                 val cleanMime = rawMime.split(";").firstOrNull()?.trim() ?: "audio/webm"
                 val cleanCodecs = if (rawMime.contains("codecs=")) {
                     rawMime.substringAfter("codecs=").removeSurrounding("\"").split(",").firstOrNull()?.trim() ?: "opus"
+                } else if (cleanMime.contains("alac")) {
+                    "alac"
+                } else if (cleanMime.contains("flac")) {
+                    "flac"
                 } else if (cleanMime.contains("opus")) {
                     "opus"
                 } else if (cleanMime.contains("mp4") || cleanMime.contains("aac")) {
@@ -4486,8 +4619,38 @@ class MusicService :
                             150.toShort(),
                         ),
                         SonicAudioProcessor(),
+                        audioDspProcessor,
                     ),
                 ).build()
+
+            override fun buildAudioRenderers(
+                context: Context,
+                extensionRendererMode: Int,
+                mediaCodecSelector: androidx.media3.exoplayer.mediacodec.MediaCodecSelector,
+                enableDecoderFallback: Boolean,
+                audioSink: androidx.media3.exoplayer.audio.AudioSink,
+                eventHandler: android.os.Handler,
+                eventListener: androidx.media3.exoplayer.audio.AudioRendererEventListener,
+                out: java.util.ArrayList<androidx.media3.exoplayer.Renderer>,
+            ) {
+                super.buildAudioRenderers(
+                    context,
+                    extensionRendererMode,
+                    mediaCodecSelector,
+                    enableDecoderFallback,
+                    audioSink,
+                    eventHandler,
+                    eventListener,
+                    out,
+                )
+                out.add(
+                    AlacAudioRenderer(
+                        eventHandler = eventHandler,
+                        eventListener = eventListener,
+                        audioSink = audioSink,
+                    ),
+                )
+            }
         }
 
     override fun onPlaybackStatsReady(
@@ -4939,4 +5102,13 @@ class MusicService :
         const val MAX_CONSECUTIVE_ERR = 5
         const val MIN_PRESENCE_UPDATE_INTERVAL = 20_000L
     }
+
+    private data class DspState(
+        val enabled: Boolean,
+        val presetName: String,
+        val bass: Float,
+        val clarity: Float,
+        val treble: Float,
+        val loudness: Boolean,
+    )
 }
