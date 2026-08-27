@@ -301,7 +301,11 @@ fun AppleAudioOutputSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = if (audioQuality == AudioQuality.OPUS) "Opus enabled" else "Saavn enabled",
+                    text = when (audioQuality) {
+                        AudioQuality.OPUS -> "Opus enabled"
+                        AudioQuality.SAAVN -> "Saavn enabled"
+                        AudioQuality.LOSSLESS -> "Hi-Res Lossless enabled"
+                    },
                     style = MaterialTheme.typography.labelLarge,
                     color = accentColor,
                 )
@@ -354,6 +358,14 @@ private fun AppleQualitySelector(
             selected = selected == AudioQuality.SAAVN,
             onClick = { onSelected(AudioQuality.SAAVN) },
             modifier = Modifier.weight(1f),
+            accentColor = accentColor,
+            onAccentColor = onAccentColor,
+        )
+        QualityOption(
+            text = "Hi-Res Lossless",
+            selected = selected == AudioQuality.LOSSLESS,
+            onClick = { onSelected(AudioQuality.LOSSLESS) },
+            modifier = Modifier.weight(1.3f),
             accentColor = accentColor,
             onAccentColor = onAccentColor,
         )

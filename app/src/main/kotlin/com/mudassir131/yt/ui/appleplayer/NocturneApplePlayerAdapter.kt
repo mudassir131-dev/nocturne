@@ -13,6 +13,7 @@ class NocturneApplePlayerAdapter(
     val currentSong get() = connection.currentSong
     val currentLyrics get() = connection.currentLyrics
     val currentFormat get() = connection.currentFormat
+    val currentFormatInfo get() = connection.currentFormatInfo
     val playbackState get() = connection.playbackState
     val isPlaying get() = connection.isPlaying
     val canSkipPrevious get() = connection.canSkipPrevious

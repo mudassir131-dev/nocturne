@@ -123,6 +123,9 @@ import com.mudassir131.yt.ui.appleplayer.lyrics.AppleLyricsTimingParser
 import com.mudassir131.yt.ui.appleplayer.lyrics.AppleLyricsView
 import com.mudassir131.yt.ui.component.BottomSheet
 import com.mudassir131.yt.ui.component.BottomSheetState
+import com.mudassir131.yt.ui.component.LosslessIcon
+import com.mudassir131.yt.ui.component.LosslessQuality
+import com.mudassir131.yt.ui.component.losslessQuality
 import com.mudassir131.yt.ui.component.LocalBottomSheetPageState
 import com.mudassir131.yt.ui.component.LocalMenuState
 import com.mudassir131.yt.ui.component.PlayerSliderTrack
@@ -134,6 +137,8 @@ import com.mudassir131.yt.ui.player.SleepTimerDialog
 import com.mudassir131.yt.ui.utils.ShowMediaInfo
 import com.mudassir131.yt.utils.makeTimeString
 import com.mudassir131.yt.utils.rememberPreference
+import com.mudassir131.yt.playback.alac.AudioFormatInfo
+import com.mudassir131.yt.playback.alac.toAudioFormatInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -164,6 +169,7 @@ fun ApplePlayerHost(
     val currentSong by adapter.currentSong.collectAsState(initial = null)
     val currentLyrics by adapter.currentLyrics.collectAsState(initial = null)
     val currentFormat by adapter.currentFormat.collectAsState(initial = null)
+    val currentFormatInfo by adapter.currentFormatInfo.collectAsState(initial = null)
     val playbackState by adapter.playbackState.collectAsState()
     val isPlaying by adapter.isPlaying.collectAsState()
     val canSkipPrevious by adapter.canSkipPrevious.collectAsState()
@@ -335,6 +341,7 @@ fun ApplePlayerHost(
             lyricsResult = lyricsResult,
             lyricsLoading = lyricsLoading,
             currentFormat = currentFormat,
+            formatInfo = currentFormatInfo,
             formatLoading = formatLoading,
             connectedOutputName = connectedOutputName,
             playerBackgroundStyle = playerBackgroundStyle.toApplePlayerBackgroundStyle(),
@@ -433,6 +440,7 @@ private fun AppleExpandedPlayer(
     lyricsResult: AppleLyricsResult?,
     lyricsLoading: Boolean,
     currentFormat: FormatEntity?,
+    formatInfo: AudioFormatInfo?,
     formatLoading: Boolean,
     connectedOutputName: String?,
     playerBackgroundStyle: ApplePlayerBackgroundStyle,
@@ -644,6 +652,7 @@ private fun AppleExpandedPlayer(
 
                 AppleQualityBadge(
                     format = currentFormat,
+                    formatInfo = formatInfo,
                     isLoading = formatLoading,
                     sleepTimerActive = sleepTimerActive,
                     sleepTimerTimeLeft = sleepTimerTimeLeft,
@@ -932,17 +941,21 @@ private fun AppleRoundActionButton(
 @Composable
 private fun AppleQualityBadge(
     format: FormatEntity?,
+    formatInfo: com.mudassir131.yt.playback.alac.AudioFormatInfo? = null,
     isLoading: Boolean,
     sleepTimerActive: Boolean,
     sleepTimerTimeLeft: Long,
 ) {
-    val formatText = remember(format) {
-        format?.let {
-            val codec = it.codecs.takeIf(String::isNotBlank)?.uppercase()
-                ?: it.mimeType.substringAfter("/", it.mimeType).uppercase()
-            val bitrate = it.bitrate.takeIf { value -> value > 0 }?.let { value -> "${value / 1000} kbps" }
-            listOfNotNull(codec.takeIf(String::isNotBlank), bitrate).joinToString(" • ")
-        }.orEmpty()
+    val resolved = remember(format, formatInfo) {
+        formatInfo ?: format?.toAudioFormatInfo()
+    }
+    val lossless = remember(resolved) { resolved?.losslessQuality() }
+    val formatText = remember(resolved) {
+        if (lossless != null) {
+            lossless.label
+        } else {
+            resolved?.qualityLabel.orEmpty()
+        }
     }
     if (!sleepTimerActive && formatText.isBlank() && !isLoading) return
 
@@ -986,6 +999,27 @@ private fun AppleQualityBadge(
                 )
                 Text(
                     text = "Loading",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        fontSize = 10.sp,
+                    ),
+                    color = Color.White.copy(alpha = 0.8f),
+                    maxLines = 1,
+                )
+            }
+        } else if (lossless != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                com.mudassir131.yt.ui.component.LosslessIcon(
+                    color = Color.White.copy(alpha = 0.8f),
+                    isHiRes = lossless == com.mudassir131.yt.ui.component.LosslessQuality.HI_RES_LOSSLESS,
+                    size = 10.dp,
+                )
+                Text(
+                    text = formatText,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
