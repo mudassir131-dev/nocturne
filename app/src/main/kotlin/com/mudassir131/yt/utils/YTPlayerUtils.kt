@@ -40,6 +40,7 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import com.mudassir131.yt.playback.alac.LosslessStreamResolver
 
 object YTPlayerUtils {
     private const val logTag = "YTPlayerUtils"
@@ -265,6 +266,39 @@ object YTPlayerUtils {
         val videoDetails = metadataPlayerResponse?.videoDetails
         val playbackTracking = metadataPlayerResponse?.playbackTracking
         val expectedDurationMs = videoDetails?.lengthSeconds?.toLongOrNull()?.takeIf { it > 0 }?.times(1000L)
+
+        if (audioQuality == AudioQuality.LOSSLESS && !dataSaver) {
+            val title = videoDetails?.title.orEmpty()
+            val artist = videoDetails?.author.orEmpty()
+            val durationSecs = videoDetails?.lengthSeconds?.toIntOrNull() ?: -1
+            Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
+            Timber.tag(logTag).i("[LOSSLESS_PIPELINE] User preference: Hi-Res Lossless (AudioQuality.LOSSLESS)")
+            Timber.tag(logTag).i("[LOSSLESS_PIPELINE] Target Track: '$title' by '$artist' (videoId=$videoId, duration=${durationSecs}s)")
+            
+            val losslessResult = LosslessStreamResolver.resolve(
+                videoId = videoId,
+                title = title,
+                artist = artist,
+                durationSeconds = durationSecs,
+                isMetered = networkMetered ?: connectivityManager.isActiveNetworkMetered,
+            )
+            if (losslessResult != null) {
+                Timber.tag(logTag).i("[LOSSLESS_PIPELINE] -> SUCCESS: Genuinely lossless stream resolved: ${losslessResult.streamUrl} (source=${losslessResult.source})")
+                Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
+                return PlaybackData(
+                    audioConfig = audioConfig,
+                    videoDetails = videoDetails,
+                    playbackTracking = playbackTracking,
+                    format = losslessResult.format,
+                    streamUrl = losslessResult.streamUrl,
+                    streamExpiresInSeconds = losslessResult.expiresInSeconds,
+                )
+            } else {
+                Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> FALLBACK TRIGGERED: No genuine ALAC/FLAC source available for videoId=$videoId ('$title' by '$artist').")
+                Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> Gracefully routing to standard YouTube stream pipeline (Opus itag 251 @ ~134-160 kbps lossy).")
+                Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
+            }
+        }
 
         val streamClients =
             buildList {
@@ -574,6 +608,7 @@ object YTPlayerUtils {
                 else -> codecRank(codec)
             }
             AudioQuality.LOSSLESS -> when {
+                codec?.contains("alac", ignoreCase = true) == true -> 6
                 codec?.contains("flac", ignoreCase = true) == true -> 5
                 codec?.contains("wav", ignoreCase = true) == true -> 5
                 codec?.contains("opus", ignoreCase = true) == true -> 4
