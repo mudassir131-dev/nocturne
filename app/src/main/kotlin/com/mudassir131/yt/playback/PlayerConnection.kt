@@ -36,6 +36,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+import com.mudassir131.yt.playback.alac.AudioFormatInfo
+import com.mudassir131.yt.playback.alac.toAudioFormatInfo
+import kotlinx.coroutines.flow.StateFlow
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerConnection(
     context: Context,
@@ -69,6 +73,17 @@ class PlayerConnection(
         mediaMetadata.flatMapLatest { mediaMetadata ->
             database.format(mediaMetadata?.id)
         }
+    val currentFormatInfo: StateFlow<AudioFormatInfo?> = combine(
+        currentFormat,
+        service.liveAudioFormat,
+        mediaMetadata,
+    ) { dbFormat, liveFormat, meta ->
+        if (liveFormat != null) {
+            liveFormat
+        } else {
+            dbFormat?.toAudioFormatInfo()
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, null)
 
     val queueTitle = MutableStateFlow<String?>(null)
     val queueWindows = MutableStateFlow<List<Timeline.Window>>(emptyList())
