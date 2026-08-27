@@ -35,9 +35,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +76,9 @@ import com.mudassir131.yt.utils.rememberPreference
 import android.content.ClipData
 import android.content.ClipboardManager
 
+import com.mudassir131.yt.playback.alac.AudioFormatInfo
+import com.mudassir131.yt.playback.alac.toAudioFormatInfo
+
 @Composable
 fun ShowMediaInfo(videoId: String) {
     if (videoId.isBlank() || videoId.isEmpty()) return
@@ -92,6 +95,15 @@ fun ShowMediaInfo(videoId: String) {
     var currentFormat by remember { mutableStateOf<FormatEntity?>(null) }
 
     val playerConnection = LocalPlayerConnection.current
+    val liveFormatInfo: AudioFormatInfo? = playerConnection?.currentFormatInfo?.collectAsState()?.value
+    val currentPlayingId = playerConnection?.mediaMetadata?.collectAsState()?.value?.id
+    val resolvedFormatInfo: AudioFormatInfo? = remember(currentFormat, liveFormatInfo, videoId, currentPlayingId) {
+        if (videoId == currentPlayingId && liveFormatInfo != null) {
+            liveFormatInfo
+        } else {
+            currentFormat?.toAudioFormatInfo()
+        }
+    }
     val context = LocalContext.current
     val clipboardManager = LocalClipboard.current
 
@@ -141,38 +153,48 @@ fun ShowMediaInfo(videoId: String) {
                     )
                 }
             }
-
             item(contentType = "MediaDetails") {
+                val titleLabel = stringResource(R.string.song_title)
+                val artistsLabel = stringResource(R.string.song_artists)
+                val mediaIdLabel = stringResource(R.string.media_id)
+                val codecsLabel = stringResource(R.string.codecs)
+                val sampleRateLabel = stringResource(R.string.sample_rate)
+                val bitrateLabel = stringResource(R.string.bitrate)
+                val mimeTypeLabel = stringResource(R.string.mime_type)
+                val loudnessLabel = stringResource(R.string.loudness)
+                val volumeLabel = stringResource(R.string.volume)
+                val fileSizeLabel = stringResource(R.string.file_size)
+                val unknownLabel = stringResource(R.string.unknown)
+
                 Column {
-                    val baseList = listOf(
-                        stringResource(R.string.song_title) to song?.title,
-                        stringResource(R.string.song_artists) to song?.artists?.joinToString { it.name },
-                        stringResource(R.string.media_id) to song?.id
+                    val baseList: List<Pair<String, String?>> = listOf(
+                        titleLabel to song?.title,
+                        artistsLabel to song?.artists?.joinToString { it.name },
+                        mediaIdLabel to song?.id,
                     )
-                    val extendedList = baseList + if (currentFormat != null) {
-                        listOf(
-                            "Itag" to currentFormat?.itag?.toString(),
-                            stringResource(R.string.mime_type) to currentFormat?.mimeType,
-                            stringResource(R.string.codecs) to currentFormat?.codecs,
-                            stringResource(R.string.bitrate) to currentFormat?.bitrate?.let { "${it / 1000} Kbps" },
-                            stringResource(R.string.sample_rate) to currentFormat?.sampleRate?.let { "$it Hz" },
-                            stringResource(R.string.loudness) to currentFormat?.loudnessDb?.let { "$it dB" },
-                            stringResource(R.string.volume) to if (playerConnection != null)
-                                "${(playerConnection.player.volume * 100).toInt()}%" else null,
-                            stringResource(R.string.file_size) to
-                                    currentFormat?.contentLength?.let {
-                                        Formatter.formatShortFileSize(
-                                            context,
-                                            it
-                                        )
-                                    }
+                    val extendedList: List<Pair<String, String?>> = baseList + if (resolvedFormatInfo != null || currentFormat != null) {
+                        listOfNotNull<Pair<String, String?>>(
+                            resolvedFormatInfo?.takeIf { it.isLossless }?.let { "Audio Quality" to it.qualityLabel },
+                            codecsLabel to (resolvedFormatInfo?.displayCodec ?: currentFormat?.codecs),
+                            resolvedFormatInfo?.displayBitDepth?.let { "Bit Depth" to it },
+                            sampleRateLabel to (resolvedFormatInfo?.displaySampleRate ?: currentFormat?.sampleRate?.let { "$it Hz" }),
+                            resolvedFormatInfo?.channelCount?.let { "Channels" to (if (it == 2) "Stereo (2 ch)" else "$it ch") },
+                            bitrateLabel to (resolvedFormatInfo?.displayBitrate ?: currentFormat?.bitrate?.takeIf { it > 0 }?.let { "${it / 1000} Kbps" }),
+                            resolvedFormatInfo?.decoderName?.let { "Decoder" to it },
+                            mimeTypeLabel to (resolvedFormatInfo?.mimeType ?: currentFormat?.mimeType),
+                            "Itag" to (resolvedFormatInfo?.itag ?: currentFormat?.itag)?.toString(),
+                            currentFormat?.loudnessDb?.let { loudnessLabel to "$it dB" },
+                            playerConnection?.let { volumeLabel to "${(it.player.volume * 100).toInt()}%" },
+                            currentFormat?.contentLength?.takeIf { it > 0 }?.let {
+                                fileSizeLabel to Formatter.formatShortFileSize(context, it)
+                            },
                         )
                     } else {
                         emptyList()
                     }
 
                     extendedList.forEach { (label, text) ->
-                        val displayText = text ?: stringResource(R.string.unknown)
+                        val displayText = text ?: unknownLabel
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelMedium,

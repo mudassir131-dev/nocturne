@@ -14,6 +14,7 @@ import com.mudassir131.yt.constants.GlassEffectsMode
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.ui.theme.glassmorphic
 import com.mudassir131.yt.ui.theme.glassmorphicButton
+import com.mudassir131.yt.playback.alac.toAudioFormatInfo
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -477,23 +478,29 @@ fun QueueCollapsedContentV2(
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
-            val codec =
-                currentFormat.codecs
-                    .takeIf { it.isNotBlank() }
-                    ?: currentFormat.mimeType.substringAfter("/", missingDelimiterValue = currentFormat.mimeType).uppercase()
+            val formatInfo = currentFormat.toAudioFormatInfo()
+            val codecLabel = if (formatInfo.isLossless) {
+                formatInfo.codec
+            } else {
+                val codec =
+                    currentFormat.codecs
+                        .takeIf { it.isNotBlank() }
+                        ?: currentFormat.mimeType.substringAfter("/", missingDelimiterValue = currentFormat.mimeType).uppercase()
 
-            val container =
-                currentFormat.mimeType.substringAfter("/", missingDelimiterValue = currentFormat.mimeType).uppercase()
+                val container =
+                    currentFormat.mimeType.substringAfter("/", missingDelimiterValue = currentFormat.mimeType).uppercase()
 
-            val codecLabel =
                 if (container.isNotBlank() && !codec.equals(container, ignoreCase = true)) {
                     "$codec ($container)"
                 } else {
                     codec
                 }
+            }
 
             val bitrate =
-                if (currentFormat.bitrate > 0) {
+                if (formatInfo.isLossless) {
+                    if (formatInfo.bitrate != null && formatInfo.bitrate > 0) "${formatInfo.bitrate / 1000} kbps" else ""
+                } else if (currentFormat.bitrate > 0) {
                     "${currentFormat.bitrate / 1000} kbps"
                 } else {
                     "Unknown"
@@ -739,8 +746,13 @@ fun QueueCollapsedContentV3(
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
-            val codec = currentFormat.mimeType.substringAfter("/").uppercase()
-            val bitrate = "${currentFormat.bitrate / 1000} kbps"
+            val formatInfo = currentFormat.toAudioFormatInfo()
+            val codec = if (formatInfo.isLossless) formatInfo.codec else currentFormat.mimeType.substringAfter("/").uppercase()
+            val bitrate = if (formatInfo.isLossless) {
+                if (formatInfo.bitrate != null && formatInfo.bitrate > 0) "${formatInfo.bitrate / 1000} kbps" else ""
+            } else {
+                "${currentFormat.bitrate / 1000} kbps"
+            }
             
             CodecInfoRow(
                 codec = codec,
@@ -926,8 +938,13 @@ fun QueueCollapsedContentV1(
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
-            val codec = currentFormat.mimeType.substringAfter("/").uppercase()
-            val bitrate = "${currentFormat.bitrate / 1000} kbps"
+            val formatInfo = currentFormat.toAudioFormatInfo()
+            val codec = if (formatInfo.isLossless) formatInfo.codec else currentFormat.mimeType.substringAfter("/").uppercase()
+            val bitrate = if (formatInfo.isLossless) {
+                if (formatInfo.bitrate != null && formatInfo.bitrate > 0) "${formatInfo.bitrate / 1000} kbps" else ""
+            } else {
+                "${currentFormat.bitrate / 1000} kbps"
+            }
             val fileSize = if (currentFormat.contentLength > 0) {
                 "${(currentFormat.contentLength / 1024.0 / 1024.0).roundToInt()} MB"
             } else ""
@@ -1107,8 +1124,13 @@ fun QueueCollapsedContentV4(
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showCodecOnPlayer && currentFormat != null) {
-            val codec = currentFormat.mimeType.substringAfter("/").uppercase()
-            val bitrate = "${currentFormat.bitrate / 1000} kbps"
+            val formatInfo = currentFormat.toAudioFormatInfo()
+            val codec = if (formatInfo.isLossless) formatInfo.codec else currentFormat.mimeType.substringAfter("/").uppercase()
+            val bitrate = if (formatInfo.isLossless) {
+                if (formatInfo.bitrate != null && formatInfo.bitrate > 0) "${formatInfo.bitrate / 1000} kbps" else ""
+            } else {
+                "${currentFormat.bitrate / 1000} kbps"
+            }
             val fileSize = if (currentFormat.contentLength > 0) {
                 "${(currentFormat.contentLength / 1024.0 / 1024.0).roundToInt()} MB"
             } else ""
