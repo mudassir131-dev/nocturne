@@ -17,22 +17,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -62,6 +68,13 @@ import com.mudassir131.yt.constants.SkipSilenceKey
 import com.mudassir131.yt.constants.StopMusicOnTaskClearKey
 import com.mudassir131.yt.constants.HistoryDuration
 import com.mudassir131.yt.constants.AudioCrossfadeDurationKey
+import com.mudassir131.yt.constants.AudioDspPreset
+import com.mudassir131.yt.constants.AudioEnhancementBassKey
+import com.mudassir131.yt.constants.AudioEnhancementClarityKey
+import com.mudassir131.yt.constants.AudioEnhancementEnabledKey
+import com.mudassir131.yt.constants.AudioEnhancementLoudnessKey
+import com.mudassir131.yt.constants.AudioEnhancementPresetKey
+import com.mudassir131.yt.constants.AudioEnhancementTrebleKey
 import com.mudassir131.yt.constants.PlayerStreamClient
 import com.mudassir131.yt.constants.PlayerStreamClientKey
 import com.mudassir131.yt.constants.SeekExtraSeconds
@@ -169,11 +182,123 @@ fun PlayerSettings(
         ArtistSeparatorsKey,
         defaultValue = ",;/&"
     )
+    val (selfHostedEnabled) = rememberPreference(
+        com.mudassir131.yt.constants.SelfHostedLosslessEnabledKey,
+        defaultValue = false
+    )
+    val (selfHostedUrl) = rememberPreference(
+        com.mudassir131.yt.constants.SelfHostedServerUrlKey,
+        defaultValue = ""
+    )
+    val (audioEnhancementEnabled, onAudioEnhancementEnabledChange) = rememberPreference(
+        AudioEnhancementEnabledKey,
+        defaultValue = false
+    )
+    val (audioDspPreset, onAudioDspPresetChange) = rememberEnumPreference(
+        AudioEnhancementPresetKey,
+        defaultValue = AudioDspPreset.BALANCED
+    )
+    val (dspBass, onDspBassChange) = rememberPreference(
+        AudioEnhancementBassKey,
+        defaultValue = 2.0f
+    )
+    val (dspClarity, onDspClarityChange) = rememberPreference(
+        AudioEnhancementClarityKey,
+        defaultValue = 1.0f
+    )
+    val (dspTreble, onDspTrebleChange) = rememberPreference(
+        AudioEnhancementTrebleKey,
+        defaultValue = 0.5f
+    )
+    val (dspLoudness, onDspLoudnessChange) = rememberPreference(
+        AudioEnhancementLoudnessKey,
+        defaultValue = false
+    )
 
     var showArtistSeparatorsDialog by remember { mutableStateOf(false) }
     var showTagsManagementDialog by remember { mutableStateOf(false) }
     var showPlayerStreamClientDialog by remember { mutableStateOf(false) }
+    var showSelfHostedServerDialog by remember { mutableStateOf(false) }
+    var showAudioDspPresetDialog by remember { mutableStateOf(false) }
     val database = LocalDatabase.current
+
+    if (showAudioDspPresetDialog) {
+        ListDialog(
+            onDismiss = { showAudioDspPresetDialog = false },
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            items(AudioDspPreset.entries) { preset ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onAudioDspPresetChange(preset)
+                            when (preset) {
+                                AudioDspPreset.PURE -> {
+                                    onDspBassChange(0.0f)
+                                    onDspClarityChange(0.0f)
+                                    onDspTrebleChange(0.0f)
+                                    onDspLoudnessChange(false)
+                                }
+                                AudioDspPreset.BALANCED -> {
+                                    onDspBassChange(2.0f)
+                                    onDspClarityChange(1.0f)
+                                    onDspTrebleChange(0.5f)
+                                    onDspLoudnessChange(false)
+                                }
+                                AudioDspPreset.BASS_BOOST -> {
+                                    onDspBassChange(4.5f)
+                                    onDspClarityChange(0.5f)
+                                    onDspTrebleChange(0.0f)
+                                    onDspLoudnessChange(false)
+                                }
+                                AudioDspPreset.VOCAL -> {
+                                    onDspBassChange(0.0f)
+                                    onDspClarityChange(2.5f)
+                                    onDspTrebleChange(1.0f)
+                                    onDspLoudnessChange(false)
+                                }
+                                AudioDspPreset.LOUD_CLEAN -> {
+                                    onDspBassChange(2.5f)
+                                    onDspClarityChange(1.0f)
+                                    onDspTrebleChange(0.5f)
+                                    onDspLoudnessChange(true)
+                                }
+                                AudioDspPreset.CUSTOM -> {}
+                            }
+                            showAudioDspPresetDialog = false
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = audioDspPreset == preset,
+                        onClick = null,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = when (preset) {
+                                AudioDspPreset.PURE -> "Pure (Neutral / Flat)"
+                                AudioDspPreset.BALANCED -> "Balanced (Warm Bass & Vocal Clarity)"
+                                AudioDspPreset.BASS_BOOST -> "Bass Boost (Deep Sub-Bass & Punch)"
+                                AudioDspPreset.VOCAL -> "Vocal (Enhanced Presence & Lyrics)"
+                                AudioDspPreset.LOUD_CLEAN -> "Loud & Clean (Dynamic Normalization)"
+                                AudioDspPreset.CUSTOM -> "Custom"
+                            },
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showSelfHostedServerDialog) {
+        com.mudassir131.yt.ui.component.SelfHostedLosslessDialog(
+            onDismiss = { showSelfHostedServerDialog = false }
+        )
+    }
 
     if (showArtistSeparatorsDialog) {
         ArtistSeparatorsDialog(
@@ -273,9 +398,23 @@ fun PlayerSettings(
                             when (it) {
                                 AudioQuality.SAAVN -> "Saavn"
                                 AudioQuality.OPUS -> "Opus"
-                                AudioQuality.LOSSLESS -> "True Lossless"
+                                AudioQuality.LOSSLESS -> "Hi-Res Lossless"
                             }
                         }
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("Self-Hosted Lossless Server") },
+                        description = if (selfHostedEnabled && selfHostedUrl.isNotBlank()) {
+                            "Connected: $selfHostedUrl"
+                        } else if (selfHostedEnabled) {
+                            "Enabled (Server URL not set)"
+                        } else {
+                            "Configure Navidrome / Subsonic lossless library"
+                        },
+                        icon = { Icon(painterResource(R.drawable.integration), null) },
+                        onClick = { showSelfHostedServerDialog = true }
                     )
                 },
                 {
@@ -383,6 +522,110 @@ fun PlayerSettings(
                         icon = { Icon(painterResource(R.drawable.bluetooth), null) },
                         checked = autoStartOnBluetooth,
                         onCheckedChange = onAutoStartOnBluetoothChange
+                    )
+                }
+            )
+        )
+
+        PreferenceGroup(
+            title = "Audio Enhancement (DSP)",
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text("Audio Enhancement DSP") },
+                        description = "Enable real-time headroom management, parametric bass/clarity enhancement, and anti-clipping limiter",
+                        icon = { Icon(painterResource(R.drawable.volume_up), null) },
+                        checked = audioEnhancementEnabled,
+                        onCheckedChange = onAudioEnhancementEnabledChange,
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("DSP Profile Preset") },
+                        description = when (audioDspPreset) {
+                            AudioDspPreset.PURE -> "Pure (Neutral / Flat)"
+                            AudioDspPreset.BALANCED -> "Balanced (Warm Bass & Vocal Clarity)"
+                            AudioDspPreset.BASS_BOOST -> "Bass Boost (Deep Sub-Bass & Punch)"
+                            AudioDspPreset.VOCAL -> "Vocal (Enhanced Presence & Lyrics)"
+                            AudioDspPreset.LOUD_CLEAN -> "Loud & Clean (Dynamic Normalization)"
+                            AudioDspPreset.CUSTOM -> "Custom"
+                        },
+                        icon = { Icon(painterResource(R.drawable.speed), null) },
+                        onClick = { showAudioDspPresetDialog = true },
+                        isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    DspSliderPreference(
+                        title = { Text("Bass Enhancement (${String.format(java.util.Locale.US, "%+.1f dB", dspBass)})") },
+                        dialogTitle = "Bass Enhancement",
+                        icon = { Icon(painterResource(R.drawable.volume_up), null) },
+                        value = dspBass,
+                        valueRange = -6.0f..6.0f,
+                        steps = 23,
+                        onValueChange = {
+                            onDspBassChange(it)
+                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                        },
+                        isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    DspSliderPreference(
+                        title = { Text("Vocal Clarity (${String.format(java.util.Locale.US, "%+.1f dB", dspClarity)})") },
+                        dialogTitle = "Vocal Clarity Enhancement",
+                        icon = { Icon(painterResource(R.drawable.volume_up), null) },
+                        value = dspClarity,
+                        valueRange = -3.0f..4.0f,
+                        steps = 13,
+                        onValueChange = {
+                            onDspClarityChange(it)
+                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                        },
+                        isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    DspSliderPreference(
+                        title = { Text("Treble Detail (${String.format(java.util.Locale.US, "%+.1f dB", dspTreble)})") },
+                        dialogTitle = "Treble Detail Enhancement",
+                        icon = { Icon(painterResource(R.drawable.volume_up), null) },
+                        value = dspTreble,
+                        valueRange = -4.0f..4.0f,
+                        steps = 15,
+                        onValueChange = {
+                            onDspTrebleChange(it)
+                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                        },
+                        isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text("Loudness Normalization") },
+                        description = "Gentle dynamic loudness compensation protected by anti-clipping limiter",
+                        icon = { Icon(painterResource(R.drawable.volume_up), null) },
+                        checked = dspLoudness,
+                        onCheckedChange = {
+                            onDspLoudnessChange(it)
+                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                        },
+                        isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("Reset DSP to Defaults") },
+                        description = "Reset Bass (+2.0 dB), Clarity (+1.0 dB), Treble (+0.5 dB)",
+                        icon = { Icon(painterResource(R.drawable.restore), null) },
+                        onClick = {
+                            onAudioDspPresetChange(AudioDspPreset.BALANCED)
+                            onDspBassChange(2.0f)
+                            onDspClarityChange(1.0f)
+                            onDspTrebleChange(0.5f)
+                            onDspLoudnessChange(false)
+                        },
+                        isEnabled = audioEnhancementEnabled,
                     )
                 }
             )
@@ -509,5 +752,72 @@ fun PlayerSettings(
                 )
             }
         }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DspSliderPreference(
+    modifier: Modifier = Modifier,
+    title: @Composable () -> Unit,
+    dialogTitle: String,
+    icon: (@Composable () -> Unit)? = null,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
+    unit: String = "dB",
+    onValueChange: (Float) -> Unit,
+    isEnabled: Boolean = true,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var sliderValue by remember(value) { mutableFloatStateOf(value) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(dialogTitle) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = String.format(java.util.Locale.US, "%+.1f %s", sliderValue, unit),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Slider(
+                        value = sliderValue,
+                        onValueChange = { sliderValue = it },
+                        valueRange = valueRange,
+                        steps = steps,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onValueChange(sliderValue)
+                        showDialog = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    PreferenceEntry(
+        modifier = modifier,
+        title = title,
+        description = String.format(java.util.Locale.US, "%+.1f %s", value, unit),
+        icon = icon,
+        onClick = { showDialog = true },
+        isEnabled = isEnabled,
     )
 }
