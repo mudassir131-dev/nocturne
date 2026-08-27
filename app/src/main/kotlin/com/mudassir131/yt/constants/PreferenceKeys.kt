@@ -117,6 +117,13 @@ enum class AudioQuality {
     LOSSLESS,
 }
 
+// Self-Hosted Lossless Server (Navidrome / Subsonic / OpenSubsonic)
+val SelfHostedLosslessEnabledKey = booleanPreferencesKey("selfHostedLosslessEnabled")
+val SelfHostedServerUrlKey = stringPreferencesKey("selfHostedServerUrl")
+val SelfHostedUsernameKey = stringPreferencesKey("selfHostedUsername")
+val SelfHostedPasswordKey = stringPreferencesKey("selfHostedPassword")
+val SelfHostedServerNameKey = stringPreferencesKey("selfHostedServerName")
+
 val PlayerStreamClientKey = stringPreferencesKey("playerStreamClient")
 
 enum class PlayerStreamClient {
@@ -126,6 +133,23 @@ enum class PlayerStreamClient {
     MOBILE,
     TVHTML5,
     ANDROID_MUSIC,
+}
+
+// Audio DSP / Enhancement
+val AudioEnhancementEnabledKey = booleanPreferencesKey("audioEnhancementEnabled")
+val AudioEnhancementPresetKey = stringPreferencesKey("audioEnhancementPreset")
+val AudioEnhancementBassKey = floatPreferencesKey("audioEnhancementBass")
+val AudioEnhancementClarityKey = floatPreferencesKey("audioEnhancementClarity")
+val AudioEnhancementTrebleKey = floatPreferencesKey("audioEnhancementTreble")
+val AudioEnhancementLoudnessKey = booleanPreferencesKey("audioEnhancementLoudness")
+
+enum class AudioDspPreset {
+    PURE,
+    BALANCED,
+    BASS_BOOST,
+    VOCAL,
+    LOUD_CLEAN,
+    CUSTOM,
 }
 
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
