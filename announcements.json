@@ -160,5 +160,16 @@
     "title": "",
     "content": "Dear users! 🎧✨\n\nWe\u2019re working on bringing Hi Res Lossless audio to the app, but running this at scale requires proper server funding and infrastructure. Without that, we unfortunately can\u2019t provide Apple Music level Hi Res Lossless quality. 💿🔥\n\nThat said, we\u2019ve also added support for self hosted servers, so you can set up and configure your own server according to your needs. 🖥️⚙️\n\nIn the meantime, we\u2019re continuously working on improving the YouTube client and optimizing audio quality so you can still get the cleanest and best sounding experience possible. 🎶🚀\n\nThank you for your support and understanding! ❤️",
     "timestamp": 1787834227918
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-2cc34c77",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "We\u2019re also working on increasing the playlist import limit to up to 10,000 songs. We\u2019ll roll this out once we\u2019re sure it stays stable and scalable under testing.\n\nWe\u2019ve also added Audio Enhancement, which you can configure according to your own taste and listening preference. 🎧🔥",
+    "timestamp": 1787837998108
   }
 ]
