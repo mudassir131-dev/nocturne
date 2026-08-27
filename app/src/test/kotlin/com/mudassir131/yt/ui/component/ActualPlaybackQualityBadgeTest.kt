@@ -23,16 +23,58 @@ class ActualPlaybackQualityBadgeTest {
         )
     }
 
+    @Test
+    fun `ALAC 16-bit 44100Hz is labeled Lossless`() {
+        assertEquals(
+            "Lossless",
+            format(
+                codecs = "alac",
+                mimeType = "audio/mp4",
+                sampleRate = 44_100,
+                bitrate = 800_000,
+            ).actualPlaybackQualityLabel(),
+        )
+    }
+
+    @Test
+    fun `ALAC 24-bit 48000Hz is labeled Hi-Res Lossless`() {
+        assertEquals(
+            "Hi-Res Lossless",
+            format(
+                codecs = "alac.24",
+                mimeType = "audio/mp4",
+                sampleRate = 48_000,
+                bitrate = 1_600_000,
+            ).actualPlaybackQualityLabel(),
+        )
+    }
+
+    @Test
+    fun `ALAC 24-bit 96000Hz is labeled Hi-Res Lossless`() {
+        assertEquals(
+            "Hi-Res Lossless",
+            format(
+                codecs = "alac",
+                mimeType = "audio/mp4",
+                sampleRate = 96_000,
+                bitrate = 2_800_000,
+            ).actualPlaybackQualityLabel(),
+        )
+    }
+
     private fun format(
         codecs: String,
+        mimeType: String = "audio/webm",
+        sampleRate: Int = 48_000,
+        bitrate: Int = 160_000,
         playbackUrl: String? = null,
     ) = FormatEntity(
         id = "id",
         itag = 251,
-        mimeType = "audio/webm",
+        mimeType = mimeType,
         codecs = codecs,
-        bitrate = 160_000,
-        sampleRate = 48_000,
+        bitrate = bitrate,
+        sampleRate = sampleRate,
         contentLength = 1L,
         loudnessDb = null,
         playbackUrl = playbackUrl,
