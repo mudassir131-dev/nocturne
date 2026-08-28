@@ -143,6 +143,16 @@ val AudioEnhancementClarityKey = floatPreferencesKey("audioEnhancementClarity")
 val AudioEnhancementTrebleKey = floatPreferencesKey("audioEnhancementTreble")
 val AudioEnhancementLoudnessKey = booleanPreferencesKey("audioEnhancementLoudness")
 
+val AiEnhancementModeKey = stringPreferencesKey("aiEnhancementMode")
+val AiEnhancementProviderKey = stringPreferencesKey("aiEnhancementProvider")
+val AiEnhancementLowMidKey = floatPreferencesKey("aiEnhancementLowMid")
+val AiEnhancementAirKey = floatPreferencesKey("aiEnhancementAir")
+val AiEnhancementBassDynamicKey = floatPreferencesKey("aiEnhancementBassDynamic")
+val AiEnhancementCompressionKey = floatPreferencesKey("aiEnhancementCompression")
+val AiEnhancementHarmonicKey = floatPreferencesKey("aiEnhancementHarmonic")
+val AiEnhancementStereoKey = floatPreferencesKey("aiEnhancementStereo")
+val AiEnhancementAdvancedKey = booleanPreferencesKey("aiEnhancementAdvanced")
+
 enum class AudioDspPreset {
     PURE,
     BALANCED,
