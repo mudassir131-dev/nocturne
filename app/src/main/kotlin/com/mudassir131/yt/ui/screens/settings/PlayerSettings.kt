@@ -67,6 +67,8 @@ import com.mudassir131.yt.constants.PersistentQueueKey
 import com.mudassir131.yt.constants.SkipSilenceKey
 import com.mudassir131.yt.constants.StopMusicOnTaskClearKey
 import com.mudassir131.yt.constants.HistoryDuration
+import com.mudassir131.yt.constants.AiEnhancementModeKey
+import com.mudassir131.yt.constants.AiEnhancementProviderKey
 import com.mudassir131.yt.constants.AudioCrossfadeDurationKey
 import com.mudassir131.yt.constants.AudioDspPreset
 import com.mudassir131.yt.constants.AudioEnhancementBassKey
@@ -78,8 +80,14 @@ import com.mudassir131.yt.constants.AudioEnhancementTrebleKey
 import com.mudassir131.yt.constants.PlayerStreamClient
 import com.mudassir131.yt.constants.PlayerStreamClientKey
 import com.mudassir131.yt.constants.SeekExtraSeconds
+import com.mudassir131.yt.playback.enhancement.model.AiProviderType
+import com.mudassir131.yt.playback.enhancement.model.EnhancementMode
+import com.mudassir131.yt.playback.enhancement.security.SecureKeyStorage
 import com.mudassir131.yt.ui.component.ArtistSeparatorsDialog
 import com.mudassir131.yt.ui.component.TagsManagementDialog
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import com.mudassir131.yt.ui.component.EnumListPreference
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.ListDialog
@@ -214,12 +222,26 @@ fun PlayerSettings(
         AudioEnhancementLoudnessKey,
         defaultValue = false
     )
+    val (enhancementMode, onEnhancementModeChange) = rememberEnumPreference(
+        AiEnhancementModeKey,
+        defaultValue = EnhancementMode.HI_RES_FEEL
+    )
+    val (aiProvider, onAiProviderChange) = rememberEnumPreference(
+        AiEnhancementProviderKey,
+        defaultValue = AiProviderType.GOOGLE_GEMINI
+    )
 
+    val secureKeyStorage = remember { SecureKeyStorage(context) }
     var showArtistSeparatorsDialog by remember { mutableStateOf(false) }
     var showTagsManagementDialog by remember { mutableStateOf(false) }
     var showPlayerStreamClientDialog by remember { mutableStateOf(false) }
     var showSelfHostedServerDialog by remember { mutableStateOf(false) }
     var showAudioDspPresetDialog by remember { mutableStateOf(false) }
+    var showEnhancementModeDialog by remember { mutableStateOf(false) }
+    var showAiProviderDialog by remember { mutableStateOf(false) }
+    var showApiKeyDialog by remember { mutableStateOf(false) }
+    var apiKeyInput by remember { mutableStateOf("") }
+    var apiKeyRefreshTrigger by remember { mutableStateOf(0) }
     val database = LocalDatabase.current
 
     if (showAudioDspPresetDialog) {
@@ -292,6 +314,112 @@ fun PlayerSettings(
                 }
             }
         }
+    }
+
+    if (showEnhancementModeDialog) {
+        ListDialog(
+            onDismiss = { showEnhancementModeDialog = false },
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            items(EnhancementMode.entries) { mode ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onEnhancementModeChange(mode)
+                            showEnhancementModeDialog = false
+                        }
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = mode.displayName, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = mode.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showAiProviderDialog) {
+        ListDialog(
+            onDismiss = { showAiProviderDialog = false },
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            items(AiProviderType.entries) { provider ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onAiProviderChange(provider)
+                            showAiProviderDialog = false
+                        }
+                ) {
+                    Text(
+                        text = provider.displayName,
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+    }
+
+    if (showApiKeyDialog) {
+        AlertDialog(
+            onDismissRequest = { showApiKeyDialog = false },
+            title = { Text("Configure ${aiProvider.displayName} API Key") },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Bring Your Own Key (BYOK): Your secret key is encrypted on your device via Android KeyStore and is NEVER sent to developer servers or logged.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = apiKeyInput,
+                        onValueChange = { apiKeyInput = it },
+                        label = { Text("API Key") },
+                        placeholder = { Text("Enter secret key...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        secureKeyStorage.saveApiKey(aiProvider, apiKeyInput)
+                        apiKeyRefreshTrigger++
+                        showApiKeyDialog = false
+                    }
+                ) {
+                    Text("Save Key")
+                }
+            },
+            dismissButton = {
+                Row {
+                    if (secureKeyStorage.hasApiKey(aiProvider)) {
+                        TextButton(
+                            onClick = {
+                                secureKeyStorage.clearApiKey(aiProvider)
+                                apiKeyInput = ""
+                                apiKeyRefreshTrigger++
+                                showApiKeyDialog = false
+                            }
+                        ) {
+                            Text("Clear", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    TextButton(onClick = { showApiKeyDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
     }
 
     if (showSelfHostedServerDialog) {
@@ -528,12 +656,12 @@ fun PlayerSettings(
         )
 
         PreferenceGroup(
-            title = "Audio Enhancement (DSP)",
+            title = "AI Audio Enhancement (Experimental)",
             items = listOf<@Composable () -> Unit>(
                 {
                     SwitchPreference(
-                        title = { Text("Audio Enhancement DSP") },
-                        description = "Enable real-time headroom management, parametric bass/clarity enhancement, and anti-clipping limiter",
+                        title = { Text("AI Audio Enhancement") },
+                        description = "Adaptive real-time enhancement engine with dynamic bass control, harmonic depth, and true-peak protection",
                         icon = { Icon(painterResource(R.drawable.volume_up), null) },
                         checked = audioEnhancementEnabled,
                         onCheckedChange = onAudioEnhancementEnabledChange,
@@ -541,31 +669,50 @@ fun PlayerSettings(
                 },
                 {
                     PreferenceEntry(
-                        title = { Text("DSP Profile Preset") },
-                        description = when (audioDspPreset) {
-                            AudioDspPreset.PURE -> "Pure (Neutral / Flat)"
-                            AudioDspPreset.BALANCED -> "Balanced (Warm Bass & Vocal Clarity)"
-                            AudioDspPreset.BASS_BOOST -> "Bass Boost (Deep Sub-Bass & Punch)"
-                            AudioDspPreset.VOCAL -> "Vocal (Enhanced Presence & Lyrics)"
-                            AudioDspPreset.LOUD_CLEAN -> "Loud & Clean (Dynamic Normalization)"
-                            AudioDspPreset.CUSTOM -> "Custom"
-                        },
+                        title = { Text("Enhancement Profile") },
+                        description = "${enhancementMode.displayName} — ${enhancementMode.description}",
                         icon = { Icon(painterResource(R.drawable.speed), null) },
-                        onClick = { showAudioDspPresetDialog = true },
+                        onClick = { showEnhancementModeDialog = true },
                         isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("AI Optimizer Provider") },
+                        description = aiProvider.displayName,
+                        icon = { Icon(painterResource(R.drawable.sync), null) },
+                        onClick = { showAiProviderDialog = true },
+                        isEnabled = audioEnhancementEnabled,
+                    )
+                },
+                {
+                    val maskedKey = remember(aiProvider, apiKeyRefreshTrigger) { secureKeyStorage.getMaskedKey(aiProvider) }
+                    PreferenceEntry(
+                        title = { Text("BYOK API Key") },
+                        description = if (aiProvider == AiProviderType.LOCAL_ONLY) {
+                            "Not required for Local mode"
+                        } else {
+                            "Configured: $maskedKey"
+                        },
+                        icon = { Icon(painterResource(R.drawable.lock), null) },
+                        onClick = {
+                            apiKeyInput = secureKeyStorage.getApiKey(aiProvider) ?: ""
+                            showApiKeyDialog = true
+                        },
+                        isEnabled = audioEnhancementEnabled && aiProvider != AiProviderType.LOCAL_ONLY,
                     )
                 },
                 {
                     DspSliderPreference(
                         title = { Text("Bass Enhancement (${String.format(java.util.Locale.US, "%+.1f dB", dspBass)})") },
-                        dialogTitle = "Bass Enhancement",
+                        dialogTitle = "Bass Enhancement (80 Hz Low-Shelf)",
                         icon = { Icon(painterResource(R.drawable.volume_up), null) },
                         value = dspBass,
                         valueRange = -6.0f..6.0f,
                         steps = 23,
                         onValueChange = {
                             onDspBassChange(it)
-                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                            onEnhancementModeChange(EnhancementMode.CUSTOM)
                         },
                         isEnabled = audioEnhancementEnabled,
                     )
@@ -573,29 +720,29 @@ fun PlayerSettings(
                 {
                     DspSliderPreference(
                         title = { Text("Vocal Clarity (${String.format(java.util.Locale.US, "%+.1f dB", dspClarity)})") },
-                        dialogTitle = "Vocal Clarity Enhancement",
+                        dialogTitle = "Vocal Clarity (3.2 kHz Peaking)",
                         icon = { Icon(painterResource(R.drawable.volume_up), null) },
                         value = dspClarity,
                         valueRange = -3.0f..4.0f,
                         steps = 13,
                         onValueChange = {
                             onDspClarityChange(it)
-                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                            onEnhancementModeChange(EnhancementMode.CUSTOM)
                         },
                         isEnabled = audioEnhancementEnabled,
                     )
                 },
                 {
                     DspSliderPreference(
-                        title = { Text("Treble Detail (${String.format(java.util.Locale.US, "%+.1f dB", dspTreble)})") },
-                        dialogTitle = "Treble Detail Enhancement",
+                        title = { Text("Treble & Air (${String.format(java.util.Locale.US, "%+.1f dB", dspTreble)})") },
+                        dialogTitle = "Treble & Air Detail (11 kHz High-Shelf)",
                         icon = { Icon(painterResource(R.drawable.volume_up), null) },
                         value = dspTreble,
                         valueRange = -4.0f..4.0f,
                         steps = 15,
                         onValueChange = {
                             onDspTrebleChange(it)
-                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                            onEnhancementModeChange(EnhancementMode.CUSTOM)
                         },
                         isEnabled = audioEnhancementEnabled,
                     )
@@ -608,21 +755,21 @@ fun PlayerSettings(
                         checked = dspLoudness,
                         onCheckedChange = {
                             onDspLoudnessChange(it)
-                            onAudioDspPresetChange(AudioDspPreset.CUSTOM)
+                            onEnhancementModeChange(EnhancementMode.CUSTOM)
                         },
                         isEnabled = audioEnhancementEnabled,
                     )
                 },
                 {
                     PreferenceEntry(
-                        title = { Text("Reset DSP to Defaults") },
-                        description = "Reset Bass (+2.0 dB), Clarity (+1.0 dB), Treble (+0.5 dB)",
+                        title = { Text("Reset to Flagship Hi-Res Defaults") },
+                        description = "Reset Bass (+1.5 dB), Clarity (+1.0 dB), Treble (+1.2 dB)",
                         icon = { Icon(painterResource(R.drawable.restore), null) },
                         onClick = {
-                            onAudioDspPresetChange(AudioDspPreset.BALANCED)
-                            onDspBassChange(2.0f)
+                            onEnhancementModeChange(EnhancementMode.HI_RES_FEEL)
+                            onDspBassChange(1.5f)
                             onDspClarityChange(1.0f)
-                            onDspTrebleChange(0.5f)
+                            onDspTrebleChange(1.2f)
                             onDspLoudnessChange(false)
                         },
                         isEnabled = audioEnhancementEnabled,
