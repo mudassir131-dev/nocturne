@@ -90,6 +90,8 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import com.mudassir131.yt.MainActivity
 import com.mudassir131.yt.R
+import com.mudassir131.yt.constants.AiEnhancementModeKey
+import com.mudassir131.yt.constants.AiEnhancementProviderKey
 import com.mudassir131.yt.constants.AudioCrossfadeDurationKey
 import com.mudassir131.yt.constants.AudioDspPreset
 import com.mudassir131.yt.constants.AudioEnhancementBassKey
@@ -99,6 +101,9 @@ import com.mudassir131.yt.constants.AudioEnhancementLoudnessKey
 import com.mudassir131.yt.constants.AudioEnhancementPresetKey
 import com.mudassir131.yt.constants.AudioEnhancementTrebleKey
 import com.mudassir131.yt.constants.AudioNormalizationKey
+import com.mudassir131.yt.playback.enhancement.EnhancementEngine
+import com.mudassir131.yt.playback.enhancement.model.AiProviderType
+import com.mudassir131.yt.playback.enhancement.model.EnhancementMode
 import com.mudassir131.yt.constants.AudioOffload
 import com.mudassir131.yt.constants.AudioQualityKey
 import com.mudassir131.yt.constants.AutoDownloadOnLikeKey
@@ -371,6 +376,7 @@ class MusicService :
     private var activeAudioDecoderName: String? = null
     private var lastAudioInputFormat: androidx.media3.common.Format? = null
     val audioDspProcessor = AudioDspProcessor()
+    val enhancementEngine by lazy { EnhancementEngine(this, audioDspProcessor) }
 
     fun updateLiveAudioFormat(mediaId: String, format: androidx.media3.common.Format, decoderName: String?) {
         lastAudioInputFormat = format
@@ -946,26 +952,27 @@ class MusicService :
 
         dataStore.data
             .map { prefs ->
-                DspState(
-                    enabled = prefs[AudioEnhancementEnabledKey] ?: false,
-                    presetName = prefs[AudioEnhancementPresetKey] ?: AudioDspPreset.BALANCED.name,
-                    bass = prefs[AudioEnhancementBassKey] ?: 2.0f,
-                    clarity = prefs[AudioEnhancementClarityKey] ?: 1.0f,
-                    treble = prefs[AudioEnhancementTrebleKey] ?: 0.5f,
-                    loudness = prefs[AudioEnhancementLoudnessKey] ?: false,
-                )
+                val enabled = prefs[AudioEnhancementEnabledKey] ?: false
+                val modeStr = prefs[AiEnhancementModeKey] ?: prefs[AudioEnhancementPresetKey] ?: EnhancementMode.HI_RES_FEEL.name
+                val mode = runCatching { EnhancementMode.valueOf(modeStr) }.getOrElse {
+                    runCatching {
+                        when (AudioDspPreset.valueOf(modeStr)) {
+                            AudioDspPreset.PURE -> EnhancementMode.NATURAL
+                            AudioDspPreset.BALANCED -> EnhancementMode.HI_RES_FEEL
+                            AudioDspPreset.BASS_BOOST -> EnhancementMode.DETAILED
+                            AudioDspPreset.VOCAL -> EnhancementMode.CLEAR
+                            AudioDspPreset.LOUD_CLEAN -> EnhancementMode.STUDIO
+                            AudioDspPreset.CUSTOM -> EnhancementMode.CUSTOM
+                        }
+                    }.getOrDefault(EnhancementMode.HI_RES_FEEL)
+                }
+                val providerStr = prefs[AiEnhancementProviderKey] ?: AiProviderType.GOOGLE_GEMINI.name
+                val provider = runCatching { AiProviderType.valueOf(providerStr) }.getOrDefault(AiProviderType.GOOGLE_GEMINI)
+                Triple(enabled, mode, provider)
             }
             .distinctUntilChanged()
-            .collectLatest(scope) { state ->
-                val preset = runCatching { AudioDspPreset.valueOf(state.presetName) }.getOrDefault(AudioDspPreset.BALANCED)
-                audioDspProcessor.updateConfig(
-                    enabled = state.enabled,
-                    preset = preset,
-                    bassGainDb = state.bass,
-                    clarityGainDb = state.clarity,
-                    trebleGainDb = state.treble,
-                    loudnessEnabled = state.loudness,
-                )
+            .collectLatest(scope) { (enabled, mode, provider) ->
+                enhancementEngine.updatePreferences(enabled, mode, provider)
             }
 
         dataStore.data
@@ -3548,6 +3555,12 @@ class MusicService :
         )
 
         crossfadeAudio?.onMediaItemTransition(mediaItem, reason)
+        enhancementEngine.onTrackChanged(
+            mediaItem?.mediaId,
+            mediaItem?.mediaMetadata?.title?.toString(),
+            mediaItem?.mediaMetadata?.artist?.toString(),
+            player.duration.takeIf { it > 0 },
+        )
 
     val currentIndex = player.currentMediaItemIndex
     val queue = player.mediaItems.mapNotNull { it.metadata }
