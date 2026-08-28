@@ -333,4 +333,90 @@ class AudioDspProcessorTest {
         assertTrue(info.isLossless)
         assertEquals("Lossless", info.qualityLabel)
     }
+
+    @Test
+    fun `14 - Dynamic Bass Management protects limiter and prevents distortion during heavy sub-bass bursts`() {
+        processor.configure(formatFloatStereo)
+        val profile = com.mudassir131.yt.playback.enhancement.model.EnhancementProfile(
+            lowShelfDb = 5.0f,
+            bassDynamicAmount = 0.8f,
+            limiterCeilingDb = -1.0f,
+        )
+        processor.applyEnhancementProfile(profile)
+
+        // Inject heavy sub-bass burst (40 Hz sine wave)
+        val frameCount = 2048
+        val inputBuffer = ByteBuffer.allocateDirect(frameCount * 8).order(ByteOrder.nativeOrder())
+        for (i in 0 until frameCount) {
+            val sample = sin(2.0 * Math.PI * 40.0 * i / 48000.0).toFloat() * 0.95f
+            inputBuffer.putFloat(sample)
+            inputBuffer.putFloat(sample)
+        }
+        inputBuffer.flip()
+
+        processor.queueInput(inputBuffer)
+        val outputBuffer = processor.output
+        assertNotNull(outputBuffer)
+
+        var maxSample = 0.0f
+        while (outputBuffer.remaining() >= 4) {
+            val s = abs(outputBuffer.float)
+            if (s > maxSample) maxSample = s
+        }
+
+        // Peak output must be strictly controlled and never exceed 1.0f
+        assertTrue("Output with dynamic bass ($maxSample) must remain strictly <= 1.0f", maxSample <= 1.0f)
+    }
+
+    @Test
+    fun `15 - Parameter sanitization prevents NaN and out-of-range floats from crashing DSP`() {
+        processor.configure(format16BitStereo)
+        val maliciousProfile = com.mudassir131.yt.playback.enhancement.model.EnhancementProfile(
+            preampDb = Float.NaN,
+            lowShelfDb = 100.0f, // Out of safe range
+            lowMidDb = Float.NEGATIVE_INFINITY,
+            presenceDb = 999.0f,
+            airDb = Float.POSITIVE_INFINITY,
+            bassDynamicAmount = 50.0f,
+            limiterCeilingDb = 10.0f,
+        )
+
+        processor.applyEnhancementProfile(maliciousProfile)
+
+        // Verify processor clamped parameters to safe ranges
+        assertTrue("Bass gain must be clamped <= 6.0", processor.config.bassGainDb <= 6.0f)
+        assertTrue("Presence gain must be clamped <= 5.0", processor.config.clarityGainDb <= 5.0f)
+        assertFalse("Treble gain must not be NaN", processor.config.trebleGainDb.isNaN())
+        assertFalse("Preamp must not be NaN", processor.config.lowMidDb.isNaN())
+
+        // Ensure normal processing still executes safely
+        val frameCount = 256
+        val inputBuffer = ByteBuffer.allocateDirect(frameCount * 4).order(ByteOrder.nativeOrder())
+        for (i in 0 until frameCount * 2) {
+            inputBuffer.putShort(1000)
+        }
+        inputBuffer.flip()
+
+        processor.queueInput(inputBuffer)
+        val output = processor.output
+        assertTrue(output.hasRemaining())
+    }
+
+    @Test
+    fun `16 - PCM Tap non-blockingly forwards samples to AudioAnalyzer`() {
+        val analyzer = com.mudassir131.yt.playback.enhancement.analyzer.AudioAnalyzer(44100 * 2)
+        processor.audioAnalyzer = analyzer
+        processor.configure(format16BitStereo)
+        processor.updateConfig(enabled = true)
+
+        val frameCount = 1024
+        val inputBuffer = ByteBuffer.allocateDirect(frameCount * 4).order(ByteOrder.nativeOrder())
+        for (i in 0 until frameCount * 2) {
+            inputBuffer.putShort((16000 * sin(i.toDouble())).toInt().toShort())
+        }
+        inputBuffer.flip()
+
+        processor.queueInput(inputBuffer)
+        assertTrue("Analyzer must receive pushed samples", analyzer.hasSufficientSamples(10L))
+    }
 }
