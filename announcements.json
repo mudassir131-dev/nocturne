@@ -171,5 +171,16 @@
     "title": "",
     "content": "We\u2019re also working on increasing the playlist import limit to up to 10,000 songs. We\u2019ll roll this out once we\u2019re sure it stays stable and scalable under testing.\n\nWe\u2019ve also added Audio Enhancement, which you can configure according to your own taste and listening preference. 🎧🔥",
     "timestamp": 1787837998108
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-4552eba6",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "Hey everyone! ❤️\n\nWe\u2019ve reached 409 downloads on GitHub! 🚀\n\nIf you\u2019re enjoying the app and find it useful, I\u2019d really appreciate it if you could take a moment to ⭐ star the GitHub repository. It helps the project grow and means a lot to me as a developer.\n\nThank you for supporting the project! 🙌",
+    "timestamp": 1787914931354
   }
 ]
