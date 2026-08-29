@@ -88,14 +88,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.mudassir131.yt.LocalPlayerAwareWindowInsets
 import com.mudassir131.yt.R
 import com.mudassir131.yt.models.BroadcastMessage
@@ -691,30 +699,90 @@ private fun BroadcastMessageItem(
 
                         if (message.content.isNotBlank()) {
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = message.content,
-                                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            AnnouncementRichText(
+                                content = message.content,
+                                onUrlClick = onActionClick,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
 
-                        // Attached Media / Image / GIF (Supports local files, Uri, and network URLs)
-                        val mediaUrl = message.imageUrl ?: message.gifUrl
-                        if (!mediaUrl.isNullOrBlank()) {
+                        // Attached Media / Image / GIF (Supports multiple images, GIFs, and markdown embeds)
+                        val mediaList = remember(message.imageUrl, message.gifUrl, message.content) {
+                            val list = mutableListOf<String>()
+                            BroadcastManager.normalizeMediaUrl(message.imageUrl)?.let { list.add(it) }
+                            BroadcastManager.normalizeMediaUrl(message.gifUrl)?.let { if (it !in list) list.add(it) }
+                            val mdImgRegex = Regex("""!\[.*?\]\((https?://[^\s\)]+)\)""")
+                            mdImgRegex.findAll(message.content).forEach { m ->
+                                val url = BroadcastManager.normalizeMediaUrl(m.groupValues[1])
+                                if (url != null && url !in list) list.add(url)
+                            }
+                            list
+                        }
+
+                        if (mediaList.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(10.dp))
-                            Card(
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 260.dp)
-                                    .clickable { onImageClick(mediaUrl) }
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                AsyncImage(
-                                    model = mediaUrl,
-                                    contentDescription = "Announcement Media",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentScale = ContentScale.Crop
-                                )
+                                mediaList.forEach { mediaUrl ->
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .clickable { onImageClick(mediaUrl) }
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(min = 120.dp, max = 280.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            var isImageLoading by remember(mediaUrl) { mutableStateOf(true) }
+                                            var isImageError by remember(mediaUrl) { mutableStateOf(false) }
+
+                                            if (isImageLoading && !isImageError) {
+                                                GoogleLoadingIndicator(size = 28.dp)
+                                            }
+
+                                            if (isImageError) {
+                                                Column(
+                                                    modifier = Modifier.padding(16.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.hide_image),
+                                                        contentDescription = "Image unavailable",
+                                                        tint = MaterialTheme.colorScheme.outline,
+                                                        modifier = Modifier.size(28.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Text(
+                                                        text = "Image unavailable",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                }
+                                            } else {
+                                                AsyncImage(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(mediaUrl)
+                                                        .crossfade(true)
+                                                        .build(),
+                                                    contentDescription = "Announcement Media",
+                                                    onLoading = { isImageLoading = true; isImageError = false },
+                                                    onSuccess = { isImageLoading = false; isImageError = false },
+                                                    onError = { isImageLoading = false; isImageError = true },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -1415,8 +1483,104 @@ private fun formatMessageTimestamp(timestamp: Long): String {
     }
 }
 
+@Composable
+fun AnnouncementRichText(
+    content: String,
+    modifier: Modifier = Modifier,
+    onUrlClick: (String) -> Unit,
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+
+    val annotatedString = remember(content, primaryColor, onSurfaceVariant) {
+        buildAnnotatedString {
+            // Regex to match Markdown links [text](url), HTTP(S) URLs, and bare domains
+            val tokenRegex = Regex(
+                """(\[([^\]]+)\]\((https?://[^\s\)]+)\))|(https?://[^\s]+)|((?:[a-zA-Z0-9-]+\.)+(?:com|org|net|app|io|dev|me|co|in|xyz|gl|be)(?:/[^\s]*)?)"""
+            )
+
+            var currentIndex = 0
+            val matches = tokenRegex.findAll(content).toList()
+
+            for (match in matches) {
+                if (match.range.first > currentIndex) {
+                    val plainSegment = content.substring(currentIndex, match.range.first)
+                    appendStyledText(plainSegment)
+                }
+
+                val mdFull = match.groups[1]?.value
+                val mdTitle = match.groups[2]?.value
+                val mdUrl = match.groups[3]?.value
+                val httpUrl = match.groups[4]?.value
+                val bareDomainUrl = match.groups[5]?.value
+
+                val (displayText, targetUrl) = when {
+                    mdTitle != null && mdUrl != null -> mdTitle to mdUrl
+                    httpUrl != null -> httpUrl to httpUrl
+                    bareDomainUrl != null -> bareDomainUrl to ("https://$bareDomainUrl")
+                    else -> match.value to match.value
+                }
+
+                val start = length
+                append(displayText)
+                val end = length
+
+                val linkAnnotation = LinkAnnotation.Url(
+                    url = targetUrl,
+                    styles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = primaryColor,
+                            fontWeight = FontWeight.SemiBold,
+                            textDecoration = TextDecoration.Underline,
+                        )
+                    ),
+                    linkInteractionListener = {
+                        onUrlClick(targetUrl)
+                    }
+                )
+                addLink(linkAnnotation, start, end)
+
+                currentIndex = match.range.last + 1
+            }
+
+            if (currentIndex < content.length) {
+                appendStyledText(content.substring(currentIndex))
+            }
+        }
+    }
+
+    Text(
+        text = annotatedString,
+        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+        color = onSurfaceVariant,
+        modifier = modifier,
+    )
+}
+
+private fun AnnotatedString.Builder.appendStyledText(text: String) {
+    val boldRegex = Regex("""\*\*(.*?)\*\*""")
+    var curIdx = 0
+    val matches = boldRegex.findAll(text).toList()
+    for (m in matches) {
+        if (m.range.first > curIdx) {
+            append(text.substring(curIdx, m.range.first))
+        }
+        val boldContent = m.groupValues[1]
+        val start = length
+        append(boldContent)
+        val end = length
+        addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, end)
+        curIdx = m.range.last + 1
+    }
+    if (curIdx < text.length) {
+        append(text.substring(curIdx))
+    }
+}
+
 private fun formatTimeOnly(timestamp: Long): String {
     val date = Date(timestamp)
     val formatter = SimpleDateFormat("h:mm a", Locale.getDefault())
     return formatter.format(date)
 }
+
+

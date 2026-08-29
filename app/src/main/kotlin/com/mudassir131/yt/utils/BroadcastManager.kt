@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -106,6 +107,34 @@ object BroadcastManager {
         )
     )
 
+    fun normalizeMediaUrl(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        val trimmed = url.trim()
+
+        // 1. Convert GitHub blob URLs to raw CDN URLs
+        val githubBlobRegex = Regex("""^https?://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)$""", RegexOption.IGNORE_CASE)
+        val match = githubBlobRegex.find(trimmed)
+        if (match != null) {
+            val (owner, repo, branch, path) = match.destructured
+            return "https://raw.githubusercontent.com/$owner/$repo/$branch/$path"
+        }
+
+        // 2. Handle dead local file paths from old announcements on receiving devices
+        if (trimmed.startsWith("file:/data/user/0/") || trimmed.startsWith("file:///data/user/0/")) {
+            val localPath = trimmed.removePrefix("file://").removePrefix("file:")
+            val file = File(localPath)
+            if (file.exists()) {
+                return trimmed
+            }
+            val fileName = localPath.substringAfterLast('/')
+            if (fileName.isNotBlank()) {
+                return "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/$fileName"
+            }
+        }
+
+        return trimmed
+    }
+
     fun showAnnouncementNotification(context: Context, message: BroadcastMessage) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -147,14 +176,19 @@ object BroadcastManager {
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
-        val imageTarget = message.imageUrl ?: message.gifUrl
+        val imageTarget = normalizeMediaUrl(message.imageUrl ?: message.gifUrl)
         if (!imageTarget.isNullOrBlank()) {
             scope.launch(Dispatchers.IO) {
                 val bitmap = runCatching {
-                    if (imageTarget.startsWith("content://") || imageTarget.startsWith("file://")) {
+                    if (imageTarget.startsWith("content://") || imageTarget.startsWith("file://") || imageTarget.startsWith("file:/")) {
                         val uri = Uri.parse(imageTarget)
-                        context.contentResolver.openInputStream(uri)?.use { stream ->
-                            BitmapFactory.decodeStream(stream)
+                        if (imageTarget.startsWith("content://")) {
+                            context.contentResolver.openInputStream(uri)?.use { stream ->
+                                BitmapFactory.decodeStream(stream)
+                            }
+                        } else {
+                            val path = imageTarget.removePrefix("file://").removePrefix("file:")
+                            BitmapFactory.decodeFile(path)
                         }
                     } else {
                         val req = ImageRequest.Builder(context)
@@ -384,8 +418,8 @@ object BroadcastManager {
             authorRole = "App developer",
             title = title.trim(),
             content = content.trim(),
-            imageUrl = imageUrl?.trim()?.takeIf { it.isNotBlank() },
-            gifUrl = gifUrl?.trim()?.takeIf { it.isNotBlank() },
+            imageUrl = normalizeMediaUrl(imageUrl?.trim()?.takeIf { it.isNotBlank() }),
+            gifUrl = normalizeMediaUrl(gifUrl?.trim()?.takeIf { it.isNotBlank() }),
             tag = tag,
             actionText = actionText?.trim()?.takeIf { it.isNotBlank() },
             actionUrl = actionUrl?.trim()?.takeIf { it.isNotBlank() },
@@ -425,6 +459,66 @@ object BroadcastManager {
         }
 
         return runCatching {
+            var publishedImageUrl = normalizeMediaUrl(message.imageUrl)
+            var publishedGifUrl = normalizeMediaUrl(message.gifUrl)
+
+            // If media is a local file on developer device, upload the binary to GitHub broadcast_assets first
+            val mediaTarget = message.imageUrl ?: message.gifUrl
+            if (!mediaTarget.isNullOrBlank() && (mediaTarget.startsWith("file:") || mediaTarget.startsWith("content:"))) {
+                val uri = Uri.parse(mediaTarget)
+                val bytes = runCatching {
+                    if (mediaTarget.startsWith("content:")) {
+                        App.instance.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    } else {
+                        val path = mediaTarget.removePrefix("file://").removePrefix("file:")
+                        File(path).readBytes()
+                    }
+                }.getOrNull()
+
+                if (bytes != null && bytes.isNotEmpty()) {
+                    val isGif = mediaTarget.endsWith(".gif", ignoreCase = true) ||
+                        (bytes.size >= 6 && bytes.take(3).toByteArray().toString(Charsets.US_ASCII) == "GIF")
+                    val ext = when {
+                        isGif -> "gif"
+                        mediaTarget.endsWith(".png", ignoreCase = true) -> "png"
+                        mediaTarget.endsWith(".webp", ignoreCase = true) -> "webp"
+                        else -> "jpg"
+                    }
+                    val fileName = "broadcast_media_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}.$ext"
+                    val assetUploadUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/contents/broadcast_assets/$fileName"
+                    val base64Media = Base64.encodeToString(bytes, Base64.NO_WRAP)
+
+                    val uploadBody = JSONObject().apply {
+                        put("message", "Upload broadcast media asset: $fileName")
+                        put("content", base64Media)
+                        put("branch", "main")
+                    }
+
+                    val uploadResp = client.put(assetUploadUrl) {
+                        header("Authorization", authHeaderVal)
+                        header("Accept", "application/vnd.github+json")
+                        header("User-Agent", "Nocturne-Android")
+                        header("X-GitHub-Api-Version", "2022-11-28")
+                        contentType(ContentType.Application.Json)
+                        setBody(uploadBody.toString())
+                    }
+
+                    if (uploadResp.status.value in 200..299) {
+                        val rawCdnUrl = "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/$fileName"
+                        if (isGif || message.gifUrl != null) {
+                            publishedGifUrl = rawCdnUrl
+                        } else {
+                            publishedImageUrl = rawCdnUrl
+                        }
+                    }
+                }
+            }
+
+            val finalMessage = message.copy(
+                imageUrl = publishedImageUrl,
+                gifUrl = publishedGifUrl
+            )
+
             val repoUrl = "https://api.github.com/repos/mudassir131-dev/nocturne/contents/announcements.json"
             val getResponse = client.get(repoUrl) {
                 header("Authorization", authHeaderVal)
@@ -449,7 +543,7 @@ object BroadcastManager {
                 }
             }
 
-            val allMessages = (listOf(message) + remoteList + _messages.value)
+            val allMessages = (listOf(finalMessage) + remoteList + _messages.value)
                 .distinctBy { it.id }
                 .sortedBy { it.timestamp }
 
@@ -458,7 +552,7 @@ object BroadcastManager {
             val base64Content = Base64.encodeToString(jsonString.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
 
             val putBody = JSONObject().apply {
-                put("message", "Broadcast: ${message.title.ifBlank { message.content.take(30) }}")
+                put("message", "Broadcast: ${finalMessage.title.ifBlank { finalMessage.content.take(30) }}")
                 put("content", base64Content)
                 if (!currentSha.isNullOrBlank()) {
                     put("sha", currentSha)
@@ -649,6 +743,8 @@ object BroadcastManager {
             timeZone = TimeZone.getTimeZone("UTC")
         }
 
+        val markdownImageRegex = Regex("""!\[.*?\]\((https?://[^\s\)]+)\)""")
+
         for (i in 0 until jsonArray.length()) {
             val issue = jsonArray.getJSONObject(i)
             // Skip pull requests
@@ -681,6 +777,9 @@ object BroadcastManager {
 
             val userReactions = userReactionsMap[issueId] ?: emptySet()
 
+            // Extract markdown image from body if present
+            val extractedImageUrl = markdownImageRegex.find(body)?.groupValues?.getOrNull(1)
+
             list.add(
                 BroadcastMessage(
                     id = issueId,
@@ -689,6 +788,7 @@ object BroadcastManager {
                     isVerified = true,
                     title = title,
                     content = body,
+                    imageUrl = normalizeMediaUrl(extractedImageUrl),
                     tag = BroadcastTag.ANNOUNCEMENT,
                     timestamp = time,
                     reactions = reactionsMap,
@@ -705,6 +805,8 @@ object BroadcastManager {
     ): List<BroadcastMessage> {
         val jsonArray = JSONArray(jsonStr)
         val list = mutableListOf<BroadcastMessage>()
+        val markdownImageRegex = Regex("""!\[.*?\]\((https?://[^\s\)]+)\)""")
+
         for (i in 0 until jsonArray.length()) {
             val obj = jsonArray.getJSONObject(i)
             val id = obj.optString("id", UUID.randomUUID().toString())
@@ -722,6 +824,23 @@ object BroadcastManager {
             }
 
             val userReactions = userReactionsMap[id] ?: emptySet()
+            val contentStr = obj.optString("content", "")
+
+            var imgUrl = if (obj.has("imageUrl")) obj.optString("imageUrl") else null
+            var gifUrl = if (obj.has("gifUrl")) obj.optString("gifUrl") else null
+
+            // If imageUrl is empty, try extracting markdown image from content
+            if (imgUrl.isNullOrBlank() && gifUrl.isNullOrBlank()) {
+                val match = markdownImageRegex.find(contentStr)
+                if (match != null) {
+                    val extracted = match.groupValues[1]
+                    if (extracted.endsWith(".gif", ignoreCase = true)) {
+                        gifUrl = extracted
+                    } else {
+                        imgUrl = extracted
+                    }
+                }
+            }
 
             list.add(
                 BroadcastMessage(
@@ -730,9 +849,9 @@ object BroadcastManager {
                     authorRole = obj.optString("authorRole", "App developer"),
                     isVerified = obj.optBoolean("isVerified", true),
                     title = obj.optString("title", ""),
-                    content = obj.optString("content", ""),
-                    imageUrl = if (obj.has("imageUrl")) obj.optString("imageUrl") else null,
-                    gifUrl = if (obj.has("gifUrl")) obj.optString("gifUrl") else null,
+                    content = contentStr,
+                    imageUrl = normalizeMediaUrl(imgUrl),
+                    gifUrl = normalizeMediaUrl(gifUrl),
                     tag = tag,
                     actionText = if (obj.has("actionText")) obj.optString("actionText") else null,
                     actionUrl = if (obj.has("actionUrl")) obj.optString("actionUrl") else null,
