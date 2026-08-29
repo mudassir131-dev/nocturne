@@ -318,5 +318,17 @@
     "title": "",
     "content": "",
     "timestamp": 1788022770132
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1788023128021_4d2856.jpg",
+    "reactions": {},
+    "id": "msg-b5195d6f",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "🎵 How to Import Your Spotify Playlist\n\nFollow these simple steps to import your Spotify playlist into the app:\n\n1. Copy your Spotify playlist link from Spotify.\n\n2. Open the Spotify Playlist Exporter:\n   https://www.chosic.com/spotify-playlist-exporter/\n\n3. Paste your Spotify playlist link on the website and export it as a CSV file.\n\n4. Download the CSV file to your device.\n\n5. Now, come back to the app and go to Settings → Backup & Restore.\n\n6. Select Import CSV File and choose the CSV file you downloaded.\n\n7. Enter the name you want for your playlist.\n\n8. Press Import/OK to start the import process.\n\n9. Once the import is complete, head over to your Library and you'll find your Spotify playlist there.\n\nAnd that's it! Your Spotify playlist is now imported and ready to enjoy. 🎶",
+    "timestamp": 1788023128001
   }
 ]
