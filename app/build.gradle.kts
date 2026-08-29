@@ -44,8 +44,8 @@ android {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
         targetSdk = 36
-        versionCode = 40
-        versionName = "2.22.29"
+        versionCode = 41
+        versionName = "2.22.30"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -66,6 +66,15 @@ android {
                 ?: System.getenv("TOGETHER_BEARER_TOKEN")
                 ?: ""
         buildConfigField("String", "TOGETHER_BEARER_TOKEN", "\"$togetherBearerToken\"")
+
+        // Optional default for Spotify → YouTube match accuracy. Read-only search.list / videos.list,
+        // no OAuth. Left empty in public builds: a shipped key's shared 10,000 units/day would be
+        // extracted from the APK and drained, so users are pointed at Settings to supply their own.
+        val youtubeDataApiKey =
+            localProperties.getProperty("YOUTUBE_DATA_API_KEY")
+                ?: System.getenv("YOUTUBE_DATA_API_KEY")
+                ?: ""
+        buildConfigField("String", "YOUTUBE_DATA_API_KEY", "\"$youtubeDataApiKey\"")
     }
 
     flavorDimensions += "abi"

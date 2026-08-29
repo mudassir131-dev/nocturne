@@ -60,13 +60,18 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🚀 What's New in v2.22.29
+    const val GenericReleaseNotes = """### 🎵 What's New in This Update
 
-* **GitHub Developer Console Security Hardening**: Strict zero-embedded credential architecture, runtime-only developer token input, and immediate token purging on developer session exit.
-* **Chronological Announcements & Smart Chat Ordering**: Fixed message ordering bugs so announcements always render chronologically with intelligent auto-scroll and interactive "New announcement" jump indicators.
-* **Vivo & iQOO Force 90/120Hz Stability & Crash Shield**: Completely redesigned refresh-rate engine with device-aware safeguards, strict resolution-matching display mode filtering, and graceful fallbacks preventing crashes across Android 11 to 16.
-* **Production Security Hardening**: Tightened Android exported components and release obfuscation.
-* **Instant Zero-Cache Live Announcements**: Instantaneous real-time announcement delivery using direct GitHub Contents API with zero CDN cache delay."""
+* **Spotify Playlist Import Fixed** — Spotify playlist importing has been significantly improved and can now handle playlists with up to 1,000 songs reliably.
+* **YouTube / YouTube Music Playlist Import** — Import large YouTube and YouTube Music playlists with support for up to 5,000 songs.
+* **Spotify & YouTube Import Workflows Separated** — Both platforms now use dedicated import flows for better reliability, accuracy, and easier troubleshooting.
+* **AI Audio Enhancement** — Added AI-powered audio enhancement to improve the overall listening experience.
+* **BYOK Gemini Support** — You can now use Bring Your Own Key (BYOK) by adding your own Google Gemini API key for AI audio enhancement.
+* **Stereo Audio Enhancement** — Added enhanced stereo processing for a wider and more immersive soundstage.
+* **Audio Processing Improvements** — Improved the audio enhancement pipeline for cleaner, more controlled processing while preserving the original listening experience.
+* **Crash Bug Fixes** — Fixed multiple crash-related issues and improved stability across playlist importing, audio processing, and other app flows.
+* **Import Reliability Improvements** — Improved large playlist processing, pagination, matching, and error handling to reduce incomplete or inconsistent imports.
+* **Performance & Stability** — General performance improvements and stability fixes across the app."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
