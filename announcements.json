@@ -270,5 +270,34 @@
     "title": "",
     "content": "youtube importation is working so users can import their playlist with 5000 songs.",
     "timestamp": 1788005089919
+  },
+  {
+    "actionText": "Open Check for Update",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "actionUrl": "nocturne://settings/update",
+    "reactions": {
+      "🔥": 342,
+      "🚀": 256,
+      "💯": 95,
+      "❤️": 189
+    },
+    "id": "msg-update-02",
+    "tag": "UPDATE",
+    "title": "Check for Update & Android 16 Loading Icon! ✨",
+    "content": "We have added a brand new dedicated **'Check for Update'** screen in Settings with real-time GitHub Releases integration and the iconic **Android 16 / Pixel Material 3 Expressive morphing flower loader**!\n\nMake sure to check it out in Settings -> Check for update.",
+    "timestamp": 1788014762712
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-f7d43b0b",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "fixed with alternative importation!",
+    "timestamp": 1788021467937
   }
 ]
