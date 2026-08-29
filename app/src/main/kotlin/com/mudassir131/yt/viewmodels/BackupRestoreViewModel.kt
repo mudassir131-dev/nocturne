@@ -520,6 +520,8 @@ class BackupRestoreViewModel @Inject constructor(
             .replace(" ", "")
             .replace("_", "")
             .replace("-", "")
+            .replace("(", "")
+            .replace(")", "")
 
     suspend fun importPlaylistFromCsv(context: Context, uri: Uri): ArrayList<Song> {
         val songs =
@@ -536,9 +538,9 @@ class BackupRestoreViewModel @Inject constructor(
                         val normalizedHeader = firstRecord.map(::normalizeCsvHeaderCell)
 
                         val titleIndex =
-                            normalizedHeader.indexOfFirst { it == "title" || it == "tracktitle" || it == "songtitle" }
+                            normalizedHeader.indexOfFirst { it == "title" || it == "tracktitle" || it == "songtitle" || it == "trackname" || it == "name" }
                         val artistIndex =
-                            normalizedHeader.indexOfFirst { it == "artist" || it == "artists" || it == "artistname" }
+                            normalizedHeader.indexOfFirst { it == "artist" || it == "artists" || it == "artistname" || it == "artistnames" || it.startsWith("artist") }
 
                         val hasHeader = titleIndex >= 0 && artistIndex >= 0
                         val resolvedTitleIndex = if (hasHeader) titleIndex else 0
