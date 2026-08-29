@@ -259,5 +259,16 @@
     "title": "",
     "content": "for Spotify importation wait for fix in the next update.",
     "timestamp": 1788005043931
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-c68d1529",
+    "tag": "HOTFIX",
+    "title": "",
+    "content": "youtube importation is working so users can import their playlist with 5000 songs.",
+    "timestamp": 1788005089919
   }
 ]
