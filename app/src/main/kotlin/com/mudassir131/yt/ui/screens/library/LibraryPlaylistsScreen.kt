@@ -322,12 +322,14 @@ fun LibraryPlaylistsScreen(
     var showChoiceDialog by rememberSaveable { mutableStateOf(false) }
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var showImportPlaylistDialog by rememberSaveable { mutableStateOf(false) }
+    var showImportSpotifyPlaylistDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showChoiceDialog) {
         com.mudassir131.yt.ui.component.PlaylistActionChoiceDialog(
             onDismiss = { showChoiceDialog = false },
             onCreateClick = { showCreatePlaylistDialog = true },
-            onImportClick = { showImportPlaylistDialog = true }
+            onImportYouTubeClick = { showImportPlaylistDialog = true },
+            onImportSpotifyClick = { showImportSpotifyPlaylistDialog = true }
         )
     }
 
@@ -342,6 +344,12 @@ fun LibraryPlaylistsScreen(
     if (showImportPlaylistDialog) {
         com.mudassir131.yt.ui.component.PlaylistImportDialog(
             onDismiss = { showImportPlaylistDialog = false }
+        )
+    }
+
+    if (showImportSpotifyPlaylistDialog) {
+        com.mudassir131.yt.ui.component.SpotifyPlaylistImportDialog(
+            onDismiss = { showImportSpotifyPlaylistDialog = false }
         )
     }
 

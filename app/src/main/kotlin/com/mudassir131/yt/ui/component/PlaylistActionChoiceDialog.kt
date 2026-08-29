@@ -26,7 +26,8 @@ import com.mudassir131.yt.R
 fun PlaylistActionChoiceDialog(
     onDismiss: () -> Unit,
     onCreateClick: () -> Unit,
-    onImportClick: () -> Unit
+    onImportYouTubeClick: () -> Unit,
+    onImportSpotifyClick: () -> Unit
 ) {
     DefaultDialog(
         onDismiss = onDismiss,
@@ -64,7 +65,7 @@ fun PlaylistActionChoiceDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        onImportClick()
+                        onImportYouTubeClick()
                         onDismiss()
                     }
                     .padding(vertical = 16.dp, horizontal = 24.dp),
@@ -77,7 +78,29 @@ fun PlaylistActionChoiceDialog(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Import Playlist",
+                    text = "Import YouTube / YT Music Playlist",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onImportSpotifyClick()
+                        onDismiss()
+                    }
+                    .padding(vertical = 16.dp, horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.playlist_import),
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Import Spotify Playlist",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )

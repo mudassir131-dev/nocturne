@@ -22,30 +22,34 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun PlaylistImportDialog(
+fun SpotifyPlaylistImportDialog(
     onDismiss: () -> Unit
 ) {
     val database = LocalDatabase.current
     val context = LocalContext.current
 
     TextFieldDialog(
-        icon = { Icon(painter = painterResource(R.drawable.add), contentDescription = null) },
-        title = { Text(text = "Import Playlist") },
+        icon = { Icon(painter = painterResource(R.drawable.playlist_import), contentDescription = null) },
+        title = { Text(text = "Import Spotify Playlist") },
         initialTextFieldValue = TextFieldValue(""),
-        placeholder = { Text(text = "Paste Spotify, Apple Music, or YouTube link") },
+        placeholder = { Text(text = "Paste Spotify Playlist URL") },
         onDismiss = onDismiss,
         onDone = { url ->
-            Toast.makeText(context, "Importing playlist in the background...", Toast.LENGTH_SHORT).show()
+            val trimmed = url.trim()
+            if (!trimmed.contains("spotify.com/playlist") && !trimmed.contains("spotify.link")) {
+                Toast.makeText(context, "Please enter a valid Spotify playlist link", Toast.LENGTH_SHORT).show()
+                return@TextFieldDialog
+            }
+            val appContext = context.applicationContext
+            Toast.makeText(appContext, "Importing Spotify playlist in the background...", Toast.LENGTH_SHORT).show()
             CoroutineScope(Dispatchers.IO).launch {
-                // Only the Spotify path reports a match tally; YouTube and Apple Music leave this null
-                // and keep the plain "Successfully imported" message they have always shown.
                 var summary: ImportSummary? = null
-                val result = PlaylistImporter.importPlaylist(database, url) { summary = it }
+                val result = PlaylistImporter.importPlaylist(database, trimmed) { summary = it }
                 withContext(Dispatchers.Main) {
                     result.onSuccess { playlistName ->
                         val reported = summary
                         val message = if (reported != null) {
-                            context.getString(
+                            appContext.getString(
                                 R.string.import_summary,
                                 playlistName,
                                 reported.matched,
@@ -54,12 +58,12 @@ fun PlaylistImportDialog(
                         } else {
                             "Successfully imported: $playlistName"
                         }
-                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        Toast.makeText(appContext, message, Toast.LENGTH_LONG).show()
                         reported?.quotaNotice?.let { notice ->
-                            Toast.makeText(context, notice, Toast.LENGTH_LONG).show()
+                            Toast.makeText(appContext, notice, Toast.LENGTH_LONG).show()
                         }
                     }.onFailure { error ->
-                        Toast.makeText(context, "Import failed: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(appContext, "Import failed: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
                 }
             }
