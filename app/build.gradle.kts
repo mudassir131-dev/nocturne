@@ -44,8 +44,8 @@ android {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
         targetSdk = 36
-        versionCode = 41
-        versionName = "2.22.30"
+        versionCode = 42
+        versionName = "2.22.31"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -75,6 +75,18 @@ android {
                 ?: System.getenv("YOUTUBE_DATA_API_KEY")
                 ?: ""
         buildConfigField("String", "YOUTUBE_DATA_API_KEY", "\"$youtubeDataApiKey\"")
+
+        val spotifyClientId =
+            localProperties.getProperty("SPOTIFY_CLIENT_ID")
+                ?: System.getenv("SPOTIFY_CLIENT_ID")
+                ?: ""
+        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$spotifyClientId\"")
+
+        val spotifyClientSecret =
+            localProperties.getProperty("SPOTIFY_CLIENT_SECRET")
+                ?: System.getenv("SPOTIFY_CLIENT_SECRET")
+                ?: ""
+        buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"$spotifyClientSecret\"")
     }
 
     flavorDimensions += "abi"

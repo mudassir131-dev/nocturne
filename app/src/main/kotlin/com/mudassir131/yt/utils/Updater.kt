@@ -60,18 +60,14 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in This Update
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.31
 
-* **Spotify Playlist Import Fixed** — Spotify playlist importing has been significantly improved and can now handle playlists with up to 1,000 songs reliably.
-* **YouTube / YouTube Music Playlist Import** — Import large YouTube and YouTube Music playlists with support for up to 5,000 songs.
-* **Spotify & YouTube Import Workflows Separated** — Both platforms now use dedicated import flows for better reliability, accuracy, and easier troubleshooting.
-* **AI Audio Enhancement** — Added AI-powered audio enhancement to improve the overall listening experience.
-* **BYOK Gemini Support** — You can now use Bring Your Own Key (BYOK) by adding your own Google Gemini API key for AI audio enhancement.
-* **Stereo Audio Enhancement** — Added enhanced stereo processing for a wider and more immersive soundstage.
-* **Audio Processing Improvements** — Improved the audio enhancement pipeline for cleaner, more controlled processing while preserving the original listening experience.
-* **Crash Bug Fixes** — Fixed multiple crash-related issues and improved stability across playlist importing, audio processing, and other app flows.
-* **Import Reliability Improvements** — Improved large playlist processing, pagination, matching, and error handling to reduce incomplete or inconsistent imports.
-* **Performance & Stability** — General performance improvements and stability fixes across the app."""
+* **CSV Playlist Import** — Import custom playlists from CSV files with automatic metadata matching and real-time progress.
+* **Spotify Playlist Import via Link (Max 100)** — Added dedicated Spotify playlist import supporting up to 100 tracks directly via playlist link.
+* **YouTube & YT Music Playlist Import** — Reliable large playlist import for YouTube and YouTube Music.
+* **Developer Console & Announcement Delivery** — Fixed media uploads with direct GitHub CDN storage, interactive Markdown links, domain recognition, and rich media viewers.
+* **Library UI & Navigation Polish** — Streamlined top header with single Settings action, dedicated bottom-right floating action button, fixed secondary filter spacing on Songs screen, and eliminated pull-to-refresh scroll jitter.
+* **Audio Enhancement & Core Stability** — AI-powered audio processing refinements, BYOK Gemini support, and overall app performance optimizations."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
