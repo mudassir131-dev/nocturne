@@ -37,6 +37,8 @@ import com.mudassir131.yt.ui.component.PreferenceGroupTitle
 import com.mudassir131.yt.constants.ListenBrainzEnabledKey
 import com.mudassir131.yt.constants.ListenBrainzTokenKey
 import com.mudassir131.yt.constants.SpotifyUseDataApiMatchingKey
+import com.mudassir131.yt.constants.SpotifyClientIdKey
+import com.mudassir131.yt.constants.SpotifyClientSecretKey
 import com.mudassir131.yt.constants.YouTubeDataApiKeyKey
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.InfoLabel
@@ -62,8 +64,13 @@ fun IntegrationScreen(
     val (youtubeDataApiKey, onYouTubeDataApiKeyChange) = rememberPreference(YouTubeDataApiKeyKey, "")
     val (spotifyUseDataApi, onSpotifyUseDataApiChange) = rememberPreference(SpotifyUseDataApiMatchingKey, true)
 
+    val (spotifyClientId, onSpotifyClientIdChange) = rememberPreference(SpotifyClientIdKey, "")
+    val (spotifyClientSecret, onSpotifyClientSecretChange) = rememberPreference(SpotifyClientSecretKey, "")
+
     var showListenBrainzTokenEditor = remember { mutableStateOf(false) }
     val showYouTubeDataApiKeyEditor = remember { mutableStateOf(false) }
+    val showSpotifyClientIdEditor = remember { mutableStateOf(false) }
+    val showSpotifyClientSecretEditor = remember { mutableStateOf(false) }
 
     // Read-only view of today's spend; the ledger resets on Google's Pacific-time quota boundary.
     val quotaUsed by produceState(initialValue = -1, youtubeDataApiKey, showYouTubeDataApiKeyEditor.value) {
@@ -118,6 +125,40 @@ fun IntegrationScreen(
             title = { Text(if (listenBrainzToken.isBlank()) stringResource(R.string.set_listenbrainz_token) else stringResource(R.string.edit_listenbrainz_token)) },
             icon = { Icon(painterResource(R.drawable.token), null) },
             onClick = { showListenBrainzTokenEditor.value = true },
+        )
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.spotify_api_integration),
+        )
+
+        PreferenceEntry(
+            title = {
+                Text(
+                    if (spotifyClientId.isBlank()) {
+                        stringResource(R.string.set_spotify_client_id)
+                    } else {
+                        stringResource(R.string.edit_spotify_client_id)
+                    }
+                )
+            },
+            description = stringResource(R.string.spotify_client_id_description),
+            icon = { Icon(painterResource(R.drawable.token), null) },
+            onClick = { showSpotifyClientIdEditor.value = true },
+        )
+
+        PreferenceEntry(
+            title = {
+                Text(
+                    if (spotifyClientSecret.isBlank()) {
+                        stringResource(R.string.set_spotify_client_secret)
+                    } else {
+                        stringResource(R.string.edit_spotify_client_secret)
+                    }
+                )
+            },
+            description = stringResource(R.string.spotify_client_secret_description),
+            icon = { Icon(painterResource(R.drawable.token), null) },
+            onClick = { showSpotifyClientSecretEditor.value = true },
         )
 
         PreferenceGroupTitle(
@@ -187,6 +228,40 @@ fun IntegrationScreen(
             },
             extraContent = {
                 InfoLabel(text = stringResource(R.string.listenbrainz_scrobbling_description))
+            }
+        )
+    }
+
+    if (showSpotifyClientIdEditor.value) {
+        TextFieldDialog(
+            initialTextFieldValue = androidx.compose.ui.text.input.TextFieldValue(spotifyClientId),
+            onDone = { data ->
+                onSpotifyClientIdChange(data.trim())
+                showSpotifyClientIdEditor.value = false
+            },
+            onDismiss = { showSpotifyClientIdEditor.value = false },
+            singleLine = true,
+            maxLines = 1,
+            isInputValid = { true },
+            extraContent = {
+                InfoLabel(text = stringResource(R.string.spotify_client_id_description))
+            }
+        )
+    }
+
+    if (showSpotifyClientSecretEditor.value) {
+        TextFieldDialog(
+            initialTextFieldValue = androidx.compose.ui.text.input.TextFieldValue(spotifyClientSecret),
+            onDone = { data ->
+                onSpotifyClientSecretChange(data.trim())
+                showSpotifyClientSecretEditor.value = false
+            },
+            onDismiss = { showSpotifyClientSecretEditor.value = false },
+            singleLine = true,
+            maxLines = 1,
+            isInputValid = { true },
+            extraContent = {
+                InfoLabel(text = stringResource(R.string.spotify_client_secret_description))
             }
         )
     }

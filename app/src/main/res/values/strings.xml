@@ -548,6 +548,14 @@ Nocturne will only extract your token, and everything else is stored locally.</s
     <string name="spotify_data_api_matching_description">Match imported Spotify tracks with the Data API while the daily quota lasts, then continue with YouTube Music search</string>
     <string name="youtube_data_api_quota_used">Quota today: %1$d / %2$d units</string>
     <string name="import_summary">Imported %1$s: %2$d matched, %3$d need review</string>
+    <!-- Spotify API Integration -->
+    <string name="spotify_api_integration">Spotify API</string>
+    <string name="set_spotify_client_id">Set Spotify Client ID</string>
+    <string name="edit_spotify_client_id">Edit Spotify Client ID</string>
+    <string name="spotify_client_id_description">Optional. A free Spotify Developer App Client ID allows unlimited playlist imports of any length. Leave blank to use web extraction.</string>
+    <string name="set_spotify_client_secret">Set Spotify Client Secret</string>
+    <string name="edit_spotify_client_secret">Edit Spotify Client Secret</string>
+    <string name="spotify_client_secret_description">Spotify Developer App client secret paired with your Client ID.</string>
     <!-- Discord activity customization -->
     <string name="discord_activity_name">Activity name</string>
     <string name="discord_activity_details">Activity details</string>

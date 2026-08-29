@@ -117,6 +117,10 @@ val YouTubeDataApiKeyKey = stringPreferencesKey("youtubeDataApiKey")
 val SpotifyUseDataApiMatchingKey = booleanPreferencesKey("spotifyUseDataApiMatching")
 val SpotifyMatchConfidenceThresholdKey = floatPreferencesKey("spotifyMatchConfidenceThreshold")
 
+// Spotify API credentials for unlimited playlist import
+val SpotifyClientIdKey = stringPreferencesKey("spotifyClientId")
+val SpotifyClientSecretKey = stringPreferencesKey("spotifyClientSecret")
+
 enum class AudioQuality {
     SAAVN,
     OPUS,

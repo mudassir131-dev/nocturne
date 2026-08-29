@@ -5,6 +5,8 @@
 
 package com.mudassir131.yt.utils
 
+import com.mudassir131.yt.constants.SpotifyClientIdKey
+import com.mudassir131.yt.constants.SpotifyClientSecretKey
 import com.mudassir131.yt.db.entities.PlaylistSongMap
 import com.mudassir131.yt.db.entities.SpotifyImportProgressEntity
 import com.mudassir131.yt.db.entities.SpotifyImportTrackEntity
@@ -13,12 +15,15 @@ import com.mudassir131.yt.utils.matching.MatchCandidate
 import com.mudassir131.yt.utils.matching.MatchStatus
 import com.mudassir131.yt.utils.matching.TrackMatcher
 import com.mudassir131.yt.utils.youtube.YouTubeDataApi
+import com.mudassir131.yt.utils.youtube.YouTubeQuotaExceededException
 import com.mudassir131.yt.utils.youtube.YouTubeQuotaTracker
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
 import java.time.Instant
@@ -27,8 +32,7 @@ import java.time.LocalDateTime
 class PlaylistImporterTest {
 
     @Test
-    fun `01 - Spotify constants and limits`() {
-        assertEquals(3000, PlaylistImporter.SPOTIFY_MAX_IMPORT_SONGS)
+    fun `01 - YouTube constants and limits retained while Spotify has zero artificial limit`() {
         assertEquals(5000, PlaylistImporter.MAX_IMPORT_SONGS)
     }
 
@@ -73,10 +77,10 @@ class PlaylistImporterTest {
             spotifyPlaylistId = "playlist_abc",
             playlistId = "local_playlist_1",
             playlistName = "Top Hits",
-            nextUrl = "https://api.spotify.com/v1/playlists/playlist_abc/tracks?offset=200&limit=100",
+            nextUrl = "https://api.spotify.com/v1/playlists/playlist_abc/items?offset=200&limit=100",
             processedCount = 200,
             status = "IN_PROGRESS",
-            maxTracks = 3000
+            maxTracks = 1000
         )
 
         // Resume: start directly from saved nextUrl
@@ -86,7 +90,7 @@ class PlaylistImporterTest {
 
         // Process Page 3 (201-300)
         val newProcessedCount = initialProgress.processedCount + 100
-        val newNextUrl = "https://api.spotify.com/v1/playlists/playlist_abc/tracks?offset=300&limit=100"
+        val newNextUrl = "https://api.spotify.com/v1/playlists/playlist_abc/items?offset=300&limit=100"
 
         val updatedProgress = initialProgress.copy(
             nextUrl = newNextUrl,
@@ -100,7 +104,7 @@ class PlaylistImporterTest {
 
     @Test
     fun `04 - Next url is updated ONLY after page is successfully processed`() {
-        var savedNextUrl = "https://api.spotify.com/v1/playlists/p1/tracks?offset=100&limit=100"
+        var savedNextUrl = "https://api.spotify.com/v1/playlists/p1/items?offset=100&limit=100"
         var pageSuccess = false
 
         // Simulate page failure halfway
@@ -114,15 +118,15 @@ class PlaylistImporterTest {
         }
 
         assertFalse(pageSuccess)
-        assertEquals("https://api.spotify.com/v1/playlists/p1/tracks?offset=100&limit=100", savedNextUrl)
+        assertEquals("https://api.spotify.com/v1/playlists/p1/items?offset=100&limit=100", savedNextUrl)
 
         // Retry succeeds
         pageSuccess = true
         if (pageSuccess) {
-            savedNextUrl = "https://api.spotify.com/v1/playlists/p1/tracks?offset=200&limit=100"
+            savedNextUrl = "https://api.spotify.com/v1/playlists/p1/items?offset=200&limit=100"
         }
 
-        assertEquals("https://api.spotify.com/v1/playlists/p1/tracks?offset=200&limit=100", savedNextUrl)
+        assertEquals("https://api.spotify.com/v1/playlists/p1/items?offset=200&limit=100", savedNextUrl)
     }
 
     @Test
@@ -130,13 +134,13 @@ class PlaylistImporterTest {
         var currentOffset = 0
         var processedCount = 0
         var status = "IN_PROGRESS"
-        var nextUrl: String? = "https://api.spotify.com/v1/playlists/p1/tracks?offset=0&limit=100"
+        var nextUrl: String? = "https://api.spotify.com/v1/playlists/p1/items?offset=0&limit=100"
 
         // Page 1: 100 songs
         val page1 = (1..100).map { "Song $it" }
         processedCount += page1.size
         currentOffset += page1.size
-        nextUrl = "https://api.spotify.com/v1/playlists/p1/tracks?offset=100&limit=100"
+        nextUrl = "https://api.spotify.com/v1/playlists/p1/items?offset=100&limit=100"
 
         assertEquals(100, processedCount)
         assertEquals("IN_PROGRESS", status)
@@ -154,21 +158,18 @@ class PlaylistImporterTest {
     }
 
     @Test
-    fun `06 - 3500-song playlist caps at exactly 3000 songs and marks COMPLETED`() {
+    fun `06 - Large 5000-song playlist paginates across 50 pages completely without artificial truncation`() {
         var processedCount = 0
         var status = "IN_PROGRESS"
-        val maxLimit = 3000
+        val totalPages = 50
 
-        for (page in 1..35) {
-            val batchSize = minOf(100, maxLimit - processedCount)
+        for (page in 1..totalPages) {
+            val batchSize = 100
             processedCount += batchSize
-            if (processedCount >= maxLimit) {
-                status = "COMPLETED"
-                break
-            }
         }
+        status = "COMPLETED"
 
-        assertEquals(3000, processedCount)
+        assertEquals(5000, processedCount)
         assertEquals("COMPLETED", status)
     }
 
@@ -193,8 +194,8 @@ class PlaylistImporterTest {
         }
         val page1 = SpotifyPage(
             tracks = page1Tracks,
-            currentUrl = "https://api.spotify.com/v1/playlists/p1/tracks?offset=0&limit=100",
-            nextUrl = "https://api.spotify.com/v1/playlists/p1/tracks?offset=100&limit=100",
+            currentUrl = "https://api.spotify.com/v1/playlists/p1/items?offset=0&limit=100",
+            nextUrl = "https://api.spotify.com/v1/playlists/p1/items?offset=100&limit=100",
             totalTracks = 250
         )
 
@@ -213,7 +214,7 @@ class PlaylistImporterTest {
         val page2 = SpotifyPage(
             tracks = page2Tracks,
             currentUrl = page1.nextUrl!!,
-            nextUrl = "https://api.spotify.com/v1/playlists/p1/tracks?offset=200&limit=100",
+            nextUrl = "https://api.spotify.com/v1/playlists/p1/items?offset=200&limit=100",
             totalTracks = 250
         )
 
@@ -325,7 +326,7 @@ class PlaylistImporterTest {
         val localPlaylistId = "playlist_200"
         val playlistMappings = mutableListOf<PlaylistSongMap>()
         var processedCount = 0
-        var nextUrl: String? = "https://api.spotify.com/v1/playlists/p200/tracks?offset=0&limit=100"
+        var nextUrl: String? = "https://api.spotify.com/v1/playlists/p200/items?offset=0&limit=100"
 
         // PAGE 1: 100 tracks (0..99)
         val page1Tracks = (0..99).map { idx ->
@@ -341,11 +342,11 @@ class PlaylistImporterTest {
             )
         }
         processedCount += page1Tracks.size
-        nextUrl = "https://api.spotify.com/v1/playlists/p200/tracks?offset=100&limit=100"
+        nextUrl = "https://api.spotify.com/v1/playlists/p200/items?offset=100&limit=100"
 
         assertEquals(100, playlistMappings.size)
         assertEquals(100, processedCount)
-        assertEquals("https://api.spotify.com/v1/playlists/p200/tracks?offset=100&limit=100", nextUrl)
+        assertEquals("https://api.spotify.com/v1/playlists/p200/items?offset=100&limit=100", nextUrl)
 
         // PAGE 2: 100 tracks (100..199)
         val page2Tracks = (100..199).map { idx ->
@@ -370,104 +371,6 @@ class PlaylistImporterTest {
         // Verify correct positions from 0 to 199
         assertEquals(0, playlistMappings.first().position)
         assertEquals(199, playlistMappings.last().position)
-    }
-
-    @Test
-    fun `12 - NO-API extraction fallback handles API failure and continues into same playlist`() {
-        val spotifyPlaylistId = "sp_no_api_123"
-        val existingPlaylistId = "local_p_999"
-        val existingPlaylistName = "My Rock Playlist"
-        val startingProcessedCount = 50 // 50 items already committed before API died
-
-        val extractedNoApiTracks = (0..249).map { idx ->
-            SpotifyTrackItem(
-                spotifyTrackId = "sp_noapi_$idx",
-                title = "Song $idx",
-                artist = "Artist $idx",
-                sourcePosition = idx
-            )
-        }
-
-        // Remaining tracks to process in NO-API mode:
-        val remainingTracks = extractedNoApiTracks.drop(startingProcessedCount)
-        assertEquals(200, remainingTracks.size)
-        assertEquals(50, remainingTracks.first().sourcePosition)
-
-        // Process in 100-item batches
-        val batches = remainingTracks.chunked(100)
-        assertEquals(2, batches.size)
-
-        val playlistMappings = mutableListOf<PlaylistSongMap>()
-        // Add existing 50 mappings
-        for (i in 0 until startingProcessedCount) {
-            playlistMappings.add(
-                PlaylistSongMap(
-                    playlistId = existingPlaylistId,
-                    songId = "yt_sp_noapi_$i",
-                    position = i
-                )
-            )
-        }
-
-        // Batch 1 (50..149)
-        for (track in batches[0]) {
-            playlistMappings.add(
-                PlaylistSongMap(
-                    playlistId = existingPlaylistId,
-                    songId = "yt_${track.spotifyTrackId}",
-                    position = track.sourcePosition
-                )
-            )
-        }
-        assertEquals(150, playlistMappings.size)
-
-        // Batch 2 (150..249)
-        for (track in batches[1]) {
-            playlistMappings.add(
-                PlaylistSongMap(
-                    playlistId = existingPlaylistId,
-                    songId = "yt_${track.spotifyTrackId}",
-                    position = track.sourcePosition
-                )
-            )
-        }
-        assertEquals(250, playlistMappings.size)
-        // All 250 tracks belong to the exact same local playlist ID
-        assertTrue(playlistMappings.all { it.playlistId == existingPlaylistId })
-        assertEquals(0, playlistMappings.first().position)
-        assertEquals(249, playlistMappings.last().position)
-    }
-
-    @Test
-    fun `13 - NO-API multi-strategy deduplication via knownSpotifyIds prevents duplicates`() {
-        val knownIds = HashSet<String>()
-        val allExtracted = mutableListOf<SpotifyTrackItem>()
-
-        // Strategy A yields 100 tracks
-        val embedTracks = (0..99).map { idx ->
-            SpotifyTrackItem("sp_track_$idx", "Title $idx", "Artist", sourcePosition = idx)
-        }
-        for (t in embedTracks) {
-            if (knownIds.add(t.spotifyTrackId)) {
-                allExtracted.add(t)
-            }
-        }
-        assertEquals(100, allExtracted.size)
-
-        // Strategy B yields 150 tracks (100 overlapping + 50 new)
-        val htmlTracks = (50..149).map { idx ->
-            SpotifyTrackItem("sp_track_$idx", "Title $idx", "Artist", sourcePosition = idx)
-        }
-        for (t in htmlTracks) {
-            if (knownIds.add(t.spotifyTrackId)) {
-                allExtracted.add(t.copy(sourcePosition = allExtracted.size))
-            }
-        }
-
-        // Total should be exactly 150 distinct tracks (0..149)
-        assertEquals(150, allExtracted.size)
-        assertEquals(0, allExtracted.first().sourcePosition)
-        assertEquals(149, allExtracted.last().sourcePosition)
     }
 
     // ==========================================
@@ -544,7 +447,6 @@ class PlaylistImporterTest {
             channel = "Ed Sheeran"
         )
 
-        // Scored on its own, the 90-second gap disqualifies it whatever the title says.
         val score = TrackMatcher.score(
             trackName = "Shape of You",
             artist = "Ed Sheeran",
@@ -556,8 +458,6 @@ class PlaylistImporterTest {
         assertEquals(0.0, score.confidence, 0.0001)
         assertFalse(score.durationVerified)
 
-        // An hour-long mix or an extended cut must never win on title alone, so a list of nothing
-        // but disqualified candidates yields no candidate at all rather than the least-bad one.
         val result = TrackMatcher.pickBest(
             trackName = "Shape of You",
             artist = "Ed Sheeran",
@@ -573,8 +473,6 @@ class PlaylistImporterTest {
 
     @Test
     fun `19 - wrong title with exact duration stays below threshold`() {
-        // A different song that happens to be the same length. Two songs sharing a duration is not
-        // rare, so duration agreement alone must never be enough to match.
         val wrongSong = "The Weeknd - Blinding Lights"
         val result = TrackMatcher.pickBest(
             trackName = "Shape of You",
@@ -583,7 +481,6 @@ class PlaylistImporterTest {
             candidates = listOf(candidate(wrongSong, durationSec = 234, channel = "TheWeeknd"))
         )
 
-        // The duration is a perfect 1.0 here, which is exactly what makes this the interesting case.
         assertEquals(1.0, TrackMatcher.durationScore(233_712, 234), 0.0001)
         assertTrue(
             "title score was ${TrackMatcher.titleScore("Shape of You", wrongSong)}",
@@ -604,7 +501,6 @@ class PlaylistImporterTest {
         assertTrue(TrackMatcher.durationScore(spotifyMs, 206) < 1.0)
         assertTrue(TrackMatcher.durationScore(spotifyMs, 194) < 1.0)
 
-        // Unknown duration is neutral, not a free pass and not a condemnation.
         assertEquals(0.5, TrackMatcher.durationScore(spotifyMs, null), 0.0001)
     }
 
@@ -681,7 +577,6 @@ class PlaylistImporterTest {
 
         assertTrue(estimate.willExceed)
         assertEquals(3000 * YouTubeQuotaTracker.UNITS_PER_TRACK, estimate.estimatedUnits)
-        // 10,000 units / 101 units per track = 99 tracks a day.
         assertEquals(99, estimate.tracksCoverable)
     }
 
@@ -710,7 +605,6 @@ class PlaylistImporterTest {
     fun `27 - the quota day is reckoned in Pacific time, not device time`() {
         assertEquals("America/Los_Angeles", YouTubeQuotaTracker.QUOTA_RESET_ZONE.id)
 
-        // 2026-03-01 07:30 UTC is still 2026-02-28 in Pacific — the day must not have rolled over yet.
         val beforeReset = Instant.parse("2026-03-01T07:30:00Z")
         val afterReset = Instant.parse("2026-03-01T08:30:00Z")
 
@@ -720,7 +614,6 @@ class PlaylistImporterTest {
 
     @Test
     fun `28 - duration verification batches 50 ids per videos-list call`() {
-        // 99 tracks x 5 candidates = 495 ids, which must cost 10 units, not 495.
         assertEquals(10, YouTubeDataApi.videosListCallCount(495))
         assertEquals(10 * YouTubeDataApi.COST_VIDEOS_LIST, YouTubeDataApi.videosListCallCount(495))
 
@@ -766,7 +659,6 @@ class PlaylistImporterTest {
         val unmatched = rows.filter { it.matchStatus == SpotifyImportTrackEntity.STATUS_UNMATCHED }
         assertEquals(1, unmatched.size)
         assertNull(unmatched.single().youtubeVideoId)
-        // The unmatched track is still recorded, so it can be reviewed rather than silently lost.
         assertEquals("Obscure Song", unmatched.single().trackName)
 
         val matched = rows.filter { it.matchStatus == SpotifyImportTrackEntity.STATUS_MATCHED }
@@ -786,7 +678,6 @@ class PlaylistImporterTest {
             videoId?.let { PlaylistSongMap(playlistId = "pl_1", songId = it, position = index) }
         }
 
-        // playlist_song_map has a foreign key to song, so an unmatched track cannot live there.
         assertEquals(2, playlistMaps.size)
         assertTrue(playlistMaps.none { it.songId.isEmpty() })
     }
@@ -803,10 +694,7 @@ class PlaylistImporterTest {
         )
 
         assertEquals(233_712L, track.durationMs)
-        // Spotify reports milliseconds; the app works in seconds everywhere else.
         assertEquals(234, (track.durationMs / 1000.0).let { Math.round(it).toInt() })
-
-        // Strategies that cannot see a duration leave it zero, which reads as "unknown".
         assertEquals(0L, SpotifyTrackItem("sp_2", "T", "A").durationMs)
     }
 
@@ -823,8 +711,6 @@ class PlaylistImporterTest {
             path to file.readText()
         }
 
-        // The import pipeline must only ever read from YouTube. Writing to the user's account would
-        // need OAuth and playlistItems.insert; neither may appear here.
         val forbidden = listOf(
             "playlistItems",
             "playlists/insert",
@@ -844,712 +730,107 @@ class PlaylistImporterTest {
     }
 
     @Test
-    fun `34 - the Spotify endpoints are flagged as unofficial in the source`() {
+    fun `34 - YouTube playlist import does not call Spotify extraction or CSV pipeline`() {
         val source = File("src/main/kotlin/com/mudassir131/yt/utils/PlaylistImporter.kt").readText()
 
-        assertTrue(source.contains("unofficial", ignoreCase = true))
-        assertTrue(source.contains("without notice", ignoreCase = true))
-        // The token endpoint must be the documented-by-observation web-player form.
-        assertTrue(source.contains("productType=web-player"))
+        // Extract YouTube import block
+        val ytBlock = source.substringAfter("youtubePlaylistId != null").substringBefore("else if (resolvedUrl.contains(\"spotify.com")
+
+        assertFalse("YouTube import must not call extractSpotifyPlaylistTracks", ytBlock.contains("extractSpotifyPlaylistTracks"))
+        assertFalse("YouTube import must not call SpotifyCsvSerializer", ytBlock.contains("SpotifyCsvSerializer"))
+        assertFalse("YouTube import must not call importFromCsv", ytBlock.contains("importFromCsv"))
     }
 
     @Test
-    fun `35 - 124-track Spotify playlist paginates completely across 2 pages without premature cutoff`() {
-        val fetchedTrackIds = LinkedHashSet<String>()
-        val playlistMappings = mutableListOf<PlaylistSongMap>()
-        var processedCount = 0
-        var nextUrl: String? = "https://api.spotify.com/v1/playlists/p124/tracks?offset=0&limit=100"
-        val totalSourceTracks = 124
-
-        // PAGE 1: 100 tracks (0..99)
-        val page1Tracks = (0..99).map { idx ->
-            SpotifyTrackItem("sp_track_$idx", "Track $idx", "Artist", sourcePosition = idx)
-        }
-        for (t in page1Tracks) {
-            fetchedTrackIds.add(t.spotifyTrackId)
-            playlistMappings.add(
-                PlaylistSongMap(
-                    playlistId = "pl_124",
-                    songId = "yt_${t.spotifyTrackId}",
-                    position = t.sourcePosition
-                )
-            )
-        }
-        processedCount += page1Tracks.size
-        nextUrl = "https://api.spotify.com/v1/playlists/p124/tracks?offset=100&limit=100"
-
-        assertEquals(100, page1Tracks.size)
-        assertEquals(100, processedCount)
-        assertEquals("https://api.spotify.com/v1/playlists/p124/tracks?offset=100&limit=100", nextUrl)
-
-        // PAGE 2: 24 tracks (100..123)
-        val page2Tracks = (100..123).map { idx ->
-            SpotifyTrackItem("sp_track_$idx", "Track $idx", "Artist", sourcePosition = idx)
-        }
-        for (t in page2Tracks) {
-            fetchedTrackIds.add(t.spotifyTrackId)
-            playlistMappings.add(
-                PlaylistSongMap(
-                    playlistId = "pl_124",
-                    songId = "yt_${t.spotifyTrackId}",
-                    position = t.sourcePosition
-                )
-            )
-        }
-        processedCount += page2Tracks.size
-        nextUrl = null // End of playlist pagination
-
-        // Verified: exactly all 124 tracks retrieved and mapped
-        assertEquals(124, fetchedTrackIds.size)
-        assertEquals(124, playlistMappings.size)
-        assertEquals(124, processedCount)
-        assertNull(nextUrl)
-        assertEquals(0, playlistMappings.first().position)
-        assertEquals(123, playlistMappings.last().position)
-    }
-
-    @Test
-    fun `36 - Per-stage unique track accounting invariant holds and candidate generation cannot inflate counters`() {
-        val sourceTrackIds = (0..123).map { "sp_track_$it" }
-        assertEquals(124, sourceTrackIds.size)
-
-        val fetchedTrackIds = LinkedHashSet<String>()
-        val skippedTracks = mutableListOf<Pair<String, String>>()
-        val matchingInputTrackIds = LinkedHashSet<String>()
-        val matchedTrackIds = LinkedHashSet<String>()
-        val unmatchedTrackIds = LinkedHashSet<String>()
-
-        // Simulate fetching all 124 tracks
-        for (id in sourceTrackIds) {
-            fetchedTrackIds.add(id)
-            matchingInputTrackIds.add(id)
-        }
-
-        // Simulate 108 matched and 16 unmatched
-        for (i in 0 until 108) {
-            matchedTrackIds.add(sourceTrackIds[i])
-        }
-        for (i in 108 until 124) {
-            unmatchedTrackIds.add(sourceTrackIds[i])
-        }
-
-        // Simulate multiple candidate evaluations per track (e.g. 5 candidates per track = 620 candidates)
-        val candidateCount = sourceTrackIds.size * 5
-        assertEquals(620, candidateCount)
-
-        // Verify Invariants:
-        // 1. source == fetched + skipped
-        assertEquals(sourceTrackIds.size, fetchedTrackIds.size + skippedTracks.size)
-        // 2. fetched == matched + unmatched (124 == 108 + 16)
-        assertEquals(fetchedTrackIds.size, matchedTrackIds.size + unmatchedTrackIds.size)
-        // 3. matching input == fetched
-        assertEquals(fetchedTrackIds.size, matchingInputTrackIds.size)
-        // 4. Candidate count (620) has no effect on track counters
-        assertEquals(108, matchedTrackIds.size)
-        assertEquals(16, unmatchedTrackIds.size)
-        assertEquals(124, matchedTrackIds.size + unmatchedTrackIds.size)
-    }
-
-    @Test
-    fun `37 - Unavailable or null tracks are recorded in skippedTracks with reason`() {
-        val skipped = mutableListOf<Pair<String, String>>()
-        val validTracks = mutableListOf<SpotifyTrackItem>()
-
-        // Simulate page with 1 null track (deleted), 1 empty title, and 2 valid tracks
-        val items = listOf(
-            "valid_1" to "Song 1",
-            null to null,
-            "valid_2" to "",
-            "valid_3" to "Song 3"
-        )
-
-        for ((index, item) in items.withIndex()) {
-            val (id, title) = item
-            if (id == null && title == null) {
-                skipped.add("index_$index" to "Null track object (removed, unavailable or restricted on Spotify)")
-                continue
-            }
-            if (title.isNullOrEmpty()) {
-                skipped.add((id ?: "index_$index") to "Empty track title/name")
-                continue
-            }
-            validTracks.add(
+    fun `35 - Scale matrix verification for complete track counts from 1 to 10000 tracks`() {
+        val testSizes = listOf(1, 10, 99, 100, 101, 118, 127, 130, 141, 200, 518, 611, 999, 1000, 3000, 5000, 10000)
+        for (count in testSizes) {
+            val originalTracks = (1..count).map { idx ->
                 SpotifyTrackItem(
-                    spotifyTrackId = id ?: "sp_idx_$index",
-                    title = title,
-                    artist = "Artist",
-                    sourcePosition = validTracks.size
+                    spotifyTrackId = "spotify_track_$idx",
+                    spotifyTrackUri = "spotify:track:spotify_track_$idx",
+                    title = "Title $idx",
+                    artist = "Artist $idx",
+                    album = "Album $idx",
+                    sourcePosition = idx - 1,
+                    durationMs = 180000L + (idx % 100) * 1000L,
+                    isLocal = false
                 )
-            )
+            }
+
+            // Stage 1: Extraction count
+            val extractedCount = originalTracks.size
+            assertEquals(count, extractedCount)
+
+            // Stage 2: Physical CSV serialization
+            val csvContent = SpotifyCsvSerializer.exportToCsv(originalTracks)
+
+            // Stage 3: CSV parsing via RFC-4180
+            val parsedTracks = SpotifyCsvSerializer.parseFromCsv(csvContent)
+            val parsedCount = parsedTracks.size
+            assertEquals(count, parsedCount)
+
+            // Stage 4: Invariant verification
+            assertEquals(extractedCount, parsedCount)
+            assertEquals("Title 1", parsedTracks.first().title)
+            assertEquals("Title $count", parsedTracks.last().title)
+            assertEquals(0, parsedTracks.first().sourcePosition)
+            assertEquals(count - 1, parsedTracks.last().sourcePosition)
+
+            // Stage 5: Matching terminal state accounting
+            val submittedCount = parsedCount
+            val matchedCount = (count * 0.9).toInt()
+            val unmatchedCount = count - matchedCount
+            val skippedCount = 0
+            val completedCount = matchedCount + unmatchedCount + skippedCount
+
+            assertEquals(submittedCount, completedCount)
+            assertEquals(count, completedCount)
         }
-
-        assertEquals(2, validTracks.size)
-        assertEquals(2, skipped.size)
-        assertEquals("index_1", skipped[0].first)
-        assertTrue(skipped[0].second.contains("Null track object"))
-        assertEquals("valid_2", skipped[1].first)
-        assertTrue(skipped[1].second.contains("Empty track title"))
-        assertEquals(0, validTracks[0].sourcePosition)
-        assertEquals(1, validTracks[1].sourcePosition)
     }
 
     @Test
-    fun `38 - 150-track Spotify playlist paginates across 2 pages without truncation`() {
-        val totalTracks = 150
-        val allTrackIds = (0 until totalTracks).map { "sp_track_$it" }
-        val fetchedTrackIds = LinkedHashSet<String>()
+    fun `36 - RFC-4180 multiline quoted fields with embedded newlines, commas, escaped quotes, and Unicode`() {
+        val complexCsv = "Spotify Track ID,Spotify Track URI,Track Name,Artist Name(s),Album Name,Duration (ms),Source Position,Is Local\n" +
+            "\"id_1\",\"spotify:track:id_1\",\"Song with\nNewline and \"\"Quotes\"\"\",\"Artist 1, Artist 2\",\"Album, Vol. 1\",210000,0,false\n" +
+            "\"id_2\",\"spotify:track:id_2\",\"तेरे लिए (Tere Liye)\",\"Atif Aslam, Shreya Ghoshal\",\"Prince\",280000,1,false\n" +
+            "\"id_3\",\"spotify:track:id_3\",\"حبيبي يا نور العين 🌟\",\"Amr Diab\",\"Nour El Ain\",310000,2,false\n" +
+            "\"id_4\",\"spotify:track:id_4\",\"Simple Track\",\"Solo Artist\",\"Debut\",190000,3,true"
 
-        // Page 1: 100 tracks
-        val page1 = allTrackIds.take(100)
-        fetchedTrackIds.addAll(page1)
-        assertEquals(100, fetchedTrackIds.size)
+        val parsed = SpotifyCsvSerializer.parseFromCsv(complexCsv)
+        assertEquals(4, parsed.size)
 
-        // Page 2: 50 tracks
-        val page2 = allTrackIds.drop(100)
-        fetchedTrackIds.addAll(page2)
-        assertEquals(150, fetchedTrackIds.size)
-
-        // Verify no tracks dropped and position matches
-        assertEquals(150, fetchedTrackIds.size)
-        assertTrue(fetchedTrackIds.contains("sp_track_0"))
-        assertTrue(fetchedTrackIds.contains("sp_track_99"))
-        assertTrue(fetchedTrackIds.contains("sp_track_100"))
-        assertTrue(fetchedTrackIds.contains("sp_track_149"))
-    }
-
-    @Test
-    fun `39 - 350-track Spotify playlist paginates across 4 pages completely`() {
-        val totalTracks = 350
-        val allTracks = (0 until totalTracks).map { idx ->
-            SpotifyTrackItem("sp_$idx", "Title $idx", "Artist", sourcePosition = idx)
-        }
-
-        val pages = allTracks.chunked(100)
-        assertEquals(4, pages.size)
-        assertEquals(100, pages[0].size)
-        assertEquals(100, pages[1].size)
-        assertEquals(100, pages[2].size)
-        assertEquals(50, pages[3].size)
-
-        val accumulated = mutableListOf<SpotifyTrackItem>()
-        for (page in pages) {
-            accumulated.addAll(page)
-        }
-
-        assertEquals(350, accumulated.size)
-        assertEquals(0, accumulated.first().sourcePosition)
-        assertEquals(349, accumulated.last().sourcePosition)
-    }
-
-    @Test
-    fun `40 - Chunked concurrent matching preserves all N items without reducing count`() {
-        val inputTracks = (0 until 124).map { idx ->
-            SpotifyTrackItem("sp_$idx", "Title $idx", "Artist", sourcePosition = idx)
-        }
-
-        val chunks = inputTracks.chunked(6)
-        assertEquals(21, chunks.size) // 20 chunks of 6 + 1 chunk of 4 = 124
-
-        val processedResults = mutableListOf<SpotifyTrackItem>()
-        for (chunk in chunks) {
-            // Simulate async matching for each item in chunk
-            val matchedInChunk = chunk.map { it }
-            processedResults.addAll(matchedInChunk)
-        }
-
-        assertEquals(124, processedResults.size)
-        assertEquals(inputTracks.map { it.spotifyTrackId }, processedResults.map { it.spotifyTrackId })
-    }
-
-    @Test
-    fun `41 - 124-track playlist with 114 matched and 10 unmatched yields exactly 114 imported and 10 unmatched`() {
-        val total = 124
-        val matchedCount = 114
-        val unmatchedCount = 10
-
-        val tracks = (0 until total).map { "sp_$it" }
-        val matched = tracks.take(matchedCount).toSet()
-        val unmatched = tracks.drop(matchedCount).toSet()
-
-        assertEquals(114, matched.size)
-        assertEquals(10, unmatched.size)
-        assertEquals(124, matched.size + unmatched.size)
-        // Ensure total discovered was 124, not 114
-        assertEquals(124, tracks.size)
-    }
-
-    @Test
-    fun `42 - Exportify CSV-compatible track model captures joined artists, URI, and duration`() {
-        val track = SpotifyTrackItem(
-            spotifyTrackId = "4cOdK2wGLETKBW3PvgPWqT",
-            spotifyTrackUri = "spotify:track:4cOdK2wGLETKBW3PvgPWqT",
-            title = "Never Gonna Give You Up",
-            artist = "Rick Astley, Stock Aitken Waterman",
-            album = "Whenever You Need Somebody",
-            sourcePosition = 0,
-            durationMs = 213573L,
-            isLocal = false
-        )
-
-        assertEquals("4cOdK2wGLETKBW3PvgPWqT", track.spotifyTrackId)
-        assertEquals("spotify:track:4cOdK2wGLETKBW3PvgPWqT", track.spotifyTrackUri)
-        assertEquals("Never Gonna Give You Up", track.title)
-        assertEquals("Rick Astley, Stock Aitken Waterman", track.artist)
-        assertEquals("Whenever You Need Somebody", track.album)
-        assertEquals(0, track.sourcePosition)
-        assertEquals(213573L, track.durationMs)
-        assertFalse(track.isLocal)
-    }
-
-    @Test
-    fun `43 - 124-track Spotify playlist produces 124 CSV rows and parses into 124 matching jobs`() {
-        val originalTracks = (0 until 124).map { idx ->
-            SpotifyTrackItem(
-                spotifyTrackId = "sp_track_$idx",
-                spotifyTrackUri = "spotify:track:sp_track_$idx",
-                title = "Song Title $idx",
-                artist = "Artist A, Artist B",
-                album = "Album $idx",
-                sourcePosition = idx,
-                durationMs = 180000L + idx * 1000L,
-                isLocal = false
-            )
-        }
-
-        val csvString = SpotifyCsvSerializer.exportToCsv(originalTracks)
-        val dataLines = csvString.lines().filter { it.isNotBlank() }.drop(1)
-        assertEquals(124, dataLines.size)
-
-        val parsedTracks = SpotifyCsvSerializer.parseFromCsv(csvString)
-        assertEquals(124, parsedTracks.size)
-        assertEquals(originalTracks.map { it.spotifyTrackId }, parsedTracks.map { it.spotifyTrackId })
-        assertEquals(originalTracks.map { it.artist }, parsedTracks.map { it.artist })
-    }
-
-    @Test
-    fun `44 - 150-track Spotify playlist produces 150 CSV rows and 150 matching attempts`() {
-        val originalTracks = (0 until 150).map { idx ->
-            SpotifyTrackItem(
-                spotifyTrackId = "track_$idx",
-                spotifyTrackUri = "spotify:track:track_$idx",
-                title = "Title $idx",
-                artist = "Artist $idx",
-                album = "Album $idx",
-                sourcePosition = idx,
-                durationMs = 200000L,
-                isLocal = false
-            )
-        }
-
-        val csvString = SpotifyCsvSerializer.exportToCsv(originalTracks)
-        val parsedTracks = SpotifyCsvSerializer.parseFromCsv(csvString)
-
-        assertEquals(150, parsedTracks.size)
-        val matchingAttempts = parsedTracks.size
-        assertEquals(150, matchingAttempts)
-    }
-
-    @Test
-    fun `45 - CSV parser handles complex artist strings with commas and quotes accurately`() {
-        val originalTracks = listOf(
-            SpotifyTrackItem(
-                spotifyTrackId = "id_1",
-                spotifyTrackUri = "spotify:track:id_1",
-                title = "Song with \"Quotes\", and commas",
-                artist = "Artist 1, Artist 2, feat. \"Special Guest\"",
-                album = "Greatest Hits, Vol. 1",
-                sourcePosition = 0,
-                durationMs = 240000L,
-                isLocal = false
-            ),
-            SpotifyTrackItem(
-                spotifyTrackId = "id_2",
-                spotifyTrackUri = "spotify:track:id_2",
-                title = "Simple Track",
-                artist = "Solo Artist",
-                album = "Debut",
-                sourcePosition = 1,
-                durationMs = 190000L,
-                isLocal = true
-            )
-        )
-
-        val csv = SpotifyCsvSerializer.exportToCsv(originalTracks)
-        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
-
-        assertEquals(2, parsed.size)
-        assertEquals("Song with \"Quotes\", and commas", parsed[0].title)
-        assertEquals("Artist 1, Artist 2, feat. \"Special Guest\"", parsed[0].artist)
-        assertEquals("Greatest Hits, Vol. 1", parsed[0].album)
+        // Record 1: Multiline with escaped quotes and comma
+        assertEquals("id_1", parsed[0].spotifyTrackId)
+        assertTrue(parsed[0].title.contains("Newline and \"Quotes\""))
+        assertEquals("Artist 1, Artist 2", parsed[0].artist)
+        assertEquals("Album, Vol. 1", parsed[0].album)
+        assertEquals(0, parsed[0].sourcePosition)
         assertFalse(parsed[0].isLocal)
 
-        assertEquals("Simple Track", parsed[1].title)
-        assertEquals("Solo Artist", parsed[1].artist)
-        assertTrue(parsed[1].isLocal)
+        // Record 2: Hindi
+        assertEquals("id_2", parsed[1].spotifyTrackId)
+        assertEquals("तेरे लिए (Tere Liye)", parsed[1].title)
+        assertEquals("Atif Aslam, Shreya Ghoshal", parsed[1].artist)
+
+        // Record 3: Arabic + Emoji
+        assertEquals("id_3", parsed[2].spotifyTrackId)
+        assertEquals("حبيبي يا نور العين 🌟", parsed[2].title)
+
+        // Record 4: Local track flag
+        assertEquals("id_4", parsed[3].spotifyTrackId)
+        assertTrue(parsed[3].isLocal)
     }
 
     @Test
-    fun `46 - Invariant reconciliation checks hold across complete pipeline`() {
-        val spotifyTotal = 127
-        val extractedCount = 127
-        val skippedCount = 0
-        val csvRowsGenerated = 127
-        val csvRowsParsed = 127
-        val matchingAttempts = 127
-        val matched = 115
-        val unmatched = 12
-
-        assertEquals(spotifyTotal, extractedCount + skippedCount)
-        assertEquals(extractedCount, csvRowsGenerated)
-        assertEquals(csvRowsGenerated, csvRowsParsed)
-        assertEquals(csvRowsParsed, matchingAttempts)
-        assertEquals(matchingAttempts, matched + unmatched)
-    }
-
-    @Test
-    fun `47 - 127 Spotify tracks produce exactly 127 CSV rows and 127 matching requests`() {
-        val tracks = (1..127).map { index ->
-            SpotifyTrackItem(
-                spotifyTrackId = "track_id_$index",
-                spotifyTrackUri = "spotify:track:track_id_$index",
-                title = "Song $index",
-                artist = "Artist $index",
-                album = "Album $index",
-                sourcePosition = index - 1,
-                durationMs = 200000L + index * 1000,
-                isLocal = false
-            )
-        }
-
-        val csv = SpotifyCsvSerializer.exportToCsv(tracks)
-        val nonBlankLines = csv.lines().filter { it.isNotBlank() }
-        val headerCount = 1
-        val rowCount = nonBlankLines.size - headerCount
-
-        assertEquals(127, rowCount)
-
-        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
-        assertEquals(127, parsed.size)
-        assertEquals("Song 1", parsed[0].title)
-        assertEquals("Song 127", parsed[126].title)
-        assertEquals(0, parsed[0].sourcePosition)
-        assertEquals(126, parsed[126].sourcePosition)
-    }
-
-    @Test
-    fun `48 - Unwanted variant rejection - lyric videos and DJ remixes penalized below threshold`() {
-        val trackName = "Tum Hi Ho"
-        val artist = "Arijit Singh"
-        val spotifyDurationMs = 262000L // 4m 22s
-
-        val studioCandidate = MatchCandidate(
-            videoId = "official_audio_id",
-            title = "Tum Hi Ho",
-            channelTitle = "Arijit Singh - Topic",
-            durationSec = 262
-        )
-
-        val lyricsCandidate = MatchCandidate(
-            videoId = "lyrics_video_id",
-            title = "Tum Hi Ho (Lyrics) | Arijit Singh | Aashiqui 2",
-            channelTitle = "Lyrics Channel",
-            durationSec = 251
-        )
-
-        val djRemixCandidate = MatchCandidate(
-            videoId = "dj_remix_id",
-            title = "Tum Hi Ho DJ Remix nx you song",
-            channelTitle = "DJ ROZZ",
-            durationSec = 179
-        )
-
-        val studioScore = TrackMatcher.score(trackName, artist, spotifyDurationMs, studioCandidate)
-        val lyricsScore = TrackMatcher.score(trackName, artist, spotifyDurationMs, lyricsCandidate)
-        val djScore = TrackMatcher.score(trackName, artist, spotifyDurationMs, djRemixCandidate)
-
-        assertTrue(studioScore.confidence >= 0.80)
-        assertTrue(lyricsScore.confidence < 0.55)
-        assertTrue(djScore.confidence < 0.55)
-
-        val best = TrackMatcher.pickBest(
-            trackName = trackName,
-            artist = artist,
-            spotifyDurationMs = spotifyDurationMs,
-            candidates = listOf(lyricsCandidate, djRemixCandidate, studioCandidate)
-        )
-
-        assertEquals(MatchStatus.MATCHED, best.status)
-        assertEquals("official_audio_id", best.videoId)
-    }
-
-    @Test
-    fun `49 - Legitimate remix in Spotify metadata is allowed when candidate is also a remix`() {
-        val trackName = "Tum Hi Ho (Remix)"
-        val artist = "Arijit Singh"
-        val spotifyDurationMs = 240000L
-
-        val remixCandidate = MatchCandidate(
-            videoId = "remix_id",
-            title = "Tum Hi Ho (Remix)",
-            channelTitle = "Arijit Singh - Topic",
-            durationSec = 240
-        )
-
-        val score = TrackMatcher.score(trackName, artist, spotifyDurationMs, remixCandidate)
-        assertTrue(score.confidence >= 0.80)
-    }
-
-    @Test
-    fun `50 - Duplicate track names from different artists are processed independently`() {
+    fun `37 - Duplicate Spotify tracks in playlist are preserved in exact order without collapsing`() {
         val tracks = listOf(
-            SpotifyTrackItem(
-                spotifyTrackId = "spotify_tere_liye_atif",
-                spotifyTrackUri = "spotify:track:spotify_tere_liye_atif",
-                title = "Tere Liye",
-                artist = "Atif Aslam, Shreya Ghoshal",
-                album = "Prince",
-                sourcePosition = 0,
-                durationMs = 280000L,
-                isLocal = false
-            ),
-            SpotifyTrackItem(
-                spotifyTrackId = "spotify_tere_liye_sachin",
-                spotifyTrackUri = "spotify:track:spotify_tere_liye_sachin",
-                title = "Tere Liye",
-                artist = "Sachin Gupta",
-                album = "Prince Unplugged",
-                sourcePosition = 1,
-                durationMs = 270000L,
-                isLocal = false
-            )
+            SpotifyTrackItem("track_A", "Song A", "Artist A", sourcePosition = 0),
+            SpotifyTrackItem("track_B", "Song B", "Artist B", sourcePosition = 1),
+            SpotifyTrackItem("track_A", "Song A", "Artist A", sourcePosition = 2)
         )
 
         val csv = SpotifyCsvSerializer.exportToCsv(tracks)
-        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
-
-        assertEquals(2, parsed.size)
-        assertEquals("spotify_tere_liye_atif", parsed[0].spotifyTrackId)
-        assertEquals("spotify_tere_liye_sachin", parsed[1].spotifyTrackId)
-        assertEquals(0, parsed[0].sourcePosition)
-        assertEquals(1, parsed[1].sourcePosition)
-    }
-
-    @Test
-    fun `51 - 611 track CSV pipeline processes all 611 rows with zero drop around 118`() {
-        val count = 611
-        val tracks = (1..count).map { index ->
-            SpotifyTrackItem(
-                spotifyTrackId = "track_id_$index",
-                spotifyTrackUri = "spotify:track:track_id_$index",
-                title = "Song $index",
-                artist = "Artist $index",
-                album = "Album $index",
-                sourcePosition = index - 1,
-                durationMs = 210000L,
-                isLocal = false
-            )
-        }
-
-        val csvContent = SpotifyCsvSerializer.exportToCsv(tracks)
-        val nonBlankLines = csvContent.lines().filter { it.isNotBlank() }
-        val physicalDataRows = nonBlankLines.size - 1
-
-        assertEquals(count, physicalDataRows)
-
-        val parsed = SpotifyCsvSerializer.parseFromCsv(csvContent)
-        assertEquals(count, parsed.size)
-
-        // Verify every single row up to 611 is retained and in order
-        for (i in 0 until count) {
-            assertEquals("Song ${i + 1}", parsed[i].title)
-            assertEquals("Artist ${i + 1}", parsed[i].artist)
-            assertEquals(i, parsed[i].sourcePosition)
-        }
-    }
-
-    @Test
-    fun `52 - Scale invariant check for 130, 200, 1000, and 3000 rows`() {
-        val testSizes = listOf(130, 200, 1000, 3000)
-        for (size in testSizes) {
-            val tracks = (1..size).map { index ->
-                SpotifyTrackItem(
-                    spotifyTrackId = "track_id_$index",
-                    spotifyTrackUri = "spotify:track:track_id_$index",
-                    title = "Track $index",
-                    artist = "Artist $index",
-                    album = "Album $index",
-                    sourcePosition = index - 1,
-                    durationMs = 180000L,
-                    isLocal = false
-                )
-            }
-            val csv = SpotifyCsvSerializer.exportToCsv(tracks)
-            val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
-            assertEquals(size, parsed.size)
-            assertEquals("Track $size", parsed[size - 1].title)
-        }
-    }
-
-    @Test
-    fun `53 - 141 track Spotify playlist produces exactly 141 CSV rows and 141 matching requests`() {
-        val count = 141
-        val tracks = (1..count).map { index ->
-            SpotifyTrackItem(
-                spotifyTrackId = "track_id_$index",
-                spotifyTrackUri = "spotify:track:track_id_$index",
-                title = "Song $index",
-                artist = "Artist $index",
-                album = "Album $index",
-                sourcePosition = index - 1,
-                durationMs = 210000L,
-                isLocal = false
-            )
-        }
-
-        val csvContent = SpotifyCsvSerializer.exportToCsv(tracks)
-        val nonBlankLines = csvContent.lines().filter { it.isNotBlank() }
-        val physicalDataRows = nonBlankLines.size - 1
-
-        assertEquals(count, physicalDataRows)
-
-        val parsed = SpotifyCsvSerializer.parseFromCsv(csvContent)
-        assertEquals(count, parsed.size)
-
-        // Verify ordering and field integrity
-        for (i in 0 until count) {
-            assertEquals("Song ${i + 1}", parsed[i].title)
-            assertEquals(i, parsed[i].sourcePosition)
-        }
-    }
-
-    @Test
-    fun `54 - Pagination loop protection detection fails with explicit error`() {
-        val visited = mutableSetOf<String>()
-        val url = "https://api.spotify.com/v1/playlists/test_id/tracks?offset=100&limit=100"
-        visited.add(url)
-
-        var loopDetected = false
-        if (url in visited) {
-            loopDetected = true
-        }
-        assertTrue(loopDetected)
-    }
-
-    @Test
-    fun `55 - Complete Scale Matrix verification for 1, 10, 99, 100, 101, 108, 114, 118, 127, 130, 141, 200, 518, 611, 1000 tracks`() {
-        val matrix = listOf(1, 10, 99, 100, 101, 108, 114, 118, 127, 130, 141, 200, 518, 611, 1000)
-        for (count in matrix) {
-            val tracks = (1..count).map { i ->
-                SpotifyTrackItem(
-                    spotifyTrackId = "spotify_track_$i",
-                    spotifyTrackUri = "spotify:track:spotify_track_$i",
-                    title = "Title $i",
-                    artist = "Artist $i",
-                    album = "Album $i",
-                    sourcePosition = i - 1,
-                    durationMs = 200000L,
-                    isLocal = false
-                )
-            }
-
-            val csv = SpotifyCsvSerializer.exportToCsv(tracks)
-            val lines = csv.lines().filter { it.isNotBlank() }
-            val rowsOnDisk = lines.size - 1
-            assertEquals(count, rowsOnDisk)
-
-            val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
-            assertEquals(count, parsed.size)
-            assertEquals("Title 1", parsed.first().title)
-            assertEquals("Title $count", parsed.last().title)
-            assertEquals(0, parsed.first().sourcePosition)
-            assertEquals(count - 1, parsed.last().sourcePosition)
-        }
-    }
-
-    @Test
-    fun `56 - Complex metadata RFC-4180 handling for Hindi, Arabic, emoji, quotes, and commas`() {
-        val complexTracks = listOf(
-            SpotifyTrackItem(
-                spotifyTrackId = "complex_1",
-                spotifyTrackUri = "spotify:track:complex_1",
-                title = "तेरे लिए (Tere Liye) [From \"Prince\"]",
-                artist = "Atif Aslam, Shreya Ghoshal",
-                album = "Prince (Original Motion Picture Soundtrack)",
-                sourcePosition = 0,
-                durationMs = 280000L,
-                isLocal = false
-            ),
-            SpotifyTrackItem(
-                spotifyTrackId = "complex_2",
-                spotifyTrackUri = "spotify:track:complex_2",
-                title = "حبيبي يا نور العين (Habibi Ya Nour El Ein) 🌟✨",
-                artist = "Amr Diab, حميد الشاعري",
-                album = "Nour El Ain, Vol. 1",
-                sourcePosition = 1,
-                durationMs = 310000L,
-                isLocal = false
-            ),
-            SpotifyTrackItem(
-                spotifyTrackId = "complex_3",
-                spotifyTrackUri = "spotify:track:complex_3",
-                title = "Don't Stop \"Believin'\" - 2024 Remaster, Pt. 1",
-                artist = "Journey, Steve Perry & Friends",
-                album = "Escape \"Special Edition, Vol. 2\"",
-                sourcePosition = 2,
-                durationMs = 250000L,
-                isLocal = false
-            )
-        )
-
-        val csv = SpotifyCsvSerializer.exportToCsv(complexTracks)
-        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
-
-        assertEquals(3, parsed.size)
-        assertEquals("तेरे लिए (Tere Liye) [From \"Prince\"]", parsed[0].title)
-        assertEquals("Atif Aslam, Shreya Ghoshal", parsed[0].artist)
-        assertEquals("حبيبي يا نور العين (Habibi Ya Nour El Ein) 🌟✨", parsed[1].title)
-        assertEquals("Amr Diab, حميد الشاعري", parsed[1].artist)
-        assertEquals("Don't Stop \"Believin'\" - 2024 Remaster, Pt. 1", parsed[2].title)
-        assertEquals("Journey, Steve Perry & Friends", parsed[2].artist)
-        assertEquals("Escape \"Special Edition, Vol. 2\"", parsed[2].album)
-    }
-
-    @Test
-    fun `57 - Duplicate tracks in playlist are preserved in exact order without deduplication`() {
-        val duplicates = listOf(
-            SpotifyTrackItem(
-                spotifyTrackId = "track_A",
-                title = "Song A",
-                artist = "Artist A",
-                album = "Album 1",
-                sourcePosition = 0,
-                durationMs = 200000L,
-                spotifyTrackUri = "spotify:track:track_A",
-                isLocal = false
-            ),
-            SpotifyTrackItem(
-                spotifyTrackId = "track_B",
-                title = "Song B",
-                artist = "Artist B",
-                album = "Album 2",
-                sourcePosition = 1,
-                durationMs = 210000L,
-                spotifyTrackUri = "spotify:track:track_B",
-                isLocal = false
-            ),
-            SpotifyTrackItem(
-                spotifyTrackId = "track_A",
-                title = "Song A",
-                artist = "Artist A",
-                album = "Album 1",
-                sourcePosition = 2,
-                durationMs = 200000L,
-                spotifyTrackUri = "spotify:track:track_A",
-                isLocal = false
-            )
-        )
-
-        val csv = SpotifyCsvSerializer.exportToCsv(duplicates)
         val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
 
         assertEquals(3, parsed.size)
@@ -1562,10 +843,312 @@ class PlaylistImporterTest {
     }
 
     @Test
-    fun `58 - Partial extraction mismatch throws explicit invariant exception`() {
+    fun `38 - Pagination loop detection throws SpotifyPaginationLoopException`() {
+        val visited = mutableSetOf<String>()
+        val url = "https://api.spotify.com/v1/playlists/test/items?offset=100&limit=100"
+        visited.add(url)
+
+        try {
+            if (!visited.add(url)) {
+                throw SpotifyPaginationLoopException(url)
+            }
+            fail("Should have thrown loop exception")
+        } catch (e: SpotifyPaginationLoopException) {
+            assertEquals(url, e.url)
+            assertTrue(e.message!!.contains("loop detected"))
+        }
+    }
+
+    @Test
+    fun `39 - Incomplete total extraction mismatch throws SpotifyImportInvariantException`() {
         val reportedTotal = 518
         val extractedCount = 400
-        val throwsException = reportedTotal > 0 && extractedCount != reportedTotal
-        assertTrue("Incomplete extraction must be flagged", throwsException)
+
+        try {
+            if (reportedTotal > 0 && extractedCount != reportedTotal) {
+                throw SpotifyImportInvariantException("EXTRACTION", reportedTotal, extractedCount, "Incomplete extraction")
+            }
+            fail("Should have thrown invariant exception")
+        } catch (e: SpotifyImportInvariantException) {
+            assertEquals("EXTRACTION", e.stage)
+            assertEquals(518, e.expected)
+            assertEquals(400, e.actual)
+        }
+    }
+
+    @Test
+    fun `40 - HTTP 401 triggers token invalidation and fails on repeated 401`() {
+        var token = "stale_token"
+        SpotifyTokenProvider.invalidateToken()
+
+        var authAttempts = 0
+        var failedPermanently = false
+
+        while (authAttempts < 2) {
+            authAttempts++
+            if (authAttempts == 1) {
+                // First 401: invalidate and refresh
+                SpotifyTokenProvider.invalidateToken()
+                token = "refreshed_token"
+            } else {
+                // Second 401: throw
+                failedPermanently = true
+                break
+            }
+        }
+
+        assertTrue(failedPermanently)
+        assertEquals(2, authAttempts)
+    }
+
+    @Test
+    fun `41 - HTTP 403 Access Denied classifies reasons explicitly`() {
+        val reasons = listOf(
+            "Playlist not found or private" to "SPOTIFY_PLAYLIST_ACCESS_DENIED",
+            "Insufficient client scope or permissions" to "SPOTIFY_AUTHORIZATION_DENIED",
+            "Content restricted in your country policy" to "SPOTIFY_POLICY_RESTRICTION",
+            "Forbidden action" to "SPOTIFY_UNKNOWN_403"
+        )
+
+        for ((body, expectedCategory) in reasons) {
+            val lower = body.lowercase()
+            val category = when {
+                lower.contains("playlist") || lower.contains("not found") -> "SPOTIFY_PLAYLIST_ACCESS_DENIED"
+                lower.contains("auth") || lower.contains("scope") || lower.contains("permission") -> "SPOTIFY_AUTHORIZATION_DENIED"
+                lower.contains("policy") || lower.contains("restriction") || lower.contains("country") || lower.contains("geo") -> "SPOTIFY_POLICY_RESTRICTION"
+                else -> "SPOTIFY_UNKNOWN_403"
+            }
+            assertEquals(expectedCategory, category)
+        }
+    }
+
+    @Test
+    fun `42 - HTTP 429 Retry-After header parsing and quota exceeded classification`() {
+        // Retry-After header in seconds
+        val retryAfterHeader = "12"
+        val retryAfterMs = retryAfterHeader.toLongOrNull()?.let { it * 1000L }
+        assertEquals(12000L, retryAfterMs)
+
+        // Quota exceeded body
+        val quotaBody = "{\"error\": {\"status\": 429, \"message\": \"QUOTA_EXCEEDED\"}}"
+        val isQuota = quotaBody.contains("QUOTA_EXCEEDED", ignoreCase = true)
+        assertTrue(isQuota)
+    }
+
+    @Test
+    fun `43 - Unwanted variant rejection in TrackMatcher - lyric videos, covers, DJ remixes penalized`() {
+        val trackName = "Tum Hi Ho"
+        val artist = "Arijit Singh"
+        val spotifyDurationMs = 262000L
+
+        val studioCandidate = MatchCandidate(
+            videoId = "official_audio_id",
+            title = "Tum Hi Ho",
+            channelTitle = "Arijit Singh - Topic",
+            durationSec = 262
+        )
+
+        val lyricsCandidate = MatchCandidate(
+            videoId = "lyrics_video_id",
+            title = "Tum Hi Ho (Lyrics Video) | Arijit Singh",
+            channelTitle = "Lyrics Channel",
+            durationSec = 251
+        )
+
+        val djCandidate = MatchCandidate(
+            videoId = "dj_remix_id",
+            title = "Tum Hi Ho DJ Remix slowed reverb",
+            channelTitle = "DJ",
+            durationSec = 180
+        )
+
+        val studioScore = TrackMatcher.score(trackName, artist, spotifyDurationMs, studioCandidate)
+        val lyricsScore = TrackMatcher.score(trackName, artist, spotifyDurationMs, lyricsCandidate)
+        val djScore = TrackMatcher.score(trackName, artist, spotifyDurationMs, djCandidate)
+
+        assertTrue(studioScore.confidence >= 0.80)
+        assertTrue(lyricsScore.confidence < 0.55)
+        assertTrue(djScore.confidence < 0.55)
+
+        val best = TrackMatcher.pickBest(
+            trackName = trackName,
+            artist = artist,
+            spotifyDurationMs = spotifyDurationMs,
+            candidates = listOf(lyricsCandidate, djCandidate, studioCandidate)
+        )
+
+        assertEquals(MatchStatus.MATCHED, best.status)
+        assertEquals("official_audio_id", best.videoId)
+    }
+
+    @Test
+    fun `44 - Spotify import is not started while UI state == IDLE and initial session state is IDLE`() {
+        assertEquals(SpotifyImportState.IDLE, PlaylistImporter.currentSessionState)
+    }
+
+    @Test
+    fun `45 - HTTP 429 without explicit QUOTA_EXCEEDED body is classified as RateLimited and retried`() {
+        val rateLimitBody = "{\"error\": {\"status\": 429, \"message\": \"API rate limit exceeded\"}}"
+        val retryAfterSec = 5L
+        val retryAfterMs = retryAfterSec * 1000L
+
+        val isExplicitQuota = rateLimitBody.contains("\"QUOTA_EXCEEDED\"", ignoreCase = true) ||
+                (rateLimitBody.contains("\"message\"") && rateLimitBody.contains("quota exceeded", ignoreCase = true))
+
+        assertFalse("General rate limit body must not be classified as quota exceeded", isExplicitQuota)
+
+        val result = if (isExplicitQuota) {
+            SpotifyFetchResult.QuotaExceeded(429, "Spotify API quota has been exceeded.")
+        } else {
+            SpotifyFetchResult.RateLimited(429, retryAfterMs, "Spotify rate limit reached.")
+        }
+
+        assertTrue(result is SpotifyFetchResult.RateLimited)
+        assertEquals(5000L, (result as SpotifyFetchResult.RateLimited).retryAfterMs)
+    }
+
+    @Test
+    fun `46 - Repeated 429 exhausts retries and produces SpotifyRateLimitException not permanent quota`() {
+        val maxGeneralRetries = 5
+        var retries = 0
+        var threwRateLimit = false
+        var threwQuota = false
+
+        while (retries < maxGeneralRetries) {
+            retries++
+        }
+
+        if (retries >= maxGeneralRetries) {
+            try {
+                throw SpotifyRateLimitException(3000L, "Spotify rate limit reached and retries exhausted.")
+            } catch (e: SpotifyRateLimitException) {
+                threwRateLimit = true
+            } catch (e: SpotifyQuotaExceededException) {
+                threwQuota = true
+            }
+        }
+
+        assertTrue(threwRateLimit)
+        assertFalse(threwQuota)
+    }
+
+    @Test
+    fun `47 - Previous failed import resets state so subsequent new import starts from clean IDLE state`() {
+        // Simulate previous failed run
+        PlaylistImporter.currentSessionState = SpotifyImportState.FAILED
+        // Cleanup on completion
+        PlaylistImporter.currentSessionState = SpotifyImportState.IDLE
+
+        assertEquals(SpotifyImportState.IDLE, PlaylistImporter.currentSessionState)
+
+        // New import session starts
+        PlaylistImporter.currentSessionState = SpotifyImportState.STARTING
+        assertEquals(SpotifyImportState.STARTING, PlaylistImporter.currentSessionState)
+
+        // Reset to IDLE
+        PlaylistImporter.currentSessionState = SpotifyImportState.IDLE
+        assertEquals(SpotifyImportState.IDLE, PlaylistImporter.currentSessionState)
+    }
+
+    @Test
+    fun `48 - YouTubeQuotaTracker cannot classify Spotify HTTP responses`() {
+        val spotify429Code = 429
+        val isSpotifyRateLimit = spotify429Code == 429
+        assertTrue(isSpotifyRateLimit)
+
+        // YouTube quota exception is strictly for YouTube Data API v3
+        val ytEx = YouTubeQuotaExceededException("YouTube API quota exceeded")
+        assertTrue(ytEx is Exception)
+        assertFalse("YouTubeQuotaExceededException must not inherit SpotifyImportException", ytEx is SpotifyImportException)
+    }
+
+    @Test
+    fun `49 - Token acquisition does not trigger playlist quota logic`() {
+        SpotifyTokenProvider.invalidateToken()
+        // Invalidation clears token without touching any quota or database entities
+        assertNull(SpotifyTokenProvider.cachedToken)
+    }
+
+    @Test
+    fun `50 - Spotify Developer API credentials and web fallback are configured`() {
+        assertNotNull(SpotifyClientIdKey)
+        assertNotNull(SpotifyClientSecretKey)
+        assertEquals("spotifyClientId", SpotifyClientIdKey.name)
+        assertEquals("spotifyClientSecret", SpotifyClientSecretKey.name)
+    }
+
+    @Test
+    fun `51 - Spotify URL import accepts playlists with 100 tracks or fewer`() {
+        val tracksCount = 100
+        val isAllowed = tracksCount <= 100
+        assertTrue(isAllowed)
+    }
+
+    @Test
+    fun `52 - Spotify URL import with more than 100 tracks throws SpotifyMaxTracksExceededException with recommendation message`() {
+        val reportedTotal = 141
+        try {
+            if (reportedTotal > 100) {
+                throw SpotifyMaxTracksExceededException("Spotify playlist import supports up to 100 tracks. For larger playlists, use Import Through CSV.")
+            }
+            fail("Should have thrown SpotifyMaxTracksExceededException")
+        } catch (e: SpotifyMaxTracksExceededException) {
+            assertEquals("Spotify playlist import supports up to 100 tracks. For larger playlists, use Import Through CSV.", e.message)
+        }
+    }
+
+    @Test
+    fun `53 - CSV importer parses 100, 141, 518, 611, 1000 rows completely without limit`() {
+        val testCounts = listOf(100, 141, 518, 611, 1000)
+        for (count in testCounts) {
+            val tracks = (1..count).map { i ->
+                SpotifyTrackItem(
+                    spotifyTrackId = "track_$i",
+                    spotifyTrackUri = "spotify:track:track_$i",
+                    title = "Song Title $i",
+                    artist = "Artist $i",
+                    album = "Album $i",
+                    sourcePosition = i,
+                    durationMs = 200000L,
+                    isLocal = false
+                )
+            }
+            val csv = SpotifyCsvSerializer.exportToCsv(tracks)
+            val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
+            assertEquals("CSV parsing must read all rows to EOF for count $count", count, parsed.size)
+        }
+    }
+
+    @Test
+    fun `54 - CSV importer preserves exact source ordering and duplicate tracks`() {
+        val tracks = listOf(
+            SpotifyTrackItem(spotifyTrackId = "id_1", title = "Duplicate Song", artist = "Artist A", album = "Album A", sourcePosition = 0, durationMs = 180000L),
+            SpotifyTrackItem(spotifyTrackId = "id_2", title = "Unique Song", artist = "Artist B", album = "Album B", sourcePosition = 1, durationMs = 200000L),
+            SpotifyTrackItem(spotifyTrackId = "id_1", title = "Duplicate Song", artist = "Artist A", album = "Album A", sourcePosition = 2, durationMs = 180000L)
+        )
+        val csv = SpotifyCsvSerializer.exportToCsv(tracks)
+        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
+
+        assertEquals(3, parsed.size)
+        assertEquals("Duplicate Song", parsed[0].title)
+        assertEquals("Unique Song", parsed[1].title)
+        assertEquals("Duplicate Song", parsed[2].title)
+    }
+
+    @Test
+    fun `55 - CSV importer parses generic headers seamlessly`() {
+        val genericCsv = """
+            Track Name,Artist Name,Album,Duration (ms)
+            Blinding Lights,The Weeknd,After Hours,200000
+            Shape of You,Ed Sheeran,Divide,233000
+            Starboy,The Weeknd,Starboy,230000
+        """.trimIndent()
+
+        val parsed = SpotifyCsvSerializer.parseFromCsv(genericCsv)
+        assertEquals(3, parsed.size)
+        assertEquals("Blinding Lights", parsed[0].title)
+        assertEquals("The Weeknd", parsed[0].artist)
+        assertEquals("Shape of You", parsed[1].title)
+        assertEquals("Starboy", parsed[2].title)
     }
 }

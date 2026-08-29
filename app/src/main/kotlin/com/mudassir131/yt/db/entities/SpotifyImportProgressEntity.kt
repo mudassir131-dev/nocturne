@@ -19,6 +19,6 @@ data class SpotifyImportProgressEntity(
     val nextUrl: String?,
     val processedCount: Int = 0,
     val status: String = "IN_PROGRESS",
-    val maxTracks: Int = 3000,
+    val maxTracks: Int = 0,
     val lastUpdated: LocalDateTime = LocalDateTime.now()
 )
