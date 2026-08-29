@@ -80,6 +80,18 @@
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1787654543330.gif",
+    "reactions": {},
+    "id": "msg-20d50270",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1787654555345
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
     "reactions": {
       "🔥": 25,
       "👍": 18,
@@ -95,21 +107,33 @@
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1787676462430.gif",
+    "reactions": {"👍": 1},
+    "id": "msg-3cd0380d",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1787676463877
+  },
+  {
+    "actionText": "Check for Update",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "actionUrl": "nocturne://settings/update",
     "reactions": {},
     "id": "msg-9ba70fa2",
     "tag": "ANNOUNCEMENT",
     "title": "🚨 Nocturne 2.22.29 Crash Bug Fixed! 🎉",
     "content": "The crash issue affecting some Vivo and iQOO devices has been fixed in the latest update. 🛠️✨\n\nPlease update Nocturne to version 2.22.29 to get the latest fixes and stability improvements.\n\nTo update:\n\nNocturne → Settings → Check for Updates → Update\n\n👉 If an update is available, please install it and restart the app afterward.\n\nWe highly recommend updating, especially if you were experiencing crashes or issues with the Force 90/120Hz setting.\n\nThank you for your patience and continued support! ❤️🎵",
-    "actionText": "Check for Update",
-    "actionUrl": "nocturne://settings/update",
     "timestamp": 1787677167003
   },
   {
     "actionText": "Nocturne Website",
-    "actionUrl": "https://nocturne-music.vercel.app",
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
+    "actionUrl": "https://nocturne-music.vercel.app",
     "reactions": {},
     "id": "msg-96b24393",
     "tag": "ANNOUNCEMENT",
@@ -118,16 +142,16 @@
     "timestamp": 1787746660600
   },
   {
+    "actionText": "Open Website",
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
+    "actionUrl": "https://nocturne-music.vercel.app",
     "reactions": {},
     "id": "msg-2678cd66",
     "tag": "ANNOUNCEMENT",
     "title": "Official Website",
     "content": "Visit our official website for downloads, guides, and updates: https://nocturne-music.vercel.app",
-    "actionText": "Open Website",
-    "actionUrl": "https://nocturne-music.vercel.app",
     "timestamp": 1787746706899
   },
   {
@@ -153,16 +177,16 @@
     "timestamp": 1787837998108
   },
   {
+    "actionText": "Star on GitHub ⭐",
     "authorRole": "App developer",
     "isVerified": true,
     "authorName": "Mudassir",
+    "actionUrl": "https://github.com/mudassir131-dev/nocturne",
     "reactions": {},
     "id": "msg-4552eba6",
     "tag": "ANNOUNCEMENT",
     "title": "",
     "content": "Hey everyone! ❤️\n\nWe\u2019ve reached 409 downloads on GitHub! 🚀\n\nIf you\u2019re enjoying the app and find it useful, I\u2019d really appreciate it if you could take a moment to ⭐ star the GitHub repository: https://github.com/mudassir131-dev/nocturne. It helps the project grow and means a lot to me as a developer.\n\nThank you for supporting the project! 🙌",
-    "actionText": "Star on GitHub ⭐",
-    "actionUrl": "https://github.com/mudassir131-dev/nocturne",
     "timestamp": 1787914931354
   },
   {
@@ -281,5 +305,18 @@
     "title": "",
     "content": "fixed with alternative importation!",
     "timestamp": 1788021467937
+  },
+  {
+    "gifUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1788022770156_bb9475.gif",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1788022766861.gif",
+    "reactions": {},
+    "id": "msg-858f07bb",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1788022770132
   }
 ]
