@@ -1,15 +1,14 @@
 /*
  * Nocturne - by Mudassir
-
  * Licensed Under GPL-3.0
  */
-
-
 
 package com.mudassir131.yt.ui.component
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ScrollState
@@ -35,12 +34,14 @@ fun BoxScope.HideOnScrollFAB(
     visible: Boolean = true,
     lazyListState: LazyListState,
     @DrawableRes icon: Int,
+    hideOnScroll: Boolean = true,
     onClick: () -> Unit,
 ) {
+    val shouldShow = visible && (!hideOnScroll || lazyListState.isScrollingUp())
     AnimatedVisibility(
-        visible = visible && lazyListState.isScrollingUp(),
-        enter = slideInVertically { it },
-        exit = slideOutVertically { it },
+        visible = shouldShow,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
         modifier =
         Modifier
             .align(Alignment.BottomEnd)
@@ -66,12 +67,14 @@ fun BoxScope.HideOnScrollFAB(
     visible: Boolean = true,
     lazyListState: LazyGridState,
     @DrawableRes icon: Int,
+    hideOnScroll: Boolean = true,
     onClick: () -> Unit,
 ) {
+    val shouldShow = visible && (!hideOnScroll || lazyListState.isScrollingUp())
     AnimatedVisibility(
-        visible = visible && lazyListState.isScrollingUp(),
-        enter = slideInVertically { it },
-        exit = slideOutVertically { it },
+        visible = shouldShow,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
         modifier =
         Modifier
             .align(Alignment.BottomEnd)
@@ -97,12 +100,14 @@ fun BoxScope.HideOnScrollFAB(
     visible: Boolean = true,
     scrollState: ScrollState,
     @DrawableRes icon: Int,
+    hideOnScroll: Boolean = true,
     onClick: () -> Unit,
 ) {
+    val shouldShow = visible && (!hideOnScroll || scrollState.isScrollingUp())
     AnimatedVisibility(
-        visible = visible && scrollState.isScrollingUp(),
-        enter = slideInVertically { it },
-        exit = slideOutVertically { it },
+        visible = shouldShow,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
         modifier =
         Modifier
             .align(Alignment.BottomEnd)

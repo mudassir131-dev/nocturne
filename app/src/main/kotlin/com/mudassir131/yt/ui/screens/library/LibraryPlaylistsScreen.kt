@@ -8,6 +8,9 @@
 
 package com.mudassir131.yt.ui.screens.library
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +25,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.only
+import com.mudassir131.yt.utils.PlaylistImporter
+import java.io.InputStreamReader
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -175,62 +181,75 @@ fun LibraryPlaylistsScreen(
 
     val topSize by viewModel.topValue.collectAsState(initial = 50)
 
-    val likedPlaylist =
-        Playlist(
-            playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.liked)
-            ),
-            songCount = 0,
-            songThumbnails = emptyList(),
-        )
+    val likedPlaylistName = stringResource(R.string.liked)
+    val offlinePlaylistName = stringResource(R.string.offline)
+    val topPlaylistPrefix = stringResource(R.string.my_top)
+    val cachedPlaylistName = stringResource(R.string.cached_playlist)
 
-    val downloadPlaylist =
+    val likedPlaylist = remember(likedPlaylistName) {
         Playlist(
             playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.offline)
+                id = "auto_playlist_liked",
+                name = likedPlaylistName
             ),
             songCount = 0,
             songThumbnails = emptyList(),
         )
+    }
 
-    val topPlaylist =
+    val downloadPlaylist = remember(offlinePlaylistName) {
         Playlist(
             playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.my_top) + " $topSize"
+                id = "auto_playlist_offline",
+                name = offlinePlaylistName
             ),
             songCount = 0,
             songThumbnails = emptyList(),
         )
+    }
 
-    val cachePlaylist =
+    val topPlaylist = remember(topPlaylistPrefix, topSize) {
         Playlist(
             playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.cached_playlist)
+                id = "auto_playlist_top",
+                name = "$topPlaylistPrefix $topSize"
             ),
             songCount = 0,
             songThumbnails = emptyList(),
         )
+    }
+
+    val cachePlaylist = remember(cachedPlaylistName) {
+        Playlist(
+            playlist = PlaylistEntity(
+                id = "auto_playlist_cached",
+                name = cachedPlaylistName
+            ),
+            songCount = 0,
+            songThumbnails = emptyList(),
+        )
+    }
 
     val (showLiked) = rememberPreference(ShowLikedPlaylistKey, true)
     val (showDownloaded) = rememberPreference(ShowDownloadedPlaylistKey, true)
     val (showTop) = rememberPreference(ShowTopPlaylistKey, true)
     val (showCached) = rememberPreference(ShowCachedPlaylistKey, true)
 
+    val autoPlaylists = remember(showLiked, showDownloaded, showTop, showCached, likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, topSize) {
+        listOfNotNull(
+            if (showLiked) (likedPlaylist to "auto_playlist/liked") else null,
+            if (showDownloaded) (downloadPlaylist to "auto_playlist/downloaded") else null,
+            if (showTop) (topPlaylist to "top_playlist/$topSize") else null,
+            if (showCached) (cachePlaylist to "cache_playlist/cached") else null,
+        )
+    }
+
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
     val canEnterReorderMode = sortType == PlaylistSortType.CUSTOM && selectedTagIds.isEmpty()
     var reorderEnabled by rememberSaveable { mutableStateOf(false) }
     val canReorderPlaylists = canEnterReorderMode && reorderEnabled
-    val listHeaderItems =
-        2 +
-            (if (showLiked) 1 else 0) +
-            (if (showDownloaded) 1 else 0) +
-            (if (showTop) 1 else 0) +
-            (if (showCached) 1 else 0)
+    val listHeaderItems = 2 + (if (autoPlaylists.isNotEmpty()) 1 else 0)
     val mutableVisiblePlaylists = remember { mutableStateListOf<Playlist>() }
     var dragInfo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     val reorderableState = rememberReorderableLazyListState(
@@ -324,12 +343,77 @@ fun LibraryPlaylistsScreen(
     var showImportPlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var showImportSpotifyPlaylistDialog by rememberSaveable { mutableStateOf(false) }
 
+    val importCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val appContext = context.applicationContext
+        Toast.makeText(appContext, "Importing playlist from CSV in background...", Toast.LENGTH_SHORT).show()
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val displayName = runCatching {
+                    var name: String? = null
+                    if (uri.scheme == "content") {
+                        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                                if (idx >= 0) name = cursor.getString(idx)
+                            }
+                        }
+                    }
+                    name?.substringBeforeLast('.')
+                }.getOrNull()?.takeIf { it.isNotBlank() } ?: "Imported CSV Playlist"
+
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    val reader = InputStreamReader(stream, Charsets.UTF_8)
+                    val summary = PlaylistImporter.importFromCsv(
+                        database = database,
+                        csvReader = reader,
+                        playlistName = displayName
+                    )
+                    withContext(Dispatchers.Main) {
+                        val msg = appContext.getString(
+                            R.string.import_summary,
+                            summary.playlistName,
+                            summary.matched,
+                            summary.unmatched
+                        )
+                        Toast.makeText(appContext, msg, Toast.LENGTH_LONG).show()
+                        summary.quotaNotice?.let { notice ->
+                            Toast.makeText(appContext, notice, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    val errorMsg = e.localizedMessage?.takeIf { it.isNotBlank() } ?: "Failed to import CSV"
+                    Toast.makeText(appContext, "CSV Import Failed: $errorMsg", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     if (showChoiceDialog) {
         com.mudassir131.yt.ui.component.PlaylistActionChoiceDialog(
             onDismiss = { showChoiceDialog = false },
             onCreateClick = { showCreatePlaylistDialog = true },
             onImportYouTubeClick = { showImportPlaylistDialog = true },
-            onImportSpotifyClick = { showImportSpotifyPlaylistDialog = true }
+            onImportSpotifyClick = { showImportSpotifyPlaylistDialog = true },
+            onImportCsvClick = {
+                importCsvLauncher.launch(
+                    arrayOf(
+                        "text/csv",
+                        "text/x-csv",
+                        "text/comma-separated-values",
+                        "text/x-comma-separated-values",
+                        "application/csv",
+                        "application/x-csv",
+                        "application/vnd.ms-excel",
+                        "text/plain",
+                        "text/*",
+                        "application/octet-stream",
+                        "*/*"
+                    )
+                )
+            }
         )
     }
 
@@ -432,15 +516,6 @@ fun LibraryPlaylistsScreen(
     ) {
         when (viewType) {
             LibraryViewType.LIST -> {
-                val autoPlaylists = remember(showLiked, showDownloaded, showTop, showCached, likedPlaylist, downloadPlaylist, topPlaylist, cachePlaylist, topSize) {
-                    listOfNotNull(
-                        if (showLiked) (likedPlaylist to "auto_playlist/liked") else null,
-                        if (showDownloaded) (downloadPlaylist to "auto_playlist/downloaded") else null,
-                        if (showTop) (topPlaylist to "top_playlist/$topSize") else null,
-                        if (showCached) (cachePlaylist to "cache_playlist/cached") else null,
-                    )
-                }
-
                 LazyColumn(
                     state = lazyListState,
                     contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom).asPaddingValues(),
@@ -470,7 +545,6 @@ fun LibraryPlaylistsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .animateItem()
                             ) {
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     autoPlaylists.forEachIndexed { index, (playlist, route) ->
@@ -532,7 +606,6 @@ fun LibraryPlaylistsScreen(
                                         useNewDesign = useNewLibraryDesign,
                                         showDragHandle = true,
                                         dragHandleModifier = Modifier.draggableHandle(),
-                                        modifier = Modifier.animateItem(),
                                     )
                                 }
                             }
@@ -552,7 +625,6 @@ fun LibraryPlaylistsScreen(
                                     coroutineScope = coroutineScope,
                                     playlist = playlist,
                                     useNewDesign = useNewLibraryDesign,
-                                    modifier = Modifier.animateItem(),
                                 )
                             }
                         }
@@ -562,6 +634,7 @@ fun LibraryPlaylistsScreen(
                 HideOnScrollFAB(
                     lazyListState = lazyListState,
                     icon = R.drawable.add,
+                    hideOnScroll = false,
                     onClick = {
                         showChoiceDialog = true
                     },
@@ -696,7 +769,6 @@ fun LibraryPlaylistsScreen(
                             menuState = menuState,
                             coroutineScope = coroutineScope,
                             playlist = playlist,
-                            modifier = Modifier.animateItem()
                         )
                     }
                 }
@@ -704,6 +776,7 @@ fun LibraryPlaylistsScreen(
                 HideOnScrollFAB(
                     lazyListState = lazyGridState,
                     icon = R.drawable.add,
+                    hideOnScroll = false,
                     onClick = {
                         showChoiceDialog = true
                     },

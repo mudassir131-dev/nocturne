@@ -14,9 +14,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -145,46 +147,56 @@ fun LibraryMixScreen(
         if (selectedTagIds.isEmpty()) emptyList() else selectedTagIds.toList()
     ).collectAsState(initial = emptyList())
 
-    val topSize by viewModel.topValue.collectAsState(initial = 50)
-    val likedPlaylist =
-        Playlist(
-            playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.liked)
-            ),
-            songCount = 0,
-            songThumbnails = emptyList(),
-        )
+    val topSize by viewModel.topValue.collectAsState(initial = "50")
 
-    val downloadPlaylist =
-        Playlist(
-            playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.offline)
-            ),
-            songCount = 0,
-            songThumbnails = emptyList(),
-        )
+    val likedPlaylistName = stringResource(R.string.liked)
+    val offlinePlaylistName = stringResource(R.string.offline)
+    val topPlaylistPrefix = stringResource(R.string.my_top)
+    val cachedPlaylistName = stringResource(R.string.cached_playlist)
 
-    val topPlaylist =
+    val likedPlaylist = remember(likedPlaylistName) {
         Playlist(
             playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.my_top) + " $topSize"
+                id = "auto_playlist_liked",
+                name = likedPlaylistName
             ),
             songCount = 0,
             songThumbnails = emptyList(),
         )
+    }
 
-    val cachePlaylist =
+    val downloadPlaylist = remember(offlinePlaylistName) {
         Playlist(
             playlist = PlaylistEntity(
-                id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.cached_playlist)
+                id = "auto_playlist_offline",
+                name = offlinePlaylistName
             ),
             songCount = 0,
             songThumbnails = emptyList(),
         )
+    }
+
+    val topPlaylist = remember(topPlaylistPrefix, topSize) {
+        Playlist(
+            playlist = PlaylistEntity(
+                id = "auto_playlist_top",
+                name = "$topPlaylistPrefix $topSize"
+            ),
+            songCount = 0,
+            songThumbnails = emptyList(),
+        )
+    }
+
+    val cachePlaylist = remember(cachedPlaylistName) {
+        Playlist(
+            playlist = PlaylistEntity(
+                id = "auto_playlist_cached",
+                name = cachedPlaylistName
+            ),
+            songCount = 0,
+            songThumbnails = emptyList(),
+        )
+    }
 
     val (showLiked) = rememberPreference(ShowLikedPlaylistKey, true)
     val (showDownloaded) = rememberPreference(ShowDownloadedPlaylistKey, true)
@@ -438,7 +450,7 @@ fun LibraryMixScreen(
             LibraryViewType.LIST ->
                 LazyColumn(
                     state = lazyListState,
-                    contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+                    contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom).asPaddingValues(),
                 ) {
                     item(
                         key = "filter",
@@ -465,7 +477,6 @@ fun LibraryMixScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .animateItem()
                             ) {
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     autoPlaylists.forEachIndexed { index, (playlist, route) ->
@@ -523,7 +534,6 @@ fun LibraryMixScreen(
                                             useNewDesign = useNewLibraryDesign,
                                             showDragHandle = true,
                                             dragHandleModifier = Modifier.draggableHandle(),
-                                            modifier = Modifier.animateItem(),
                                         )
                                     }
                                 }
@@ -543,7 +553,6 @@ fun LibraryMixScreen(
                                         coroutineScope = coroutineScope,
                                         playlist = item,
                                         useNewDesign = useNewLibraryDesign,
-                                        modifier = Modifier.animateItem(),
                                     )
                                 }
                             }
