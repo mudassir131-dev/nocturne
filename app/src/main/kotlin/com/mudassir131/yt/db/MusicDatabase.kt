@@ -49,6 +49,9 @@ import com.mudassir131.yt.db.entities.SortedSongAlbumMap
 import com.mudassir131.yt.db.entities.SortedSongArtistMap
 import com.mudassir131.yt.db.entities.TagEntity
 import com.mudassir131.yt.db.entities.PlaylistTagMap
+import com.mudassir131.yt.db.entities.SpotifyTrackMap
+import com.mudassir131.yt.db.entities.SpotifyImportProgressEntity
+import com.mudassir131.yt.db.entities.SpotifyImportTrackEntity
 import com.mudassir131.yt.extensions.toSQLiteQuery
 import java.time.Instant
 import java.time.LocalDateTime
@@ -58,7 +61,7 @@ import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 
 private const val TAG = "MusicDatabase"
-private const val CURRENT_VERSION = 28
+private const val CURRENT_VERSION = 30
 
 class MusicDatabase(
     private val delegate: InternalDatabase,
@@ -124,7 +127,10 @@ class MusicDatabase(
         PlayCountEntity::class,
         TagEntity::class,
         PlaylistTagMap::class,
-        com.mudassir131.yt.db.entities.SongSkipEntity::class
+        com.mudassir131.yt.db.entities.SongSkipEntity::class,
+        SpotifyTrackMap::class,
+        SpotifyImportProgressEntity::class,
+        SpotifyImportTrackEntity::class
     ],
     views = [
         SortedSongArtistMap::class,
@@ -154,6 +160,8 @@ class MusicDatabase(
         AutoMigration(from = 19, to = 20, spec = Migration19To20::class),
         AutoMigration(from = 20, to = 21, spec = Migration20To21::class),
         AutoMigration(from = 21, to = 22),
+        // 22-29 predate this list and run through UniversalMigration / SchemaTools instead.
+        AutoMigration(from = 29, to = 30),
     ],
 )
 @TypeConverters(Converters::class)

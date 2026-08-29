@@ -52,6 +52,9 @@ import com.mudassir131.yt.db.entities.SongAlbumMap
 import com.mudassir131.yt.db.entities.SongArtistMap
 import com.mudassir131.yt.db.entities.SongEntity
 import com.mudassir131.yt.db.entities.SongWithStats
+import com.mudassir131.yt.db.entities.SpotifyImportProgressEntity
+import com.mudassir131.yt.db.entities.SpotifyImportTrackEntity
+import com.mudassir131.yt.db.entities.SpotifyTrackMap
 import com.mudassir131.yt.db.entities.TagEntity
 import com.mudassir131.yt.db.entities.PlaylistTagMap
 import com.mudassir131.yt.db.entities.PlaylistWithTags
@@ -1660,4 +1663,55 @@ interface DatabaseDao {
 
     @Query("DELETE FROM song_skip WHERE songId = :songId")
     suspend fun deleteSkip(songId: String)
+
+    // ─── Spotify Track Duplicate Prevention & Pagination State ───────────
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insert(spotifyTrackMap: SpotifyTrackMap): Long
+
+    @Query("SELECT * FROM spotify_track_map WHERE spotifyTrackId = :spotifyTrackId LIMIT 1")
+    fun getSpotifyTrack(spotifyTrackId: String): SpotifyTrackMap?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM spotify_track_map WHERE spotifyTrackId = :spotifyTrackId)")
+    fun hasSpotifyTrack(spotifyTrackId: String): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertSpotifyImportProgress(progress: SpotifyImportProgressEntity)
+
+    @Query("SELECT * FROM spotify_import_progress WHERE spotifyPlaylistId = :spotifyPlaylistId LIMIT 1")
+    fun getSpotifyImportProgress(spotifyPlaylistId: String): SpotifyImportProgressEntity?
+
+    @Query("DELETE FROM spotify_import_progress WHERE spotifyPlaylistId = :spotifyPlaylistId")
+    fun deleteSpotifyImportProgress(spotifyPlaylistId: String)
+
+    // ─── Spotify Import Match Records (incl. unmatched, for manual review) ───
+
+    /**
+     * Non-suspend so it can be called from inside the importer's per-page
+     * [MusicDatabase.withTransaction] block, alongside the progress checkpoint.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertSpotifyImportTrack(track: SpotifyImportTrackEntity)
+
+    @Query("SELECT * FROM spotify_import_track WHERE playlistId = :playlistId ORDER BY position")
+    fun spotifyImportTracks(playlistId: String): Flow<List<SpotifyImportTrackEntity>>
+
+    @Query(
+        "SELECT * FROM spotify_import_track WHERE playlistId = :playlistId AND matchStatus = 'UNMATCHED' ORDER BY position"
+    )
+    fun unmatchedSpotifyImportTracks(playlistId: String): Flow<List<SpotifyImportTrackEntity>>
+
+    @Query(
+        "SELECT COUNT(*) FROM spotify_import_track WHERE playlistId = :playlistId AND matchStatus = 'MATCHED'"
+    )
+    fun matchedSpotifyImportTrackCount(playlistId: String): Int
+
+    @Query(
+        "SELECT COUNT(*) FROM spotify_import_track WHERE playlistId = :playlistId AND matchStatus = 'UNMATCHED'"
+    )
+    fun unmatchedSpotifyImportTrackCount(playlistId: String): Int
+
+    @Query("DELETE FROM spotify_import_track WHERE playlistId = :playlistId")
+    fun deleteSpotifyImportTracks(playlistId: String)
 }
+
