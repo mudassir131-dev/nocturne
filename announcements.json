@@ -341,5 +341,17 @@
     "title": "",
     "content": "first update to the latest version 👄",
     "timestamp": 1788023400920
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1788023683951_97c3ea.jpg",
+    "reactions": {},
+    "id": "msg-2203787e",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1788023683923
   }
 ]
