@@ -111,6 +111,12 @@ val AudioQualityKey = stringPreferencesKey("audioQuality")
 
 val NetworkMeteredKey = booleanPreferencesKey("networkMetered")
 
+// Spotify import → YouTube matching.
+// The key is read-only Data API v3 usage (search.list / videos.list); no OAuth, no account writes.
+val YouTubeDataApiKeyKey = stringPreferencesKey("youtubeDataApiKey")
+val SpotifyUseDataApiMatchingKey = booleanPreferencesKey("spotifyUseDataApiMatching")
+val SpotifyMatchConfidenceThresholdKey = floatPreferencesKey("spotifyMatchConfidenceThreshold")
+
 enum class AudioQuality {
     SAAVN,
     OPUS,

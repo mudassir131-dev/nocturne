@@ -539,6 +539,15 @@ Nocturne will only extract your token, and everything else is stored locally.</s
     <string name="listenbrainz_scrobbling_description">Enable submitting now-playing and finished listens to ListenBrainz</string>
     <string name="set_listenbrainz_token">Set ListenBrainz token</string>
     <string name="edit_listenbrainz_token">Edit ListenBrainz token</string>
+    <!-- YouTube Data API (Spotify import matching) -->
+    <string name="youtube_data_api">YouTube Data API</string>
+    <string name="set_youtube_data_api_key">Set API key</string>
+    <string name="edit_youtube_data_api_key">Edit API key</string>
+    <string name="youtube_data_api_key_description">Optional. A read-only YouTube Data API v3 key improves Spotify import accuracy by verifying track durations. No sign-in, and nothing is written to your YouTube account. Leave blank to match with YouTube Music search instead.</string>
+    <string name="spotify_data_api_matching">Use Data API for Spotify imports</string>
+    <string name="spotify_data_api_matching_description">Match imported Spotify tracks with the Data API while the daily quota lasts, then continue with YouTube Music search</string>
+    <string name="youtube_data_api_quota_used">Quota today: %1$d / %2$d units</string>
+    <string name="import_summary">Imported %1$s: %2$d matched, %3$d need review</string>
     <!-- Discord activity customization -->
     <string name="discord_activity_name">Activity name</string>
     <string name="discord_activity_details">Activity details</string>
