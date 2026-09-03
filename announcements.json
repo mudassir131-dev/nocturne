@@ -423,5 +423,17 @@
     "title": "",
     "content": "",
     "timestamp": 1788325448608
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1788405532451_9dc2b0.jpg",
+    "reactions": {},
+    "id": "msg-599d1561",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1788405532433
   }
 ]
