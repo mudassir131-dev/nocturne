@@ -173,10 +173,16 @@ fun ShowMediaInfo(videoId: String) {
                         mediaIdLabel to song?.id,
                     )
                     val extendedList: List<Pair<String, String?>> = baseList + if (resolvedFormatInfo != null || currentFormat != null) {
+                        val out = resolvedFormatInfo?.outputInfo
                         listOfNotNull<Pair<String, String?>>(
                             resolvedFormatInfo?.takeIf { it.isLossless }?.let { "Audio Quality" to it.qualityLabel },
+                            out?.let { "Playback Status" to it.statusLabel },
+                            out?.let { "Source Format" to it.displaySourceFormat },
+                            out?.let { "Hardware Output" to it.displayOutputFormat },
+                            out?.routeName?.let { "Output Device" to it },
+                            out?.let { "Audio Pipeline" to "${it.backend} (${it.sharingMode} Mode)" },
                             codecsLabel to (resolvedFormatInfo?.displayCodec ?: currentFormat?.codecs),
-                            resolvedFormatInfo?.displayBitDepth?.let { "Bit Depth" to it },
+                            resolvedFormatInfo?.displayBitDepth?.let { "Source Bit Depth" to it },
                             sampleRateLabel to (resolvedFormatInfo?.displaySampleRate ?: currentFormat?.sampleRate?.let { "$it Hz" }),
                             resolvedFormatInfo?.channelCount?.let { "Channels" to (if (it == 2) "Stereo (2 ch)" else "$it ch") },
                             bitrateLabel to (resolvedFormatInfo?.displayBitrate ?: currentFormat?.bitrate?.takeIf { it > 0 }?.let { "${it / 1000} Kbps" }),
