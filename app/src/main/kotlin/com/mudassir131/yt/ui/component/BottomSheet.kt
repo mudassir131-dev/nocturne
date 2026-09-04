@@ -86,15 +86,21 @@ fun BottomSheet(
         topEnd = if (!state.isExpanded) 16.dp else 0.dp,
     )
 
+    val bottomBarScrollState = LocalBottomBarScrollState.current
+    val maxMiniPlayerSlide = 64.dp
+
     Box(
         modifier =
         modifier
             .fillMaxSize()
             .offset {
+                val scrollFraction = bottomBarScrollState?.collapseFraction ?: 0f
+                val sheetProgress = state.progress.coerceIn(0f, 1f)
+                val miniPlayerSlidePx = (maxMiniPlayerSlide.toPx() * scrollFraction * (1f - sheetProgress)).toInt()
                 val y =
                     (state.expandedBound - state.value)
                         .roundToPx()
-                        .coerceAtLeast(0)
+                        .coerceAtLeast(0) + miniPlayerSlidePx
                 IntOffset(x = 0, y = y)
             }
             .bottomSheetDraggable(state, onDismiss)
