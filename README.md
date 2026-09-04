@@ -26,6 +26,8 @@
     <a href="LICENSE"><img src="https://img.shields.io/github/license/mudassir131-dev/nocturne?style=for-the-badge&color=6366f1&labelColor=1e1e2e" alt="License" /></a>
     <img src="https://img.shields.io/badge/Architecture-MVVM-6366f1?style=for-the-badge&labelColor=1e1e2e&logo=kotlin" alt="MVVM Architecture" />
     <img src="https://img.shields.io/badge/Language-Kotlin-7f52ff?style=for-the-badge&logo=kotlin&color=6366f1&labelColor=1e1e2e" alt="Kotlin Language" />
+    <img src="https://img.shields.io/badge/Language-C%2B%2B17-00599C?style=for-the-badge&logo=c%2B%2B&color=6366f1&labelColor=1e1e2e" alt="C++17 Language" />
+    <img src="https://img.shields.io/badge/Audio_Engine-Oboe%20%2F%20AAudio-3DDC84?style=for-the-badge&logo=android&logoColor=white&color=6366f1&labelColor=1e1e2e" alt="Oboe / AAudio Native Engine" />
     <img src="https://img.shields.io/badge/Toolkit-Jetpack_Compose-4285f4?style=for-the-badge&logo=jetpack-compose&color=6366f1&labelColor=1e1e2e" alt="Jetpack Compose" />
     <img src="https://img.shields.io/badge/Design-Material_3-000000?style=for-the-badge&logo=material-design&color=6366f1&labelColor=1e1e2e" alt="Material 3" />
     <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=1e1e2e" alt="Android 8.0+" />
@@ -38,7 +40,7 @@
 > [!IMPORTANT]
 > **Website**: Explore features and stay up to date at [nocturne-music.vercel.app](https://nocturne-music.vercel.app).
 >
-> **Nocturne** isn't just another generic YouTube Music wrapper. It is a completely native Android music player crafted from the ground up using Kotlin, Jetpack Compose, and Media3/ExoPlayer for pure audio performance, privacy, and visual elegance.
+> **Nocturne** isn't just another generic YouTube Music wrapper. It is a high-performance native Android music player crafted from the ground up using **Kotlin**, **C++17 (Google Oboe / AAudio)**, **Jetpack Compose**, and **AndroidX Media3/ExoPlayer** for genuine bit-perfect Hi-Res lossless playback, strict privacy, and modern visual elegance.
 
 ---
 
@@ -82,13 +84,14 @@
     </td>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>🔊 High-Fidelity Audio</h3>
+        <h3>🔊 Native Hi-Res Audio Engine</h3>
         <ul>
-          <li>True Lossless mode & high-bitrate streaming</li>
-          <li>Support for OPUS, AAC, and FLAC audio formats</li>
-          <li>Real-time format, codec, and bitrate status badge</li>
-          <li>Audio normalization & playback speed controls</li>
-          <li>System equalizer & spatial audio integration</li>
+          <li><b>Native C++ Audio Pipeline</b> powered by Google Oboe & AAudio</li>
+          <li><b>Hi-Res Lossless & Bit-Perfect Playback</b> up to 24-bit / 192 kHz FLAC</li>
+          <li><b>Lock-Free SPSC Ring Buffer</b> for zero-allocation, glitch-free streaming</li>
+          <li><b>Bandlimited Sinc Resampler</b> (Blackman-Nuttall windowed)</li>
+          <li><b>10-Band Parametric Equalizer</b> with Direct Form II Transposed biquad filters</li>
+          <li><b>Live Audio Telemetry Badge</b> (Source vs DAC Sample Rate, Bit Depth, Route)</li>
         </ul>
       </div>
     </td>
@@ -263,6 +266,7 @@ If you love using Nocturne and want to support its ongoing development, features
 
 ### Acknowledgments
 Nocturne is made possible thanks to the open-source community:
+- [Google Oboe](https://github.com/google/oboe) for high-performance native audio streaming on Android.
 - [BetterLyrics](https://better-lyrics.boidu.dev/) for word-by-word synchronization and live artwork provider support.
 - [SimpMusic](https://github.com/maxrave-dev/SimpMusic) & [LRCLIB](https://lrclib.net/) for lyrics backend services.
 - [AndroidX Media3](https://developer.android.com/media/media3) & ExoPlayer for media playback.
