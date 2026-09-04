@@ -60,7 +60,7 @@ fun ActualPlaybackQualityBadge(
             if (lossless != null) {
                 LosslessIcon(
                     color = color.copy(alpha = 0.82f),
-                    isHiRes = lossless == LosslessQuality.HI_RES_LOSSLESS,
+                    isHiRes = lossless == LosslessQuality.HI_RES_LOSSLESS || lossless == LosslessQuality.BIT_PERFECT,
                     size = 10.dp,
                 )
             }
