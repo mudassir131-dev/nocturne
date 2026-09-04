@@ -60,11 +60,11 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.32
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.33
 
-* **Enhanced Music Experience to Lossless** — Upgraded high-res lossless audio pipeline with default Hi-Res lossless playback, bit-perfect streaming capabilities, and native audio engine optimization.
-* **Audio Lifecycle & Glitch Fixes** — Resolved pause/stop/seek audio stuttering artifacts with smooth zero-crossing fades and thread-safe lock-free buffer synchronization.
-* **Bug Fixes & Core Stability** — General player refinements, UI polish, and performance optimizations."""
+* **Native Audio Pipeline & Hi-Res Fixes** — Resolved audio regressions in native Oboe/AAudio playback, fixed OPUS fallback frame timing, and corrected 24-bit PCM decoding for flawless lossless audio.
+* **Audio Lifecycle & Stability** — Enhanced buffer synchronization, fixed resampler state on seek/pause transitions, and improved audio clock accuracy.
+* **Bug Fixes & Core Stability** — General playback refinements, UI polish, and performance optimizations."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
