@@ -141,7 +141,7 @@ fun AppleAudioOutputSheet(
     val onAccentColor by animateColorAsState(palette.onAccent, tween(280), label = "audioSheetOnAccent")
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var outputs by remember { mutableStateOf(audioManager.currentOutputs()) }
-    var audioQuality by rememberEnumPreference(AudioQualityKey, AudioQuality.OPUS)
+    var audioQuality by rememberEnumPreference(AudioQualityKey, AudioQuality.LOSSLESS)
     val activeOutput = remember(outputs) {
         outputs.firstOrNull { it.isExternal }
             ?: outputs.firstOrNull()
@@ -346,6 +346,14 @@ private fun AppleQualitySelector(
             .background(surfaceColor),
     ) {
         QualityOption(
+            text = "Hi-Res Lossless",
+            selected = selected == AudioQuality.LOSSLESS,
+            onClick = { onSelected(AudioQuality.LOSSLESS) },
+            modifier = Modifier.weight(1.3f),
+            accentColor = accentColor,
+            onAccentColor = onAccentColor,
+        )
+        QualityOption(
             text = "Opus",
             selected = selected == AudioQuality.OPUS,
             onClick = { onSelected(AudioQuality.OPUS) },
@@ -358,14 +366,6 @@ private fun AppleQualitySelector(
             selected = selected == AudioQuality.SAAVN,
             onClick = { onSelected(AudioQuality.SAAVN) },
             modifier = Modifier.weight(1f),
-            accentColor = accentColor,
-            onAccentColor = onAccentColor,
-        )
-        QualityOption(
-            text = "Hi-Res Lossless",
-            selected = selected == AudioQuality.LOSSLESS,
-            onClick = { onSelected(AudioQuality.LOSSLESS) },
-            modifier = Modifier.weight(1.3f),
             accentColor = accentColor,
             onAccentColor = onAccentColor,
         )
