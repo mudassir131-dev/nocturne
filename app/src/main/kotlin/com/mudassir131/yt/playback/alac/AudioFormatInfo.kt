@@ -26,9 +26,27 @@ data class AudioFormatInfo(
     val itag: Int?,
     val source: String?, // e.g. "saavn", "youtube", "local", "alac"
     val decoderName: String?,
+    val outputInfo: com.mudassir131.yt.playback.nativeaudio.AudioOutputInfo? = null,
 ) {
+    val isBitPerfect: Boolean
+        get() = outputInfo?.isBitPerfect == true
+
     val qualityLabel: String
         get() {
+            if (outputInfo != null) {
+                if (outputInfo.isBitPerfect) {
+                    return "Bit-perfect"
+                }
+                if (isLossless) {
+                    return if (outputInfo.isResampled) {
+                        "Resampled (${com.mudassir131.yt.playback.nativeaudio.AudioOutputInfo.formatSampleRate(outputInfo.outputSampleRate)})"
+                    } else if (isHiRes) {
+                        "Hi-Res Lossless"
+                    } else {
+                        "Lossless"
+                    }
+                }
+            }
             if (isLossless) {
                 return if (isHiRes) "Hi-Res Lossless" else "Lossless"
             }
