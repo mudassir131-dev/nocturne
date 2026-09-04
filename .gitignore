@@ -31,6 +31,9 @@ out/
 .gradle-*-home/
 .android-sdk/
 .kotlin/
+.cxx/
+**/.cxx/
+*.mp4
 app/universal/release/
 
 # Local configuration file
