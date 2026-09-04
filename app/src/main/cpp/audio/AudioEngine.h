@@ -99,8 +99,12 @@ public:
         std::int32_t sourceBitDepth,
         std::int32_t sourceChannels);
 
-    // Stream telemetry
+    // Stream telemetry & lifecycle state
     [[nodiscard]] bool isRunning() const noexcept;
+    [[nodiscard]] bool isStarted() const noexcept;
+    [[nodiscard]] bool isPlaybackActive() const noexcept;
+    [[nodiscard]] bool isPaused() const noexcept;
+    [[nodiscard]] bool isStopped() const noexcept;
     [[nodiscard]] PlaybackState getPlaybackState() const noexcept;
     [[nodiscard]] std::int32_t getActualSampleRate() const noexcept;
     [[nodiscard]] std::int32_t getActualChannelCount() const noexcept;
@@ -114,6 +118,18 @@ public:
     }
     [[nodiscard]] std::int64_t getFramesRead() const noexcept {
         return framesRead_.load(std::memory_order_relaxed);
+    }
+    [[nodiscard]] std::int64_t getUnderrunCount() const noexcept {
+        return underrunCount_.load(std::memory_order_relaxed);
+    }
+    [[nodiscard]] std::int64_t getOverrunCount() const noexcept {
+        return overrunCount_.load(std::memory_order_relaxed);
+    }
+    [[nodiscard]] std::int64_t getResamplerInputFrames() const noexcept {
+        return resamplerInputFrames_.load(std::memory_order_relaxed);
+    }
+    [[nodiscard]] std::int64_t getResamplerOutputFrames() const noexcept {
+        return resamplerOutputFrames_.load(std::memory_order_relaxed);
     }
 
     [[nodiscard]] bool isBitPerfect() const noexcept;
@@ -161,6 +177,10 @@ private:
 
     std::atomic<std::int64_t> framesWritten_{0};
     std::atomic<std::int64_t> framesRead_{0};
+    std::atomic<std::int64_t> underrunCount_{0};
+    std::atomic<std::int64_t> overrunCount_{0};
+    std::atomic<std::int64_t> resamplerInputFrames_{0};
+    std::atomic<std::int64_t> resamplerOutputFrames_{0};
 
     std::atomic<float> volume_{1.0f};
     std::atomic<bool> dspEnabled_{false};

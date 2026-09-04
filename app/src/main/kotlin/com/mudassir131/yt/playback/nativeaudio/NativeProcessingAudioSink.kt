@@ -82,13 +82,14 @@ class NativeProcessingAudioSink(
     }
 
     override fun getCurrentPositionUs(sourceEnded: Boolean): Long {
-        if (useNativeAudio && nativeEngine.isAvailable() && nativeEngine.isRunning()) {
+        if (useNativeAudio && nativeEngine.isAvailable() && nativeEngine.isStarted()) {
             if (startPositionUs == C.TIME_UNSET) {
                 return if (lastPresentationTimeUs != C.TIME_UNSET) lastPresentationTimeUs else 0L
             }
             val framesRead = nativeEngine.getFramesRead() - initialFramesRead
-            val playedUs = if (currentSampleRate > 0 && framesRead >= 0) {
-                (framesRead * 1_000_000L) / currentSampleRate
+            val outRate = nativeEngine.getActualSampleRate().takeIf { it > 0 } ?: currentSampleRate
+            val playedUs = if (outRate > 0 && framesRead >= 0) {
+                (framesRead * 1_000_000L) / outRate
             } else 0L
             return startPositionUs + playedUs
         }
@@ -113,16 +114,17 @@ class NativeProcessingAudioSink(
 
         currentEncoding = when (inputFormat.pcmEncoding) {
             C.ENCODING_PCM_16BIT -> 1 // Pcm16Bit
-            C.ENCODING_PCM_24BIT -> 3 // Pcm24BitInt
+            C.ENCODING_PCM_24BIT -> 2 // Pcm24BitPacked (Android/Media3 packed 24-bit PCM)
             C.ENCODING_PCM_32BIT -> 4 // Pcm32BitInt
             C.ENCODING_PCM_FLOAT -> 5 // PcmFloat
             else -> 1
         }
 
-        val bytesPerSample = when (currentBitDepth) {
-            16 -> 2
-            24 -> 4
-            32 -> 4
+        val bytesPerSample = when (inputFormat.pcmEncoding) {
+            C.ENCODING_PCM_16BIT -> 2
+            C.ENCODING_PCM_24BIT -> 3
+            C.ENCODING_PCM_32BIT -> 4
+            C.ENCODING_PCM_FLOAT -> 4
             else -> 2
         }
         bytesPerFrame = bytesPerSample * currentChannelCount
@@ -142,7 +144,7 @@ class NativeProcessingAudioSink(
     override fun play() {
         isPlaying = true
         if (useNativeAudio && nativeEngine.isAvailable()) {
-            val started = if (!nativeEngine.isRunning()) {
+            val started = if (!nativeEngine.isStarted()) {
                 nativeEngine.start(currentSampleRate)
             } else {
                 nativeEngine.resume()
@@ -173,11 +175,17 @@ class NativeProcessingAudioSink(
         if (!buffer.hasRemaining()) return true
 
         if (useNativeAudio && nativeEngine.isAvailable()) {
-            if (!nativeEngine.isRunning()) {
-                nativeEngine.start(currentSampleRate)
+            if (!nativeEngine.isStarted()) {
+                val started = nativeEngine.start(currentSampleRate)
+                if (!started) {
+                    Timber.tag(TAG).w("Native engine start failed in handleBuffer, falling back to AudioTrack")
+                    return fallbackSink.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+                }
                 if (isPlaying) {
                     nativeEngine.resume()
                 }
+            } else if (isPlaying && nativeEngine.isPaused()) {
+                nativeEngine.resume()
             }
 
             if (startPositionUs == C.TIME_UNSET) {
@@ -226,7 +234,7 @@ class NativeProcessingAudioSink(
 
     override fun hasPendingData(): Boolean {
         if (useNativeAudio && nativeEngine.isAvailable()) {
-            return nativeEngine.isRunning() && (nativeEngine.getFramesWritten() > nativeEngine.getFramesRead())
+            return nativeEngine.isStarted() && (nativeEngine.getFramesWritten() > nativeEngine.getFramesRead())
         }
         return fallbackSink.hasPendingData()
     }

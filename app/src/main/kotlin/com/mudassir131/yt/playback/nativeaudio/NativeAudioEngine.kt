@@ -176,6 +176,41 @@ class NativeAudioEngine(
         return nativeIsRunning(nativeHandle)
     }
 
+    fun isStarted(): Boolean {
+        if (!isAvailable()) return false
+        return nativeIsStarted(nativeHandle)
+    }
+
+    fun isPlaybackActive(): Boolean {
+        if (!isAvailable()) return false
+        return nativeIsPlaybackActive(nativeHandle)
+    }
+
+    fun isPaused(): Boolean {
+        if (!isAvailable()) return false
+        return nativeIsPaused(nativeHandle)
+    }
+
+    fun isStopped(): Boolean {
+        if (!isAvailable()) return true
+        return nativeIsStopped(nativeHandle)
+    }
+
+    fun getActualSampleRate(): Int {
+        if (!isAvailable()) return 0
+        return nativeGetActualSampleRate(nativeHandle)
+    }
+
+    fun getUnderrunCount(): Long {
+        if (!isAvailable()) return 0
+        return nativeGetUnderrunCount(nativeHandle)
+    }
+
+    fun getOverrunCount(): Long {
+        if (!isAvailable()) return 0
+        return nativeGetOverrunCount(nativeHandle)
+    }
+
     private fun updateAudioRoute() {
         var route = "Speaker"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioManager != null) {
@@ -202,7 +237,7 @@ class NativeAudioEngine(
     }
 
     private fun updateOutputMetrics() {
-        if (!isAvailable() || !isRunning()) {
+        if (!isAvailable() || !isStarted()) {
             return
         }
 
@@ -270,7 +305,13 @@ class NativeAudioEngine(
     private external fun nativeGetSharingMode(handle: Long): Int
     private external fun nativeGetFramesWritten(handle: Long): Long
     private external fun nativeGetFramesRead(handle: Long): Long
+    private external fun nativeGetUnderrunCount(handle: Long): Long
+    private external fun nativeGetOverrunCount(handle: Long): Long
     private external fun nativeIsRunning(handle: Long): Boolean
+    private external fun nativeIsStarted(handle: Long): Boolean
+    private external fun nativeIsPlaybackActive(handle: Long): Boolean
+    private external fun nativeIsPaused(handle: Long): Boolean
+    private external fun nativeIsStopped(handle: Long): Boolean
     private external fun nativeIsBitPerfect(handle: Long): Boolean
     private external fun nativeIsResampled(handle: Long): Boolean
     private external fun nativeSetVolume(handle: Long, volume: Float)

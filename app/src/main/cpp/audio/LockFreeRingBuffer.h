@@ -101,8 +101,9 @@ public:
         }
 
         // Use CAS so a concurrent clear() won't be overwritten with an old readIndex_
-        if (readIndex_.compare_exchange_strong(r, r + toRead, std::memory_order_release, std::memory_order_relaxed)) {
-            return toRead;
+        if (!readIndex_.compare_exchange_strong(r, r + toRead, std::memory_order_release, std::memory_order_relaxed)) {
+            // Concurrent clear() occurred during read: do not deliver stale data
+            return 0;
         }
 
         return toRead;

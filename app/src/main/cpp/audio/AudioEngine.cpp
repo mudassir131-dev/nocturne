@@ -196,6 +196,20 @@ std::size_t AudioEngine::writePcm(
     const bool needsResampling = (sourceSampleRate > 0 && targetRate > 0 && sourceSampleRate != targetRate);
     isResampled_.store(needsResampling, std::memory_order_relaxed);
 
+    // Calculate maximum output frames that this chunk can produce
+    std::size_t estimatedOutputFrames = frameCount;
+    if (needsResampling) {
+        estimatedOutputFrames = static_cast<std::size_t>(
+            std::ceil(static_cast<double>(frameCount) * (static_cast<double>(targetRate) / static_cast<double>(sourceSampleRate)))) + 64;
+    }
+    const std::size_t requiredElements = estimatedOutputFrames * 2;
+
+    // Check if ring buffer has room for the entire chunk
+    if (ringBuffer_->availableToWrite() < requiredElements) {
+        // Ring buffer backpressure: do NOT process, resample, or mutate filter state
+        return 0;
+    }
+
     // 1. Convert source PCM to stereo Float32
     if (pcmFloatScratch_.size() < frameCount * 2) {
         pcmFloatScratch_.resize(frameCount * 2);
@@ -212,16 +226,16 @@ std::size_t AudioEngine::writePcm(
     // 2. Resample if hardware rate != source rate
     if (needsResampling) {
         resampler_->setup(sourceSampleRate, targetRate);
-        const std::size_t maxResampledFrames = static_cast<std::size_t>(
-            std::ceil(static_cast<double>(readyFrameCount) * (static_cast<double>(targetRate) / static_cast<double>(sourceSampleRate)))) + 64;
-
-        if (resampleScratch_.size() < maxResampledFrames * 2) {
-            resampleScratch_.resize(maxResampledFrames * 2);
+        if (resampleScratch_.size() < estimatedOutputFrames * 2) {
+            resampleScratch_.resize(estimatedOutputFrames * 2);
         }
 
         readyFrameCount = resampler_->process(
-            readyFrames, readyFrameCount, resampleScratch_.data(), maxResampledFrames);
+            readyFrames, readyFrameCount, resampleScratch_.data(), estimatedOutputFrames);
         readyFrames = resampleScratch_.data();
+
+        resamplerInputFrames_.fetch_add(static_cast<std::int64_t>(frameCount), std::memory_order_relaxed);
+        resamplerOutputFrames_.fetch_add(static_cast<std::int64_t>(readyFrameCount), std::memory_order_relaxed);
     }
 
     // 3. DSP processing (bypassed if disabled)
@@ -229,12 +243,18 @@ std::size_t AudioEngine::writePcm(
         dspProcessor_->process(const_cast<float*>(readyFrames), readyFrameCount);
     }
 
-    // 4. Write to lock-free ring buffer (in stereo float elements = frameCount * 2)
+    // 4. Write to lock-free ring buffer (in stereo float elements = readyFrameCount * 2)
     const std::size_t elementsWritten = ringBuffer_->write(readyFrames, readyFrameCount * 2);
-    const std::size_t framesWritten = elementsWritten / 2;
+    const std::size_t outFramesWritten = elementsWritten / 2;
 
-    framesWritten_.fetch_add(static_cast<std::int64_t>(framesWritten), std::memory_order_relaxed);
-    return framesWritten;
+    if (outFramesWritten < readyFrameCount) {
+        overrunCount_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    framesWritten_.fetch_add(static_cast<std::int64_t>(outFramesWritten), std::memory_order_relaxed);
+
+    // CRITICAL: Return the number of INPUT audio frames successfully consumed from pcmData
+    return frameCount;
 }
 
 oboe::DataCallbackResult AudioEngine::onAudioReady(
@@ -315,6 +335,7 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(
     // Underrun handling: fill any remaining space with pure silence
     if (elementsRead < totalElements) {
         std::memset(out + elementsRead, 0, (totalElements - elementsRead) * sizeof(float));
+        underrunCount_.fetch_add(1, std::memory_order_relaxed);
     }
 
     return oboe::DataCallbackResult::Continue;
@@ -330,6 +351,25 @@ void AudioEngine::onErrorAfterClose(
 bool AudioEngine::isRunning() const noexcept {
     const auto state = playbackState_.load(std::memory_order_acquire);
     return state != PlaybackState::Stopped;
+}
+
+bool AudioEngine::isStarted() const noexcept {
+    const auto state = playbackState_.load(std::memory_order_acquire);
+    return state != PlaybackState::Stopped;
+}
+
+bool AudioEngine::isPlaybackActive() const noexcept {
+    return playbackState_.load(std::memory_order_acquire) == PlaybackState::Playing;
+}
+
+bool AudioEngine::isPaused() const noexcept {
+    const auto state = playbackState_.load(std::memory_order_acquire);
+    return state == PlaybackState::Paused || state == PlaybackState::Pausing;
+}
+
+bool AudioEngine::isStopped() const noexcept {
+    const auto state = playbackState_.load(std::memory_order_acquire);
+    return state == PlaybackState::Stopped || state == PlaybackState::Stopping;
 }
 
 PlaybackState AudioEngine::getPlaybackState() const noexcept {

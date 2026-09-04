@@ -206,6 +206,60 @@ Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsRunning(
 }
 
 JNIEXPORT jboolean JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsStarted(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return (engine && engine->isStarted()) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsPlaybackActive(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return (engine && engine->isPlaybackActive()) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsPaused(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return (engine && engine->isPaused()) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsStopped(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return (!engine || engine->isStopped()) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeGetUnderrunCount(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return engine ? engine->getUnderrunCount() : 0;
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeGetOverrunCount(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return engine ? engine->getOverrunCount() : 0;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsBitPerfect(
     JNIEnv* /*env*/,
     jobject /*thiz*/,
