@@ -9,6 +9,10 @@
 package com.mudassir131.yt
 
 import com.mudassir131.yt.ui.component.NocturneBottomBar
+import com.mudassir131.yt.ui.component.BottomBarScrollState
+import com.mudassir131.yt.ui.component.LocalBottomBarScrollProgress
+import com.mudassir131.yt.ui.component.LocalBottomBarScrollState
+import com.mudassir131.yt.ui.component.rememberBottomBarScrollState
 import com.mudassir131.yt.ui.component.RootScreenHeader
 import com.mudassir131.yt.ui.component.AutoHidingRootScaffold
 import com.mudassir131.yt.ui.component.NocturneDynamicScreen
@@ -1019,6 +1023,15 @@ class MainActivity : ComponentActivity() {
                                 .add(WindowInsets(top = AppBarHeight, bottom = bottom))
                         }
 
+                    val bottomBarScrollState = rememberBottomBarScrollState(
+                        collapseDistance = 140.dp,
+                        canScroll = {
+                            !active &&
+                            (playerBottomSheetState.isCollapsed || playerBottomSheetState.isDismissed) &&
+                            (navBackStackEntry?.destination?.route?.startsWith("search") == false)
+                        }
+                    )
+
                     appBarScrollBehavior(
                         canScroll = {
                             navBackStackEntry?.destination?.route?.startsWith("search") == false &&
@@ -1054,6 +1067,7 @@ class MainActivity : ComponentActivity() {
                         if (wasOnNonTopLevelScreen && isReturningToHomeOrLibrary) {
                             searchBarScrollBehavior.state.resetHeightOffset()
                             topAppBarScrollBehavior.state.resetHeightOffset()
+                            bottomBarScrollState.expand()
                         }
 
                         previousRoute = currentRoute
@@ -1091,6 +1105,7 @@ class MainActivity : ComponentActivity() {
                             if (navBackStackEntry?.destination?.route != Screens.Home.route) {
                                 searchBarScrollBehavior.state.resetHeightOffset()
                                 topAppBarScrollBehavior.state.resetHeightOffset()
+                                bottomBarScrollState.expand()
                             }
                         }
                     }
@@ -1098,6 +1113,7 @@ class MainActivity : ComponentActivity() {
                         if (active) {
                             searchBarScrollBehavior.state.resetHeightOffset()
                             topAppBarScrollBehavior.state.resetHeightOffset()
+                            bottomBarScrollState.expand()
                         }
                     }
 
@@ -1243,6 +1259,8 @@ class MainActivity : ComponentActivity() {
                         LocalSyncUtils provides syncUtils,
                         LocalBottomSheetPageState provides bottomSheetPageState,
                         LocalMenuState provides menuState,
+                        LocalBottomBarScrollProgress provides bottomBarScrollState.collapseFraction,
+                        LocalBottomBarScrollState provides bottomBarScrollState,
                     ) {
                         Row {
                             AnimatedVisibility(useRail && shouldShowNavigationBar) {
@@ -1322,6 +1340,7 @@ class MainActivity : ComponentActivity() {
                                 if (!useRail) {
                                     val navSlideDistance =
                                         bottomInset + floatingBarsBottomPadding + navVisibleHeight
+                                    val compactNavUpOffset = MiniPlayerHeight + MiniPlayerBottomSpacing
 
                                     Box(
                                         modifier =
@@ -1329,6 +1348,16 @@ class MainActivity : ComponentActivity() {
                                                 .align(Alignment.BottomCenter)
                                                 .height(navSlideDistance)
                                                 .offset {
+                                                    val sheetProgress = playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                                    val hasMiniPlayer = !playerBottomSheetState.isDismissed
+                                                    val scrollFraction = bottomBarScrollState.collapseFraction
+
+                                                    val upShiftPx = if (hasMiniPlayer) {
+                                                        -(compactNavUpOffset.toPx() * scrollFraction * (1f - sheetProgress)).toInt()
+                                                    } else {
+                                                        0
+                                                    }
+
                                                     if (bottomNavigationBarHeight == 0.dp) {
                                                         IntOffset(
                                                             x = 0,
@@ -1336,14 +1365,13 @@ class MainActivity : ComponentActivity() {
                                                         )
                                                     } else {
                                                         val slideOffset =
-                                                            navSlideDistance *
-                                                                playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                                            navSlideDistance * sheetProgress
                                                         val hideOffset =
                                                             navSlideDistance *
                                                                 (1 - bottomNavigationBarHeight / navVisibleHeight)
                                                         IntOffset(
                                                             x = 0,
-                                                            y = (slideOffset + hideOffset).roundToPx(),
+                                                            y = (slideOffset + hideOffset).roundToPx() + upShiftPx,
                                                         )
                                                     }
                                                 },
@@ -1361,11 +1389,14 @@ class MainActivity : ComponentActivity() {
                                             items = navigationItems,
                                             currentRoute = navBackStackEntry?.destination?.route ?: "",
                                             pureBlack = pureBlack,
+                                            collapseFraction = bottomBarScrollState.collapseFraction,
                                             onTabSelected = { screen ->
                                                 val isSelected =
                                                     navBackStackEntry?.destination?.hierarchy?.any {
                                                         it.route == screen.route
                                                     } == true
+
+                                                bottomBarScrollState.expand()
 
                                                 if (isSelected) {
                                                     navController.currentBackStackEntry?.savedStateHandle
@@ -1572,15 +1603,17 @@ class MainActivity : ComponentActivity() {
                                              ) { it / 2 }
                                          }
                                      },
-                                    modifier = Modifier.nestedScroll(
-                                        if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } ||
-                                            navBackStackEntry?.destination?.route?.startsWith("search") == true
-                                        ) {
-                                            searchBarScrollBehavior.nestedScrollConnection
-                                        } else {
-                                            topAppBarScrollBehavior.nestedScrollConnection
-                                        }
-                                    )
+                                     modifier = Modifier
+                                         .nestedScroll(bottomBarScrollState.nestedScrollConnection)
+                                         .nestedScroll(
+                                             if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } ||
+                                                 navBackStackEntry?.destination?.route?.startsWith("search") == true
+                                             ) {
+                                                 searchBarScrollBehavior.nestedScrollConnection
+                                             } else {
+                                                 topAppBarScrollBehavior.nestedScrollConnection
+                                             }
+                                         )
                                 ) {
                                     navigationBuilder(
                                         navController,
