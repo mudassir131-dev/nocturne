@@ -23,7 +23,7 @@ object AudioQualityMigration : DataMigration<Preferences> {
                 // LOW used the AAC-oriented compatibility tier; all other legacy modes preferred
                 // the best available stream and therefore migrate to the explicit Opus path.
                 "LOW" -> AudioQuality.SAAVN.name
-                else -> AudioQuality.OPUS.name
+                else -> AudioQuality.LOSSLESS.name
             }
             // Volume is now owned by Android STREAM_MUSIC; prevent a stale in-player multiplier
             // from attenuating the device volume a second time.
