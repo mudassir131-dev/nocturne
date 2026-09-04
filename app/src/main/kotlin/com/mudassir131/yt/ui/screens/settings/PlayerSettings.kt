@@ -116,7 +116,7 @@ fun PlayerSettings(
     )
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
-        defaultValue = AudioQuality.OPUS
+        defaultValue = AudioQuality.LOSSLESS
     )
     val (playerStreamClient, onPlayerStreamClientChange) = rememberEnumPreference(
         PlayerStreamClientKey,
@@ -520,13 +520,13 @@ fun PlayerSettings(
                         title = { Text(stringResource(R.string.audio_quality)) },
                         icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
                         selectedValue = audioQuality,
-                        values = listOf(AudioQuality.SAAVN, AudioQuality.OPUS, AudioQuality.LOSSLESS),
+                        values = listOf(AudioQuality.LOSSLESS, AudioQuality.OPUS, AudioQuality.SAAVN),
                         onValueSelected = onAudioQualityChange,
                         valueText = {
                             when (it) {
-                                AudioQuality.SAAVN -> "Saavn"
-                                AudioQuality.OPUS -> "Opus"
                                 AudioQuality.LOSSLESS -> "Hi-Res Lossless"
+                                AudioQuality.OPUS -> "Opus"
+                                AudioQuality.SAAVN -> "Saavn"
                             }
                         }
                     )
