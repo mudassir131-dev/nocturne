@@ -73,15 +73,19 @@ class PlayerConnection(
         mediaMetadata.flatMapLatest { mediaMetadata ->
             database.format(mediaMetadata?.id)
         }
+    val nativeAudioOutputInfo: StateFlow<com.mudassir131.yt.playback.nativeaudio.AudioOutputInfo?> =
+        service.nativeAudioEngine.audioOutputInfo
+
     val currentFormatInfo: StateFlow<AudioFormatInfo?> = combine(
         currentFormat,
         service.liveAudioFormat,
+        nativeAudioOutputInfo,
         mediaMetadata,
-    ) { dbFormat, liveFormat, meta ->
+    ) { dbFormat, liveFormat, nativeInfo, meta ->
         if (liveFormat != null) {
-            liveFormat
+            liveFormat.copy(outputInfo = nativeInfo ?: liveFormat.outputInfo)
         } else {
-            dbFormat?.toAudioFormatInfo()
+            dbFormat?.toAudioFormatInfo()?.copy(outputInfo = nativeInfo)
         }
     }.stateIn(scope, SharingStarted.Eagerly, null)
 
