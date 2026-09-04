@@ -60,14 +60,11 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.31
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.32
 
-* **CSV Playlist Import** — Import custom playlists from CSV files with automatic metadata matching and real-time progress.
-* **Spotify Playlist Import via Link (Max 100)** — Added dedicated Spotify playlist import supporting up to 100 tracks directly via playlist link.
-* **YouTube & YT Music Playlist Import** — Reliable large playlist import for YouTube and YouTube Music.
-* **Developer Console & Announcement Delivery** — Fixed media uploads with direct GitHub CDN storage, interactive Markdown links, domain recognition, and rich media viewers.
-* **Library UI & Navigation Polish** — Streamlined top header with single Settings action, dedicated bottom-right floating action button, fixed secondary filter spacing on Songs screen, and eliminated pull-to-refresh scroll jitter.
-* **Audio Enhancement & Core Stability** — AI-powered audio processing refinements, BYOK Gemini support, and overall app performance optimizations."""
+* **Enhanced Music Experience to Lossless** — Upgraded high-res lossless audio pipeline with default Hi-Res lossless playback, bit-perfect streaming capabilities, and native audio engine optimization.
+* **Audio Lifecycle & Glitch Fixes** — Resolved pause/stop/seek audio stuttering artifacts with smooth zero-crossing fades and thread-safe lock-free buffer synchronization.
+* **Bug Fixes & Core Stability** — General player refinements, UI polish, and performance optimizations."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
