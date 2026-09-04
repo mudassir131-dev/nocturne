@@ -299,7 +299,7 @@ class MusicService :
     private val audioQuality by enumPreference(
         this,
         AudioQualityKey,
-        com.mudassir131.yt.constants.AudioQuality.OPUS
+        com.mudassir131.yt.constants.AudioQuality.LOSSLESS
     )
     private val preferredStreamClient by enumPreference(
         this,
@@ -375,6 +375,7 @@ class MusicService :
     val liveAudioFormat = MutableStateFlow<AudioFormatInfo?>(null)
     private var activeAudioDecoderName: String? = null
     private var lastAudioInputFormat: androidx.media3.common.Format? = null
+    val nativeAudioEngine by lazy { com.mudassir131.yt.playback.nativeaudio.NativeAudioEngine(this, scope) }
     val audioDspProcessor = AudioDspProcessor()
     val enhancementEngine by lazy { EnhancementEngine(this, audioDspProcessor) }
 
@@ -390,7 +391,7 @@ class MusicService :
                 media3Format = format,
                 decoderName = activeAudioDecoderName,
                 formatEntity = existingDbFormat,
-            )
+            )?.copy(outputInfo = nativeAudioEngine.audioOutputInfo.value)
             liveAudioFormat.value = info
 
             if (info != null) {
@@ -4618,23 +4619,29 @@ class MusicService :
                 context: Context,
                 enableFloatOutput: Boolean,
                 enableAudioTrackPlaybackParams: Boolean,
-            ) = DefaultAudioSink
-                .Builder(this@MusicService)
-                .setEnableFloatOutput(true)
-                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-                .setAudioProcessorChain(
-                    DefaultAudioSink.DefaultAudioProcessorChain(
-                        SilenceSkippingAudioProcessor(
-                            1_500_000L,
-                            0.35f,
-                            500_000L,
-                            10,
-                            150.toShort(),
+            ): androidx.media3.exoplayer.audio.AudioSink {
+                val defaultSink = DefaultAudioSink
+                    .Builder(this@MusicService)
+                    .setEnableFloatOutput(true)
+                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                    .setAudioProcessorChain(
+                        DefaultAudioSink.DefaultAudioProcessorChain(
+                            SilenceSkippingAudioProcessor(
+                                1_500_000L,
+                                0.35f,
+                                500_000L,
+                                10,
+                                150.toShort(),
+                            ),
+                            SonicAudioProcessor(),
+                            audioDspProcessor,
                         ),
-                        SonicAudioProcessor(),
-                        audioDspProcessor,
-                    ),
-                ).build()
+                    ).build()
+                return com.mudassir131.yt.playback.nativeaudio.NativeProcessingAudioSink(
+                    nativeEngine = nativeAudioEngine,
+                    fallbackSink = defaultSink,
+                )
+            }
 
             override fun buildAudioRenderers(
                 context: Context,
