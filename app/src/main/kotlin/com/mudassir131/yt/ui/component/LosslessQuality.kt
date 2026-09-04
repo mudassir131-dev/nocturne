@@ -23,6 +23,7 @@ import com.mudassir131.yt.playback.alac.toAudioFormatInfo
 enum class LosslessQuality(val label: String) {
     LOSSLESS("Lossless"),
     HI_RES_LOSSLESS("Hi-Res Lossless"),
+    BIT_PERFECT("Bit-perfect"),
 }
 
 /**
@@ -31,6 +32,7 @@ enum class LosslessQuality(val label: String) {
  */
 fun FormatEntity.losslessQuality(): LosslessQuality? {
     val info = toAudioFormatInfo()
+    if (info.isBitPerfect) return LosslessQuality.BIT_PERFECT
     return if (info.isLossless) {
         if (info.isHiRes) LosslessQuality.HI_RES_LOSSLESS else LosslessQuality.LOSSLESS
     } else {
@@ -39,6 +41,7 @@ fun FormatEntity.losslessQuality(): LosslessQuality? {
 }
 
 fun AudioFormatInfo.losslessQuality(): LosslessQuality? {
+    if (isBitPerfect) return LosslessQuality.BIT_PERFECT
     return if (isLossless) {
         if (isHiRes) LosslessQuality.HI_RES_LOSSLESS else LosslessQuality.LOSSLESS
     } else {
