@@ -33,6 +33,7 @@ val hasReleaseSigning =
 android {
     namespace = "com.mudassir131.yt"
     compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     testOptions {
         unitTests {
@@ -44,8 +45,8 @@ android {
         applicationId = "com.mudassir131.nocturne"
         minSdk = 26
         targetSdk = 36
-        versionCode = 42
-        versionName = "2.22.31"
+        versionCode = 43
+        versionName = "2.22.32"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -87,6 +88,13 @@ android {
                 ?: System.getenv("SPOTIFY_CLIENT_SECRET")
                 ?: ""
         buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"$spotifyClientSecret\"")
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++17", "-O3", "-fexceptions", "-frtti")
+                arguments += listOf("-DANDROID_STL=c++_shared")
+            }
+        }
     }
 
     flavorDimensions += "abi"
@@ -156,6 +164,13 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     dependenciesInfo {
@@ -254,6 +269,7 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.okhttp)
     implementation("androidx.media3:media3-ui:${libs.versions.media3.get()}")
+    implementation(libs.oboe)
     implementation(libs.squigglyslider)
 
     implementation(libs.room.runtime)
