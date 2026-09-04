@@ -58,7 +58,7 @@ constructor(
     @PlayerCache val playerCache: Cache,
 ) {
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
-    private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.OPUS)
+    private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.LOSSLESS)
     private val preferredStreamClient by enumPreference(context, PlayerStreamClientKey, PlayerStreamClient.ANDROID_VR)
     private val songUrlCache = HashMap<String, Pair<String, Long>>()
 
