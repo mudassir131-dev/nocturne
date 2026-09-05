@@ -448,5 +448,18 @@
     "title": "",
     "content": "",
     "timestamp": 1788414839770
+  },
+  {
+    "gifUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1788586636472_4da244.gif",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1788586633980.gif",
+    "reactions": {},
+    "id": "msg-417d8df9",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "finally audio quality improvement succeed!",
+    "timestamp": 1788586636465
   }
 ]
