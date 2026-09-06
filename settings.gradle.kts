@@ -1,3 +1,7 @@
+/*
+ * Nocturne - Gradle Settings & Module Registry
+ */
+
 @file:Suppress("UnstableApiUsage")
 
 pluginManagement {

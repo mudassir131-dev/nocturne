@@ -1,4 +1,4 @@
-# Android-specific setup
+# Nocturne Android Setup Guide
 
 ## 1. Generate native folders
 

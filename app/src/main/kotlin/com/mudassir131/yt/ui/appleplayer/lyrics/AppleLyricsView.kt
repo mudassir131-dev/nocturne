@@ -54,7 +54,7 @@ import com.mudassir131.yt.ui.screens.settings.LyricsPosition
 import com.mudassir131.yt.constants.LyricsScrollKey
 import com.mudassir131.yt.constants.LyricsTextPositionKey
 import com.mudassir131.yt.constants.LyricsTextSizeKey
-import com.mudassir131.yt.ui.component.VeluneLoader
+import com.mudassir131.yt.ui.component.NocturneLoader
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
 import kotlinx.coroutines.delay
@@ -84,7 +84,7 @@ fun AppleLyricsView(
     if (loading || result == null) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (loading) {
-                VeluneLoader(size = 52.dp, color = Color.White)
+                NocturneLoader(size = 52.dp, color = Color.White)
             } else {
                 Text("Lyrics unavailable", color = Color.White.copy(alpha = .7f))
             }

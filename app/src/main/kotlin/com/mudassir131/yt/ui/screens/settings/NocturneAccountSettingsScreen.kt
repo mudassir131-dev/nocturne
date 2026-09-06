@@ -494,9 +494,3 @@ private fun PlaylistSelectionDialog(onDismiss: () -> Unit) {
         }
     )
 }
-
-
-@Composable
-fun VeluneAccountSettingsScreen(navController: androidx.navigation.NavController) {
-    NocturneAccountSettingsScreen(navController)
-}

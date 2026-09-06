@@ -181,6 +181,3 @@ data class CanvasArtwork(
     val preferredAnimationUrl: String?
         get() = animated ?: videoUrl
 }
-
-
-typealias VeluneCanvas = NocturneCanvas

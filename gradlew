@@ -1,4 +1,5 @@
 #!/bin/sh
+# Nocturne Project - Gradle Wrapper
 
 #
 # Copyright © 2015 the original authors.

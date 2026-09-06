@@ -1,6 +1,6 @@
 package com.mudassir131.yt.utils
 
-private val productPrefix = Regex("^(nocturne|velune)\\s+", RegexOption.IGNORE_CASE)
+private val productPrefix = Regex("^nocturne\\s+", RegexOption.IGNORE_CASE)
 
 fun normalizeVersionLabel(raw: String): String {
     var value = raw.trim().replace(productPrefix, "").trim()

@@ -494,23 +494,3 @@ object ThemeSeedPaletteCodec {
         }.getOrNull()
     }
 }
-
-
-@Composable
-fun VeluneTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    pureBlack: Boolean = false,
-    themeColor: Color = DefaultThemeColor,
-    seedPalette: ThemeSeedPalette? = null,
-    useSystemFont: Boolean = false,
-    content: @Composable () -> Unit,
-) {
-    NocturneTheme(
-        darkTheme = darkTheme,
-        pureBlack = pureBlack,
-        themeColor = themeColor,
-        seedPalette = seedPalette,
-        useSystemFont = useSystemFont,
-        content = content,
-    )
-}

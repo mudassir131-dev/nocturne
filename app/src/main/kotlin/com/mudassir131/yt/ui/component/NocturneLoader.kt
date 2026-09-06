@@ -30,13 +30,3 @@ fun NocturneLoader(
         numLobes = 10
     )
 }
-
-@Deprecated("Use NocturneLoader instead", ReplaceWith("NocturneLoader(modifier, size, color)"))
-@Composable
-fun VeluneLoader(
-    modifier: Modifier = Modifier,
-    size: Dp = 40.dp,
-    color: Color? = null,
-) {
-    NocturneLoader(modifier, size, color)
-}

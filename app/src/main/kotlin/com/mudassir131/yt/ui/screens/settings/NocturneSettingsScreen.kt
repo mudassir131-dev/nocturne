@@ -275,8 +275,3 @@ private fun SettingsDestinationRow(
         }
     }
 }
-
-@Composable
-fun VeluneSettingsScreen(navController: androidx.navigation.NavController) {
-    NocturneSettingsScreen(navController)
-}

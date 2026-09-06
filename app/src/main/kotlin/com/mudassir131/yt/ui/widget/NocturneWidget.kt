@@ -364,12 +364,3 @@ class MediaControlCallback : ActionCallback {
         })
     }
 }
-
-
-
-typealias VeluneWidget = NocturneWidget
-typealias VeluneWidgetReceiver = NocturneWidgetReceiver
-
-fun updateVeluneWidgetState(context: Context, title: String, artist: String, isPlaying: Boolean, thumbnailUrl: String?) {
-    updateNocturneWidgetState(context, title, artist, isPlaying, thumbnailUrl)
-}
