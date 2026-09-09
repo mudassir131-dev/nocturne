@@ -486,5 +486,18 @@
     "title": "",
     "content": "",
     "timestamp": 1788885969335
+  },
+  {
+    "gifUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1788934179425_e3f692.gif",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1788934178547.gif",
+    "reactions": {},
+    "id": "msg-93de8c0c",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "",
+    "timestamp": 1788934179408
   }
 ]
