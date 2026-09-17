@@ -499,5 +499,16 @@
     "title": "",
     "content": "",
     "timestamp": 1788934179408
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-a3b56e2b",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "while streaming music it gets suttered while calling, will be fixed soon..its due to updating the sound quality in kHZ.",
+    "timestamp": 1789634843003
   }
 ]
