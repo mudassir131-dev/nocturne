@@ -576,64 +576,18 @@ private fun AppleExpandedPlayer(
 
             Spacer(Modifier.height(20.dp))
 
-            val trackInteractionSource = remember { MutableInteractionSource() }
-            val isTrackDragged by trackInteractionSource.collectIsDraggedAsState()
-            val isTrackPressed by trackInteractionSource.collectIsPressedAsState()
-            val trackHeight by animateDpAsState(
-                targetValue = if (isTrackDragged || isTrackPressed) 16.dp else 10.dp,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                ),
-                label = "appleProgressTrackHeight",
-            )
-
             val (sliderStyle) = rememberEnumPreference(SliderStyleKey, SliderStyle.Standard)
 
-            if (sliderStyle != SliderStyle.Standard) {
-                StyledPlaybackSlider(
-                    sliderStyle = sliderStyle,
-                    value = position.coerceIn(0L, duration.coerceAtLeast(1L)).toFloat(),
-                    valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                    onValueChange = { onSeek(it.toLong()) },
-                    onValueChangeFinished = onSeekFinished,
-                    activeColor = Color.White,
-                    isPlaying = isPlaying,
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                )
-            } else {
-                Slider(
-                    value = position.coerceIn(0L, duration.coerceAtLeast(1L)).toFloat(),
-                    onValueChange = { onSeek(it.toLong()) },
-                    onValueChangeFinished = onSeekFinished,
-                    valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                    enabled = duration > 0L,
-                    interactionSource = trackInteractionSource,
-                    colors = SliderDefaults.colors(
-                        activeTrackColor = Color.White.copy(alpha = 0.7f),
-                        activeTickColor = Color.White.copy(alpha = 0.7f),
-                        thumbColor = Color.White.copy(alpha = 0.7f),
-                        inactiveTrackColor = Color.White.copy(alpha = 0.4f),
-                        disabledActiveTrackColor = Color.White.copy(alpha = 0.7f),
-                        disabledInactiveTrackColor = Color.White.copy(alpha = 0.4f),
-                        disabledThumbColor = Color.White.copy(alpha = 0.7f),
-                    ),
-                    thumb = { Spacer(Modifier.size(0.dp)) },
-                    track = { sliderState ->
-                        PlayerSliderTrack(
-                            sliderState = sliderState,
-                            colors = SliderDefaults.colors(
-                                activeTrackColor = Color.White.copy(alpha = 0.7f),
-                                activeTickColor = Color.White.copy(alpha = 0.7f),
-                                inactiveTrackColor = Color.White.copy(alpha = 0.4f),
-                                inactiveTickColor = Color.White.copy(alpha = 0.4f),
-                            ),
-                            trackHeight = trackHeight,
-                        )
-                    },
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                )
-            }
+            StyledPlaybackSlider(
+                sliderStyle = sliderStyle,
+                value = position.coerceIn(0L, duration.coerceAtLeast(1L)).toFloat(),
+                valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
+                onValueChange = { onSeek(it.toLong()) },
+                onValueChangeFinished = onSeekFinished,
+                activeColor = Color.White,
+                isPlaying = isPlaying,
+                modifier = Modifier.padding(horizontal = 32.dp),
+            )
 
             Spacer(Modifier.height(4.dp))
 
@@ -754,10 +708,10 @@ private fun AppleExpandedPlayer(
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.bluetooth),
+                        painter = painterResource(R.drawable.ic_ios_headphones),
                         contentDescription = null,
                         tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(15.dp),
                     )
                     Spacer(Modifier.width(7.dp))
                     Text(

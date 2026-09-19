@@ -46,21 +46,46 @@ bool AudioEngine::start(std::int32_t preferredOutputSampleRate) {
 }
 
 void AudioEngine::pause() noexcept {
-    auto expected = PlaybackState::Playing;
-    if (playbackState_.compare_exchange_strong(expected, PlaybackState::Pausing, std::memory_order_acq_rel)) {
-        // Callback will smoothly ramp down and transition to Paused
-    } else {
-        playbackState_.store(PlaybackState::Paused, std::memory_order_release);
+    playbackState_.store(PlaybackState::Paused, std::memory_order_release);
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    if (stream_) {
+        const auto state = stream_->getState();
+        if (state == oboe::StreamState::Started || state == oboe::StreamState::Starting) {
+            stream_->requestPause();
+        }
     }
 }
 
 void AudioEngine::resume() noexcept {
     needsFadeIn_.store(true, std::memory_order_release);
     playbackState_.store(PlaybackState::Playing, std::memory_order_release);
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    if (stream_) {
+        const auto state = stream_->getState();
+        if (state == oboe::StreamState::Paused || state == oboe::StreamState::Open) {
+            stream_->requestStart();
+        } else if (state == oboe::StreamState::Pausing) {
+            oboe::StreamState nextState = oboe::StreamState::Unknown;
+            stream_->waitForStateChange(oboe::StreamState::Pausing, &nextState, 50 * 1000 * 1000LL /* 50ms */);
+            if (stream_->getState() == oboe::StreamState::Paused || stream_->getState() == oboe::StreamState::Open) {
+                stream_->requestStart();
+            }
+        }
+    }
 }
 
 void AudioEngine::stop() noexcept {
     playbackState_.store(PlaybackState::Stopped, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(streamMutex_);
+        if (stream_) {
+            const auto state = stream_->getState();
+            if (state == oboe::StreamState::Started || state == oboe::StreamState::Starting ||
+                state == oboe::StreamState::Paused || state == oboe::StreamState::Pausing) {
+                stream_->requestStop();
+            }
+        }
+    }
     flush();
 }
 
@@ -96,11 +121,15 @@ void AudioEngine::release() noexcept {
 }
 
 bool AudioEngine::openStream(std::int32_t sampleRate) {
+    if (stream_) {
+        closeStream();
+    }
+
     oboe::AudioStreamBuilder builder;
 
     builder.setDirection(oboe::Direction::Output)
            ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
-           ->setSharingMode(oboe::SharingMode::Exclusive)
+           ->setSharingMode(oboe::SharingMode::Shared)
            ->setFormat(oboe::AudioFormat::Float)
            ->setChannelCount(oboe::ChannelCount::Stereo)
            ->setUsage(oboe::Usage::Media)
@@ -114,8 +143,8 @@ bool AudioEngine::openStream(std::int32_t sampleRate) {
 
     oboe::Result result = builder.openStream(stream_);
     if (result != oboe::Result::OK) {
-        LOGW("Failed to open exclusive stream (result=%s), trying shared mode fallback", oboe::convertToText(result));
-        builder.setSharingMode(oboe::SharingMode::Shared);
+        LOGW("Failed to open low-latency shared stream (result=%s), trying default performance mode", oboe::convertToText(result));
+        builder.setPerformanceMode(oboe::PerformanceMode::None);
         result = builder.openStream(stream_);
     }
 
@@ -124,6 +153,8 @@ bool AudioEngine::openStream(std::int32_t sampleRate) {
         playbackState_.store(PlaybackState::Stopped, std::memory_order_release);
         return false;
     }
+
+    currentVolume_ = volume_.load(std::memory_order_relaxed);
 
     // Inspect and cache ACTUAL stream properties
     const std::int32_t actualRate = stream_->getSampleRate();
@@ -283,15 +314,18 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(
 
         if (framesRead > 0) {
             for (std::size_t i = 0; i < framesRead; ++i) {
-                const float gain = targetVol * (1.0f - static_cast<float>(i + 1) / static_cast<float>(framesRead));
+                const float gain = currentVolume_ * (1.0f - static_cast<float>(i + 1) / static_cast<float>(framesRead));
                 out[i * 2] *= gain;
                 out[i * 2 + 1] *= gain;
             }
+            framesRead_.fetch_add(static_cast<std::int64_t>(framesRead), std::memory_order_relaxed);
         }
 
         if (elementsRead < totalElements) {
             std::memset(out + elementsRead, 0, (totalElements - elementsRead) * sizeof(float));
         }
+
+        currentVolume_ = targetVol;
 
         if (state == PlaybackState::Pausing) {
             playbackState_.store(PlaybackState::Paused, std::memory_order_release);
@@ -317,15 +351,33 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(
                 out[i * 2] *= gain;
                 out[i * 2 + 1] *= gain;
             }
+            currentVolume_ = targetVol;
             if (std::abs(targetVol - 1.0f) > 0.001f) {
                 for (std::size_t i = rampFrames; i < framesRead; ++i) {
                     out[i * 2] *= targetVol;
                     out[i * 2 + 1] *= targetVol;
                 }
             }
-        } else if (std::abs(targetVol - 1.0f) > 0.001f) {
-            for (std::size_t i = 0; i < elementsRead; ++i) {
-                out[i] *= targetVol;
+        } else {
+            // Smooth volume ramping when targetVol differs from currentVolume_
+            if (std::abs(targetVol - currentVolume_) > 0.0001f) {
+                const std::size_t rampFrames = std::min<std::size_t>(framesRead, 256);
+                const float startVol = currentVolume_;
+                const float volDelta = targetVol - startVol;
+                for (std::size_t i = 0; i < rampFrames; ++i) {
+                    const float rampGain = startVol + volDelta * (static_cast<float>(i + 1) / static_cast<float>(rampFrames));
+                    out[i * 2] *= rampGain;
+                    out[i * 2 + 1] *= rampGain;
+                }
+                currentVolume_ = targetVol;
+                for (std::size_t i = rampFrames; i < framesRead; ++i) {
+                    out[i * 2] *= targetVol;
+                    out[i * 2 + 1] *= targetVol;
+                }
+            } else if (std::abs(targetVol - 1.0f) > 0.001f) {
+                for (std::size_t i = 0; i < elementsRead; ++i) {
+                    out[i] *= targetVol;
+                }
             }
         }
 
@@ -345,6 +397,10 @@ void AudioEngine::onErrorAfterClose(
     oboe::AudioStream* /*audioStream*/,
     oboe::Result error) {
     LOGW("Audio stream disconnected / error encountered: %s", oboe::convertToText(error));
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    if (stream_) {
+        stream_.reset();
+    }
     playbackState_.store(PlaybackState::Stopped, std::memory_order_release);
 }
 

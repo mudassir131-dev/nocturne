@@ -8,11 +8,14 @@ package com.mudassir131.yt.ui.screens.settings
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -23,6 +26,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,6 +44,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +60,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,7 +94,9 @@ import com.mudassir131.yt.ui.component.GoogleLoadingIndicator
 import com.mudassir131.yt.ui.component.IconButton
 import com.mudassir131.yt.ui.component.PreferenceGroupTitle
 import com.mudassir131.yt.ui.component.SwitchPreference
+import com.mudassir131.yt.ui.component.MarkdownText
 import com.mudassir131.yt.ui.utils.backToMain
+import com.mudassir131.yt.utils.DownloadedApkInfo
 import com.mudassir131.yt.utils.GitCommit
 import com.mudassir131.yt.utils.ReleaseInfo
 import com.mudassir131.yt.utils.UpdateNotificationManager
@@ -96,8 +104,12 @@ import com.mudassir131.yt.utils.Updater
 import com.mudassir131.yt.utils.compareSemanticVersions
 import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.utils.rememberPreference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -186,6 +198,75 @@ fun UpdateScreen(
         }
     }
 
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableFloatStateOf(0f) }
+    var downloadedBytes by remember { mutableLongStateOf(0L) }
+    var totalBytes by remember { mutableLongStateOf(0L) }
+    var downloadedFile by remember { mutableStateOf<File?>(null) }
+    var downloadError by remember { mutableStateOf<String?>(null) }
+    var downloadJob by remember { mutableStateOf<Job?>(null) }
+
+    var downloadedApks by remember { mutableStateOf<List<DownloadedApkInfo>>(emptyList()) }
+    var isDeletingApks by remember { mutableStateOf(false) }
+    var storageCleanupMessage by remember { mutableStateOf<String?>(null) }
+
+    fun refreshDownloadedApks() {
+        coroutineScope.launch(Dispatchers.IO) {
+            val apks = Updater.getDownloadedApks(context)
+            withContext(Dispatchers.Main) {
+                downloadedApks = apks
+            }
+        }
+    }
+
+    fun startInAppDownload(release: ReleaseInfo) {
+        val downloadUrl = release.browserDownloadUrl.ifBlank { release.htmlUrl }
+        if (downloadUrl.isBlank() || !downloadUrl.startsWith("http")) {
+            uriHandler.openUri(release.htmlUrl)
+            return
+        }
+
+        val fileName = "Nocturne-${release.tagName.trim().replace(' ', '-')}.apk"
+        val destDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.cacheDir
+        val targetFile = File(destDir, fileName)
+
+        isDownloading = true
+        downloadProgress = 0f
+        downloadedBytes = 0L
+        totalBytes = 0L
+        downloadError = null
+        downloadedFile = null
+
+        downloadJob = coroutineScope.launch {
+            Updater.downloadApkWithProgress(
+                downloadUrl = downloadUrl,
+                destinationFile = targetFile,
+                onProgress = { bytesRead, total, fraction ->
+                    downloadedBytes = bytesRead
+                    totalBytes = total
+                    downloadProgress = fraction
+                }
+            ).onSuccess { file ->
+                isDownloading = false
+                downloadProgress = 1f
+                downloadedFile = file
+                refreshDownloadedApks()
+                Updater.installApk(context, file)
+            }.onFailure { err ->
+                isDownloading = false
+                downloadError = err.message ?: "Download failed"
+            }
+        }
+    }
+
+    fun cancelDownload() {
+        downloadJob?.cancel()
+        downloadJob = null
+        isDownloading = false
+        downloadProgress = 0f
+        downloadError = null
+    }
+
     fun loadCommits() {
         isLoadingCommits = true
         coroutineScope.launch {
@@ -198,6 +279,7 @@ fun UpdateScreen(
 
     // Initial check on entry
     LaunchedEffect(Unit) {
+        refreshDownloadedApks()
         checkForUpdates(forceRefresh = false)
         if (updateChannel == UpdateChannel.NIGHTLY) {
             loadCommits()
@@ -441,102 +523,312 @@ fun UpdateScreen(
                             }
                         } else if (isUpdateAvailable && latestRelease != null) {
                             val release = latestRelease!!
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.auto_awesome),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
+                            if (isDownloading) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.download),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
 
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
                                 Text(
-                                    text = "UPDATE AVAILABLE",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    text = "Downloading Update…",
+                                    style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    textAlign = TextAlign.Center
                                 )
-                            }
 
-                            Text(
-                                text = release.name.ifBlank { release.tagName },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
+                                Spacer(modifier = Modifier.height(4.dp))
 
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = "Current: v$currentVersionName  ➔  Latest: ${release.tagName}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            if (release.publishedAt.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Released ${formatReleaseDate(release.publishedAt)}",
+                                    text = "Nocturne ${release.tagName}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+
+                                Spacer(modifier = Modifier.height(18.dp))
+
+                                ThickProgressSlider(
+                                    progress = downloadProgress,
+                                    trackHeight = 12.dp,
+                                    activeColor = MaterialTheme.colorScheme.primary,
+                                    inactiveColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${(downloadProgress * 100).toInt()}%",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = if (totalBytes > 0) "${formatFileSize(downloadedBytes)} / ${formatFileSize(totalBytes)}"
+                                               else formatFileSize(downloadedBytes),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(18.dp))
+
+                                OutlinedButton(
+                                    onClick = { cancelDownload() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(20.dp)
+                                ) {
+                                    Text("Cancel Download")
+                                }
+                            } else if (downloadedFile != null && downloadedFile!!.exists()) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF34A853).copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.check),
+                                        contentDescription = null,
+                                        tint = Color(0xFF34A853),
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Text(
+                                    text = "Download Complete! 🎉",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "Ready to install ${release.tagName}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                ThickProgressSlider(
+                                    progress = 1f,
+                                    trackHeight = 12.dp,
+                                    activeColor = Color(0xFF34A853),
+                                    inactiveColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                )
+
+                                Spacer(modifier = Modifier.height(18.dp))
+
+                                Button(
+                                    onClick = {
+                                        Updater.installApk(context, downloadedFile!!)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.android_cell),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Install Update Now", fontWeight = FontWeight.Bold)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        downloadedFile = null
+                                        startInAppDownload(release)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Text("Download Again")
+                                }
+                            } else if (downloadError != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.error),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Text(
+                                    text = "Download Failed",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = downloadError ?: "An unexpected network error occurred",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
                                 )
-                            }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                            // Download & Install Action Button
-                            Button(
-                                onClick = {
-                                    val downloadUrl = release.browserDownloadUrl.ifBlank { release.htmlUrl }
-                                    uriHandler.openUri(downloadUrl)
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.download),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = { startInAppDownload(release) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Icon(painterResource(R.drawable.cached), null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Retry Download", fontWeight = FontWeight.Bold)
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        val fallbackUrl = release.browserDownloadUrl.ifBlank { release.htmlUrl }
+                                        uriHandler.openUri(fallbackUrl)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Text("Open Download Link in Browser")
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.auto_awesome),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "UPDATE AVAILABLE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+
                                 Text(
-                                    text = stringResource(R.string.download_and_install),
-                                    fontWeight = FontWeight.Bold
+                                    text = release.name.ifBlank { release.tagName },
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
                                 )
-                            }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
 
-                            OutlinedButton(
-                                onClick = { uriHandler.openUri(release.htmlUrl) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.github),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                Text(
+                                    text = "Current: v$currentVersionName  ➔  Latest: ${release.tagName}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.view_on_github))
+
+                                if (release.publishedAt.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Released ${formatReleaseDate(release.publishedAt)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                // In-App Download & Install Action Button
+                                Button(
+                                    onClick = { startInAppDownload(release) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.download),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.download_and_install),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                OutlinedButton(
+                                    onClick = { uriHandler.openUri(release.htmlUrl) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.github),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(stringResource(R.string.view_on_github))
+                                }
                             }
                         } else {
                             // Up to Date State
@@ -654,10 +946,11 @@ fun UpdateScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            Text(
-                                text = latestRelease?.body ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            val formattedNotes = formatChangelogText(latestRelease?.body ?: "")
+                            MarkdownText(
+                                markdown = formattedNotes,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                             )
                         }
                     }
@@ -726,6 +1019,118 @@ fun UpdateScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // Storage & Installers Group (Clean up previous APKs)
+            item {
+                PreferenceGroupTitle(title = "Storage & Clean Up")
+            }
+
+            item {
+                val totalApkSize = remember(downloadedApks) { downloadedApks.sumOf { it.sizeBytes } }
+                val apkCount = downloadedApks.size
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (apkCount > 0) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                                            else MaterialTheme.colorScheme.surfaceContainerHigh
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(if (apkCount > 0) R.drawable.delete else R.drawable.storage),
+                                        contentDescription = null,
+                                        tint = if (apkCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column {
+                                    Text(
+                                        text = "Previous App Installers",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (apkCount > 0) "$apkCount previous APK file(s) found (${formatFileSize(totalApkSize)})"
+                                               else "No leftover APK files in storage (0 MB)",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            if (apkCount > 0) {
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            isDeletingApks = true
+                                            val (deleted, freed) = Updater.deleteDownloadedApks(context)
+                                            withContext(Dispatchers.Main) {
+                                                isDeletingApks = false
+                                                refreshDownloadedApks()
+                                                storageCleanupMessage = "Deleted $deleted installer(s) (${formatFileSize(freed)} freed)"
+                                            }
+                                        }
+                                    },
+                                    enabled = !isDeletingApks,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                    ),
+                                    shape = RoundedCornerShape(14.dp)
+                                ) {
+                                    if (isDeletingApks) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "Delete",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (storageCleanupMessage != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = storageCleanupMessage!!,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
                 }
@@ -1047,4 +1452,46 @@ private fun formatFileSize(bytes: Long): String {
     if (bytes <= 0) return ""
     val mb = bytes / (1024.0 * 1024.0)
     return String.format(Locale.getDefault(), "%.1f MB", mb)
+}
+
+private fun formatChangelogText(rawNotes: String): String {
+    if (rawNotes.isBlank()) return Updater.GenericReleaseNotes
+    val lines = rawNotes.lines()
+    val filtered = lines.filterNot { line ->
+        val trimmed = line.trim()
+        trimmed.startsWith("**Full Changelog**:") ||
+        trimmed.startsWith("See the assets to download") ||
+        trimmed.startsWith("Full Commit Hash:")
+    }
+    return filtered.joinToString("\n").trim().ifBlank { Updater.GenericReleaseNotes }
+}
+
+@Composable
+private fun ThickProgressSlider(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    trackHeight: androidx.compose.ui.unit.Dp = 12.dp,
+    activeColor: Color = MaterialTheme.colorScheme.primary,
+    inactiveColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = 250, easing = LinearOutSlowInEasing),
+        label = "thick_progress_slider"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(trackHeight)
+            .clip(RoundedCornerShape(50))
+            .background(inactiveColor)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(animatedProgress)
+                .background(activeColor, RoundedCornerShape(50))
+        )
+    }
 }

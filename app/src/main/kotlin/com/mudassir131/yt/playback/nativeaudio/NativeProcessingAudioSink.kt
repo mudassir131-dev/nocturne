@@ -183,6 +183,8 @@ class NativeProcessingAudioSink(
                 }
                 if (isPlaying) {
                     nativeEngine.resume()
+                } else {
+                    nativeEngine.pause()
                 }
             } else if (isPlaying && nativeEngine.isPaused()) {
                 nativeEngine.resume()
@@ -279,7 +281,6 @@ class NativeProcessingAudioSink(
         isPlaying = false
         if (useNativeAudio && nativeEngine.isAvailable()) {
             nativeEngine.pause()
-            return
         }
         fallbackSink.pause()
     }

@@ -1202,6 +1202,57 @@ class MusicService :
         }
     }
 
+    private fun isCallOrRingingActive(): Boolean {
+        val mode = audioManager.mode
+        return mode == AudioManager.MODE_RINGTONE ||
+            mode == AudioManager.MODE_IN_CALL ||
+            mode == AudioManager.MODE_IN_COMMUNICATION ||
+            mode == AudioManager.MODE_CALL_SCREENING
+    }
+
+    private var audioModeChangeListener: AudioManager.OnModeChangedListener? = null
+    private val phoneStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "android.intent.action.PHONE_STATE") {
+                val stateStr = intent.getStringExtra(android.telephony.TelephonyManager.EXTRA_STATE)
+                when (stateStr) {
+                    android.telephony.TelephonyManager.EXTRA_STATE_RINGING,
+                    android.telephony.TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                        if (player.isPlaying || player.playWhenReady) {
+                            wasPlayingBeforeAudioFocusLoss = true
+                            player.pause()
+                        }
+                    }
+                    android.telephony.TelephonyManager.EXTRA_STATE_IDLE -> {
+                        handleAudioModeChanged(AudioManager.MODE_NORMAL)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleAudioModeChanged(newMode: Int) {
+        if (newMode == AudioManager.MODE_NORMAL) {
+            if (wasPlayingBeforeAudioFocusLoss && !suppressAutoPlayback) {
+                scope.launch {
+                    kotlinx.coroutines.delay(350)
+                    if (!isCallOrRingingActive() && wasPlayingBeforeAudioFocusLoss && !suppressAutoPlayback) {
+                        val focusGranted = requestAudioFocus()
+                        if (focusGranted) {
+                            player.play()
+                            wasPlayingBeforeAudioFocusLoss = false
+                        }
+                    }
+                }
+            }
+        } else {
+            if (player.isPlaying || player.playWhenReady) {
+                wasPlayingBeforeAudioFocusLoss = true
+                player.pause()
+            }
+        }
+    }
+
     private fun setupAudioFocusRequest() {
         audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(
@@ -1215,15 +1266,35 @@ class MusicService :
             }
             .setAcceptsDelayedFocusGain(true)
             .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val listener = AudioManager.OnModeChangedListener { mode ->
+                handleAudioModeChanged(mode)
+            }
+            audioModeChangeListener = listener
+            try {
+                audioManager.addOnModeChangedListener(mainExecutor, listener)
+            } catch (_: Exception) {}
+        }
+        try {
+            registerReceiver(phoneStateReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
+        } catch (_: Exception) {}
     }
 
     private fun handleAudioFocusChange(focusChange: Int) {
+        val isCallActive = isCallOrRingingActive()
+
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
                 hasAudioFocus = true
                 audioFocusVolumeFactor.value = 1f
 
-                if (wasPlayingBeforeAudioFocusLoss) {
+                if (isCallActive) {
+                    // In-call or ringing: do NOT resume playback between ring bursts!
+                    return
+                }
+
+                if (wasPlayingBeforeAudioFocusLoss && !suppressAutoPlayback) {
                     player.play()
                     wasPlayingBeforeAudioFocusLoss = false
                 }
@@ -1236,7 +1307,7 @@ class MusicService :
                 audioFocusVolumeFactor.value = 1f
                 wasPlayingBeforeAudioFocusLoss = false
 
-                if (player.isPlaying) {
+                if (player.isPlaying || player.playWhenReady) {
                     player.pause()
                 }
 
@@ -1248,9 +1319,14 @@ class MusicService :
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                 hasAudioFocus = false
                 audioFocusVolumeFactor.value = 1f
-                wasPlayingBeforeAudioFocusLoss = player.isPlaying
+                val wasPlaying = (player.playWhenReady || player.isPlaying) &&
+                    player.playbackState != Player.STATE_IDLE &&
+                    player.playbackState != Player.STATE_ENDED
+                if (wasPlaying) {
+                    wasPlayingBeforeAudioFocusLoss = true
+                }
 
-                if (player.isPlaying) {
+                if (player.isPlaying || player.playWhenReady) {
                     player.pause()
                 }
 
@@ -1258,22 +1334,36 @@ class MusicService :
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-
                 hasAudioFocus = false
+                val wasPlaying = (player.playWhenReady || player.isPlaying) &&
+                    player.playbackState != Player.STATE_IDLE &&
+                    player.playbackState != Player.STATE_ENDED
+                if (wasPlaying) {
+                    wasPlayingBeforeAudioFocusLoss = true
+                }
 
-                wasPlayingBeforeAudioFocusLoss = player.isPlaying
-
-                audioFocusVolumeFactor.value = 0.2f
+                if (isCallActive) {
+                    audioFocusVolumeFactor.value = 1f
+                    if (player.isPlaying || player.playWhenReady) {
+                        player.pause()
+                    }
+                } else {
+                    audioFocusVolumeFactor.value = 0.2f
+                }
 
                 lastAudioFocusState = focusChange
             }
 
             AudioManager.AUDIOFOCUS_GAIN_TRANSIENT -> {
-
                 hasAudioFocus = true
                 audioFocusVolumeFactor.value = 1f
 
-                if (wasPlayingBeforeAudioFocusLoss) {
+                if (isCallActive) {
+                    // Do not resume during call / ringtone pulses
+                    return
+                }
+
+                if (wasPlayingBeforeAudioFocusLoss && !suppressAutoPlayback) {
                     player.play()
                     wasPlayingBeforeAudioFocusLoss = false
                 }
@@ -4019,7 +4109,16 @@ class MusicService :
         if (isBufferingOrReady && player.playWhenReady) {
             val focusGranted = requestAudioFocus()
             if (focusGranted) openAudioEffectSession()
-        } else {
+        } else if (!player.playWhenReady) {
+            if (hasAudioFocus && !isCallOrRingingActive()) {
+                wasPlayingBeforeAudioFocusLoss = false
+                wasAutoPausedByDeviceMute = false
+                abandonAudioFocus()
+            }
+            if (player.playbackState == Player.STATE_IDLE) {
+                closeAudioEffectSession()
+            }
+        } else if (player.playbackState == Player.STATE_IDLE) {
             closeAudioEffectSession()
         }
     }
@@ -4918,6 +5017,16 @@ class MusicService :
             connectivityObserver.unregister()
         } catch (_: Exception) {}
         abandonAudioFocus()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            audioModeChangeListener?.let {
+                try {
+                    audioManager.removeOnModeChangedListener(it)
+                } catch (_: Exception) {}
+            }
+        }
+        try {
+            unregisterReceiver(phoneStateReceiver)
+        } catch (_: Exception) {}
         try {
             releaseAudioEffects()
         } catch (_: Exception) {}

@@ -618,9 +618,9 @@ object YouTube {
         val sectionListRender = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
             ?.tabRenderer?.content?.sectionListRenderer
         val sections = sectionListRender?.contents!!
-            .mapNotNull { it.musicCarouselShelfRenderer }
             .mapNotNull {
-                HomePage.Section.fromMusicCarouselShelfRenderer(it)
+                it.musicCarouselShelfRenderer?.let { r -> HomePage.Section.fromMusicCarouselShelfRenderer(r) }
+                    ?: it.musicShelfRenderer?.let { r -> HomePage.Section.fromMusicShelfRenderer(r) }
             }.toMutableList()
         val chips = sectionListRender.header?.chipCloudRenderer?.chips?.mapNotNull { HomePage.Chip.fromChipCloudChipRenderer(it) }
         HomePage(chips, sections, continuation)
@@ -630,9 +630,9 @@ object YouTube {
         val response =
             innerTube.browse(WEB_REMIX, continuation = continuation).body<BrowseResponse>()
         val sections = response.continuationContents?.sectionListContinuation?.contents
-            ?.mapNotNull { it.musicCarouselShelfRenderer }
             ?.mapNotNull {
-                HomePage.Section.fromMusicCarouselShelfRenderer(it)
+                it.musicCarouselShelfRenderer?.let { r -> HomePage.Section.fromMusicCarouselShelfRenderer(r) }
+                    ?: it.musicShelfRenderer?.let { r -> HomePage.Section.fromMusicShelfRenderer(r) }
             }.orEmpty()
         val nextContinuation = if (sections.isEmpty()) null else {
             response.continuationContents?.sectionListContinuation?.continuations?.getContinuation()

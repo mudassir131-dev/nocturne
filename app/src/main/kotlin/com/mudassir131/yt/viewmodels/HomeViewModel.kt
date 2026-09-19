@@ -156,10 +156,108 @@ class HomeViewModel @Inject constructor(
         return chips?.filterNot { it.title.contains("podcasts", ignoreCase = true) }
     }
 
+    private fun mapSongItemToSong(item: com.mudassir131.yt.innertube.models.SongItem): Song {
+        return Song(
+            song = com.mudassir131.yt.db.entities.SongEntity(
+                id = item.id,
+                title = item.title,
+                duration = item.duration ?: 0,
+                thumbnailUrl = item.thumbnail,
+            ),
+            artists = item.artists.map {
+                com.mudassir131.yt.db.entities.ArtistEntity(
+                    id = it.id.orEmpty(),
+                    name = it.name,
+                )
+            },
+            album = item.album?.let {
+                com.mudassir131.yt.db.entities.AlbumEntity(
+                    id = it.id,
+                    title = it.name,
+                    thumbnailUrl = item.thumbnail,
+                    songCount = 0,
+                    duration = 0,
+                )
+            }
+        )
+    }
+
+    private suspend fun populateQuickPicksFallback(page: HomePage? = null) {
+        val targetPage = page ?: _homePage.value
+
+        // 1. YouTube Music Home song sections (Quick picks, Listen again, Start radio, etc.)
+        val songSections = targetPage?.sections?.filter { section ->
+            section.items.any { it is com.mudassir131.yt.innertube.models.SongItem }
+        }.orEmpty()
+
+        if (songSections.isNotEmpty()) {
+            val prioritizedSection = songSections.firstOrNull { section ->
+                section.title.contains("quick", ignoreCase = true) ||
+                section.title.contains("listen", ignoreCase = true) ||
+                section.title.contains("picks", ignoreCase = true) ||
+                section.title.contains("radio", ignoreCase = true) ||
+                section.title.contains("mixed", ignoreCase = true) ||
+                section.title.contains("recommend", ignoreCase = true)
+            } ?: songSections.first()
+
+            val ytSongs = prioritizedSection.items.filterIsInstance<com.mudassir131.yt.innertube.models.SongItem>()
+            if (ytSongs.isNotEmpty()) {
+                _quickPicks.value = ytSongs.distinctBy { it.id }.shuffled().map { mapSongItemToSong(it) }.take(20)
+                return
+            }
+        }
+
+        // 2. All SongItems across all sections of YouTube home page (shuffled)
+        val allHomeSongs = targetPage?.sections?.flatMap { it.items }
+            ?.filterIsInstance<com.mudassir131.yt.innertube.models.SongItem>()
+            .orEmpty()
+        if (allHomeSongs.isNotEmpty()) {
+            _quickPicks.value = allHomeSongs.distinctBy { it.id }.shuffled().map { mapSongItemToSong(it) }.take(20)
+            return
+        }
+
+        // 3. For You Suggestion Engine (YouTube related songs algorithmic recommendations)
+        val suggestions = _forYouSuggestions.value
+        if (!suggestions.isNullOrEmpty()) {
+            _quickPicks.value = suggestions.distinctBy { it.id }.shuffled().map { mapSongItemToSong(it) }.take(20)
+            return
+        }
+
+        // 4. Local database played songs (shuffled)
+        val dbSongs = runCatching { database.songsByPlayTimeAsc().first().shuffled().take(20) }.getOrNull()
+        if (!dbSongs.isNullOrEmpty()) {
+            _quickPicks.value = dbSongs.shuffled()
+            return
+        }
+
+        // 5. Dynamic YouTube Music trending/popular songs search (NEVER fallback to Curated & Trending playlist)
+        runCatching {
+            val searchResult = YouTube.search("Trending Songs", com.mudassir131.yt.innertube.YouTube.SearchFilter.FILTER_SONG).getOrNull()
+            val songs = searchResult?.items?.filterIsInstance<com.mudassir131.yt.innertube.models.SongItem>()
+            if (!songs.isNullOrEmpty()) {
+                _quickPicks.value = songs.distinctBy { it.id }.shuffled().map { mapSongItemToSong(it) }.take(20)
+            }
+        }
+    }
+
     private suspend fun getQuickPicks(){
         when (quickPicksEnum.first()) {
-            QuickPicks.QUICK_PICKS -> _quickPicks.value = database.quickPicks().first().shuffled().take(20)
-            QuickPicks.LAST_LISTEN -> songLoad()
+            QuickPicks.QUICK_PICKS -> {
+                val dbPicks = database.quickPicks().first().shuffled().take(20)
+                if (dbPicks.isNotEmpty()) {
+                    _quickPicks.value = dbPicks
+                } else {
+                    populateQuickPicksFallback()
+                }
+            }
+            QuickPicks.LAST_LISTEN -> {
+                songLoad()
+                if (_quickPicks.value.isNullOrEmpty()) {
+                    populateQuickPicksFallback()
+                } else {
+                    _quickPicks.value = _quickPicks.value?.shuffled()
+                }
+            }
         }
     }
 
@@ -179,7 +277,11 @@ class HomeViewModel @Inject constructor(
                     try {
                         val hideExplicit = context.dataStore.get(HideExplicitKey, false)
                         val hideVideo = context.dataStore.get(HideVideoKey, false)
-                        _forYouSuggestions.value = forYouEngine.getSuggestions(hideExplicit, hideVideo)
+                        val suggestions = forYouEngine.getSuggestions(hideExplicit, hideVideo)
+                        _forYouSuggestions.value = suggestions
+                        if (_quickPicks.value.isNullOrEmpty()) {
+                            populateQuickPicksFallback()
+                        }
                     } catch (_: Exception) {}
                 }
                 
@@ -195,13 +297,19 @@ class HomeViewModel @Inject constructor(
                 }
 
                 launch {
-                        YouTube.home().onSuccess { page ->
+                    YouTube.home().onSuccess { page ->
                         _homePage.value = page.copy(
                             chips = filterHomeChips(page.chips),
                             sections = page.sections.map { section ->
                                 section.copy(items = section.items.filterExplicit(hideExplicit).filterVideo(hideVideo))
                             }
                         )
+                        val hasDbPicks = runCatching { database.quickPicks().first().isNotEmpty() }.getOrDefault(false)
+                        if (!hasDbPicks || _quickPicks.value.isNullOrEmpty()) {
+                            populateQuickPicksFallback(page)
+                        } else {
+                            _quickPicks.value = _quickPicks.value?.shuffled()
+                        }
                     }.onFailure { reportException(it) }
                 }
 
@@ -418,9 +526,16 @@ class HomeViewModel @Inject constructor(
                     QuickPicks.QUICK_PICKS -> {
                         if (picks.isNotEmpty()) {
                             _quickPicks.value = picks.shuffled().take(20)
+                        } else if (_quickPicks.value.isNullOrEmpty()) {
+                            populateQuickPicksFallback()
                         }
                     }
-                    QuickPicks.LAST_LISTEN -> songLoad()
+                    QuickPicks.LAST_LISTEN -> {
+                        songLoad()
+                        if (_quickPicks.value.isNullOrEmpty()) {
+                            populateQuickPicksFallback()
+                        }
+                    }
                 }
             }
         }

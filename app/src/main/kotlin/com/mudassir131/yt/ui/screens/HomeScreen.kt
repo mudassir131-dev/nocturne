@@ -238,43 +238,32 @@ fun HomeScreen(
                 }
 
                 quickPicks?.takeIf { it.isNotEmpty() }?.let { picks ->
-            /*
-                item {
-                    NavigationTitle(
-                        title = stringResource(R.string.quick_picks),
-                        modifier = Modifier.animateItem()
-                    )
-                }
-            */
+                    item(key = "quick_picks_cards") {
+                        QuickPicksSection(
+                            quickPicks = picks,
+                            mediaMetadata = mediaMetadata,
+                            isPlaying = isPlaying,
+                            navController = navController,
+                            playerConnection = playerConnection,
+                            menuState = menuState,
+                            haptic = haptic,
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
 
-                item {
-                    QuickPicksSection(
-                        quickPicks = picks,
-                        mediaMetadata = mediaMetadata,
-                        isPlaying = isPlaying,
-                        navController = navController,
-                        playerConnection = playerConnection,
-                        menuState = menuState,
-                        haptic = haptic
-                    )
+                    item(key = "quick_picks_list") {
+                        QuickPicksListSection(
+                            quickPicks = picks,
+                            mediaMetadata = mediaMetadata,
+                            isPlaying = isPlaying,
+                            navController = navController,
+                            playerConnection = playerConnection,
+                            menuState = menuState,
+                            haptic = haptic,
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
                 }
-            }
-
-
-            quickPicks?.takeIf { it.isNotEmpty() }?.let { picks ->
-                item {
-                    QuickPicksListSection(
-                        quickPicks = picks,
-                        mediaMetadata = mediaMetadata,
-                        isPlaying = isPlaying,
-                        navController = navController,
-                        playerConnection = playerConnection,
-                        menuState = menuState,
-                        haptic = haptic,
-                        modifier = Modifier.animateItem()
-                    )
-                }
-            }
 
             keepListening?.takeIf { it.isNotEmpty() }?.let { items ->
                 item {
@@ -347,6 +336,11 @@ fun HomeScreen(
             )
 
             homePage?.sections?.forEach { section ->
+                val isQuickPicksSection = section.title?.contains("Quick picks", ignoreCase = true) == true
+                if (isQuickPicksSection && quickPicks?.isNotEmpty() == true) {
+                    return@forEach
+                }
+
                 val isCommunity = section.title?.contains("community", ignoreCase = true) == true ||
                     section.title?.contains("From the", ignoreCase = true) == true ||
                     section.title?.contains("Trending", ignoreCase = true) == true &&

@@ -459,7 +459,7 @@ private fun AudioManager.currentOutputs(): List<OutputDevice> {
         OutputDevice(
             name = device.productName?.toString().orEmpty().ifBlank { kind },
             kind = kind,
-            icon = if (kind == "Bluetooth") R.drawable.bluetooth else R.drawable.volume_up,
+            icon = if (kind == "Bluetooth" || kind == "Headphones") R.drawable.ic_ios_headphones else R.drawable.volume_up,
             isExternal = external,
         )
     }.distinctBy { it.name to it.kind }

@@ -8,8 +8,14 @@
 
 package com.mudassir131.yt.utils
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import android.util.Log
+import androidx.core.content.FileProvider
 import androidx.datastore.preferences.core.edit
 import com.mudassir131.yt.App
 import com.mudassir131.yt.BuildConfig
@@ -25,8 +31,15 @@ import io.ktor.client.request.headers
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 
 data class GitCommit(
     val sha: String,
@@ -60,11 +73,11 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.33
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.34
 
-* **Native Audio Pipeline & Hi-Res Fixes** — Resolved audio regressions in native Oboe/AAudio playback, fixed OPUS fallback frame timing, and corrected 24-bit PCM decoding for flawless lossless audio.
-* **Audio Lifecycle & Stability** — Enhanced buffer synchronization, fixed resampler state on seek/pause transitions, and improved audio clock accuracy.
-* **Bug Fixes & Core Stability** — General playback refinements, UI polish, and performance optimizations."""
+* **In-App Updater & Smooth Progress** — Direct in-app streaming downloads with a player-style thick smooth progress slider and one-tap package installation.
+* **Storage & Clean Up** — Easily delete previously downloaded APK files directly within the app.
+* **Compact Update Dialog & Fixes** — Minimalist centered update card with direct check-for-updates navigation and beautifully rendered changelogs."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
@@ -420,4 +433,142 @@ object Updater {
                 }
             }
         }
+
+    fun getDownloadedApks(context: Context): List<DownloadedApkInfo> {
+        val results = mutableListOf<DownloadedApkInfo>()
+        val dirsToScan = listOfNotNull(
+            context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
+            context.cacheDir,
+            context.externalCacheDir,
+            runCatching { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }.getOrNull()
+        )
+
+        for (dir in dirsToScan) {
+            if (!dir.exists() || !dir.isDirectory) continue
+            val files = dir.listFiles() ?: continue
+            for (file in files) {
+                val name = file.name.lowercase()
+                if (file.isFile && name.endsWith(".apk") && (name.contains("nocturne") || name.startsWith("app-"))) {
+                    results.add(
+                        DownloadedApkInfo(
+                            file = file,
+                            name = file.name,
+                            sizeBytes = file.length(),
+                            lastModified = file.lastModified()
+                        )
+                    )
+                }
+            }
+        }
+        return results.distinctBy { it.file.absolutePath }
+    }
+
+    fun deleteDownloadedApks(context: Context): Pair<Int, Long> {
+        val apks = getDownloadedApks(context)
+        var deletedCount = 0
+        var freedBytes = 0L
+        for (apk in apks) {
+            val len = apk.sizeBytes
+            if (apk.file.delete()) {
+                deletedCount++
+                freedBytes += len
+            }
+        }
+        return Pair(deletedCount, freedBytes)
+    }
+
+    suspend fun downloadApkWithProgress(
+        downloadUrl: String,
+        destinationFile: File,
+        onProgress: (bytesRead: Long, totalBytes: Long, progressFraction: Float) -> Unit
+    ): Result<File> = withContext(Dispatchers.IO) {
+        runCatching {
+            var currentUrl = downloadUrl
+            var connection: HttpURLConnection
+            var redirectCount = 0
+            while (true) {
+                val url = URL(currentUrl)
+                connection = url.openConnection() as HttpURLConnection
+                connection.instanceFollowRedirects = false
+                connection.setRequestProperty("User-Agent", "Nocturne")
+                connection.connectTimeout = 15000
+                connection.readTimeout = 30000
+                connection.connect()
+
+                val responseCode = connection.responseCode
+                if (responseCode in 300..399) {
+                    val newUrl = connection.getHeaderField("Location")
+                    connection.disconnect()
+                    if (!newUrl.isNullOrBlank() && redirectCount < 10) {
+                        currentUrl = newUrl
+                        redirectCount++
+                        continue
+                    } else {
+                        throw IOException("Too many redirects: $responseCode")
+                    }
+                } else if (responseCode !in 200..299) {
+                    connection.disconnect()
+                    throw IOException("HTTP Error: $responseCode")
+                }
+                break
+            }
+
+            val totalLength = connection.contentLengthLong.takeIf { it > 0 } ?: -1L
+            destinationFile.parentFile?.mkdirs()
+            if (destinationFile.exists()) destinationFile.delete()
+
+            var bytesCopied = 0L
+            val buffer = ByteArray(16384)
+            connection.inputStream.use { input ->
+                FileOutputStream(destinationFile).use { output ->
+                    var bytes = input.read(buffer)
+                    while (bytes >= 0) {
+                        output.write(buffer, 0, bytes)
+                        bytesCopied += bytes
+                        val fraction = if (totalLength > 0) (bytesCopied.toFloat() / totalLength.toFloat()).coerceIn(0f, 1f) else 0f
+                        onProgress(bytesCopied, totalLength, fraction)
+                        bytes = input.read(buffer)
+                    }
+                }
+            }
+            destinationFile
+        }
+    }
+
+    fun installApk(context: Context, apkFile: File): Boolean {
+        if (!apkFile.exists()) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                data = Uri.parse("package:${context.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            return false
+        }
+
+        return try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.FileProvider",
+                apkFile
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            Log.e("NocturneUpdater", "Failed to launch package installer", e)
+            false
+        }
+    }
 }
+
+data class DownloadedApkInfo(
+    val file: File,
+    val name: String,
+    val sizeBytes: Long,
+    val lastModified: Long
+)

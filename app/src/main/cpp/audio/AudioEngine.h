@@ -183,6 +183,7 @@ private:
     std::atomic<std::int64_t> resamplerOutputFrames_{0};
 
     std::atomic<float> volume_{1.0f};
+    float currentVolume_{1.0f};
     std::atomic<bool> dspEnabled_{false};
 
     // Conversion scratch buffers for producer thread

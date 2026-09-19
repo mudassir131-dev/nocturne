@@ -12,7 +12,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import com.mudassir131.yt.extensions.toMediaItem
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -975,6 +977,16 @@ fun QuickPicksListSection(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
                     .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                    .clickable {
+                        if (distinctQuickPicks.isNotEmpty()) {
+                            playerConnection.playQueue(
+                                com.mudassir131.yt.playback.queues.ListQueue(
+                                    title = "Quick picks",
+                                    items = distinctQuickPicks.map { it.toMediaMetadata().toMediaItem() },
+                                )
+                            )
+                        }
+                    }
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
