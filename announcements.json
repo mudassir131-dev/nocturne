@@ -510,5 +510,16 @@
     "title": "",
     "content": "while streaming music it gets suttered while calling, will be fixed soon..its due to updating the sound quality in kHZ.",
     "timestamp": 1789634843003
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-0f8f4b69",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "🚨 v2.22.34 Recommended Update\n\nThis update is a must-install for all users. If you\u2019re experiencing stuttering, lag, or playback issues, update to v2.22.34 for improved smoothness, stability, and performance.\n\nUpdate now. Experience the difference. ⚡",
+    "timestamp": 1789830658591
   }
 ]
