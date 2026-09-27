@@ -73,11 +73,12 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.34
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.35
 
-* **In-App Updater & Smooth Progress** — Direct in-app streaming downloads with a player-style thick smooth progress slider and one-tap package installation.
-* **Storage & Clean Up** — Easily delete previously downloaded APK files directly within the app.
-* **Compact Update Dialog & Fixes** — Minimalist centered update card with direct check-for-updates navigation and beautifully rendered changelogs."""
+* **Apple Music Inspired Player & Lyrics** — Pure white player slider preserved, ultra-smooth synchronized lyrics teaser with 32ms precision polling, and immersive optical depth-of-field blur on non-active lyrics lines with standard shader backdrop blur.
+* **Cinematic Player Light Mode Overhaul** — Complete contrast redesign for light mode featuring a dedicated white-grey slider aesthetic, bold hero Play/Pause control, and high-contrast bordered action pills.
+* **Silver Color Palette & Adaptive Contrast** — Silver palette set as default with intelligent adaptive luminance text contrast across all 18+ screens and dialogs.
+* **Performance & Stability** — Disable Blur enabled by default for maximum framerates, native audio engine optimizations, and fast offline Gradle build pipeline caching."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
