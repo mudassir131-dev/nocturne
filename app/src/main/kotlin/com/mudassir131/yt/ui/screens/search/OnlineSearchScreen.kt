@@ -340,17 +340,8 @@ fun SuggestionItem(
     onFillTextField: () -> Unit,
     pureBlack: Boolean
 ) {
-    val iconContainerColor = if (pureBlack) {
-        Color.White.copy(alpha = 0.08f)
-    } else {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-    }
-
-    val iconTint = if (pureBlack) {
-        Color.White.copy(alpha = 0.7f)
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
+    val iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = if (pureBlack) 0.12f else 0.08f)
+    val iconTint = MaterialTheme.colorScheme.primary
 
     Row(
         verticalAlignment = Alignment.CenterVertically,

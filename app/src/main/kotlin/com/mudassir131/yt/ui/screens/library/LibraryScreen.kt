@@ -66,7 +66,7 @@ fun LibraryScreen(navController: NavController) {
         if (filterType == LibraryFilter.LIBRARY) filterType = LibraryFilter.PLAYLISTS
     }
 
-    val (disableBlur) = rememberPreference(DisableBlurKey, false)
+    val (disableBlur) = rememberPreference(DisableBlurKey, true)
     val (showTagsInLibrary) = rememberPreference(ShowTagsInLibraryKey, true)
     val (selectedTagsFilter, onSelectedTagsFilterChange) = rememberPreference(PlaylistTagsFilterKey, "")
     val selectedTagIds = remember(selectedTagsFilter) {

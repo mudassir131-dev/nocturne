@@ -164,7 +164,7 @@ fun AlbumScreen(
     val uiState by viewModel.uiState.collectAsState()
     val otherVersions by viewModel.otherVersions.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
-    val (disableBlur) = rememberPreference(DisableBlurKey, false)
+    val (disableBlur) = rememberPreference(DisableBlurKey, true)
     val (showAlbumCanvas) = rememberPreference(ShowAlbumCanvasKey, false)
     var albumCanvas by remember { mutableStateOf<CanvasArtwork?>(null) }
     LaunchedEffect(albumWithSongs?.songs?.firstOrNull()?.id, showAlbumCanvas) {

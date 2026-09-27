@@ -153,14 +153,14 @@ fun LocalSearchScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .background(
-                                        color = if (pureBlack) Color.White.copy(alpha = 0.08f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = if (pureBlack) 0.12f else 0.08f),
                                         shape = RoundedCornerShape(10.dp)
                                     )
                             ) {
                                 Icon(
                                     painter = painterResource(filterIcon),
                                     contentDescription = null,
-                                    tint = if (pureBlack) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }

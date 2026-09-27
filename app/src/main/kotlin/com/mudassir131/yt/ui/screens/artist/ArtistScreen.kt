@@ -177,7 +177,7 @@ fun ArtistScreen(
     val librarySongs by viewModel.librarySongs.collectAsState()
     val libraryAlbums by viewModel.libraryAlbums.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
-    val (disableBlur) = rememberPreference(DisableBlurKey, false)
+    val (disableBlur) = rememberPreference(DisableBlurKey, true)
     val (showArtistDescription) = rememberPreference(ShowArtistDescriptionKey, true)
     val (showArtistCanvasVideo) = rememberPreference(ShowArtistCanvasVideoKey, true)
     val (showArtistBackgroundVideo) = rememberPreference(ShowArtistBackgroundVideoKey, true)
