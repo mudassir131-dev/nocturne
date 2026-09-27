@@ -52,6 +52,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import com.mudassir131.yt.constants.SliderStyle
 import com.mudassir131.yt.constants.SliderStyleKey
 import com.mudassir131.yt.ui.player.StyledPlaybackSlider
+import com.mudassir131.yt.ui.player.PlayerLyricsTeaser
 import com.mudassir131.yt.utils.rememberEnumPreference
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -230,9 +231,9 @@ fun ApplePlayerHost(
         }
     }
 
-    LaunchedEffect(showLyrics, metadata?.id) {
+    LaunchedEffect(metadata?.id) {
         val current = metadata
-        if (showLyrics && current != null && lyricsResult == null) {
+        if (current != null) {
             lyricsLoading = true
             lyricsResult = withContext(Dispatchers.IO) {
                 AppleLyricsPipeline.resolve(context.applicationContext, current)
@@ -261,7 +262,7 @@ fun ApplePlayerHost(
         while (isActive) {
             position = connection.player.currentPosition.coerceAtLeast(0L)
             duration = connection.player.duration.validDuration()
-            delay(if (isPlaying) 250 else 750)
+            delay(if (isPlaying) 32L else 750L)
         }
     }
 
@@ -340,6 +341,7 @@ fun ApplePlayerHost(
             lyricsFullScreen = lyricsFullScreen,
             lyricsResult = lyricsResult,
             lyricsLoading = lyricsLoading,
+            currentLyrics = currentLyrics,
             currentFormat = currentFormat,
             formatInfo = currentFormatInfo,
             formatLoading = formatLoading,
@@ -439,6 +441,7 @@ private fun AppleExpandedPlayer(
     lyricsFullScreen: Boolean,
     lyricsResult: AppleLyricsResult?,
     lyricsLoading: Boolean,
+    currentLyrics: LyricsEntity?,
     currentFormat: FormatEntity?,
     formatInfo: AudioFormatInfo?,
     formatLoading: Boolean,
@@ -574,7 +577,32 @@ private fun AppleExpandedPlayer(
                 )
             }
 
-            Spacer(Modifier.height(20.dp))
+            AnimatedVisibility(
+                visible = !showLyrics,
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(150)),
+            ) {
+                Column {
+                    Spacer(Modifier.height(8.dp))
+                    PlayerLyricsTeaser(
+                        mediaMetadata = metadata,
+                        position = position,
+                        duration = duration,
+                        lyricsEntity = currentLyrics,
+                        appleLyricsResult = lyricsResult,
+                        textBackgroundColor = Color.White,
+                        onShowLyrics = onLyrics,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp)
+                            .padding(bottom = 4.dp),
+                    )
+                }
+            }
+
+            if (showLyrics) {
+                Spacer(Modifier.height(16.dp))
+            }
 
             val (sliderStyle) = rememberEnumPreference(SliderStyleKey, SliderStyle.Standard)
 
@@ -803,10 +831,7 @@ private fun AppleMusicBackdrop(
                     onSuccess = { blurArtworkReady = true },
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(
-                            if (blurArtworkReady) Modifier.blur(150.dp)
-                            else Modifier.alpha(0f),
-                        ),
+                        .blur(75.dp),
                 )
             }
         }

@@ -57,6 +57,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -115,6 +116,10 @@ import com.mudassir131.yt.constants.EqualizerSelectedProfileIdKey
 import com.mudassir131.yt.constants.EqualizerVirtualizerEnabledKey
 import com.mudassir131.yt.constants.EqualizerVirtualizerStrengthKey
 import com.mudassir131.yt.constants.ListItemHeight
+import com.mudassir131.yt.constants.SpatialAudioEnabledKey
+import com.mudassir131.yt.constants.SpatialAudioMode
+import com.mudassir131.yt.constants.SpatialAudioModeKey
+import com.mudassir131.yt.utils.rememberEnumPreference
 import com.mudassir131.yt.models.MediaMetadata
 import com.mudassir131.yt.playback.EqCapabilities
 import com.mudassir131.yt.playback.EqProfile
@@ -334,6 +339,26 @@ fun PlayerMenu(
     if (showPitchTempoDialog) {
         TempoPitchDialog(
             onDismiss = { showPitchTempoDialog = false },
+        )
+    }
+
+    val (spatialAudioEnabled, setSpatialAudioEnabled) = rememberPreference(
+        SpatialAudioEnabledKey,
+        defaultValue = false
+    )
+    val (spatialAudioMode, setSpatialAudioMode) = rememberEnumPreference(
+        SpatialAudioModeKey,
+        defaultValue = SpatialAudioMode.SPATIAL_3D
+    )
+    var showSpatialAudioDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showSpatialAudioDialog) {
+        SpatialAudioDialog(
+            enabled = spatialAudioEnabled,
+            onEnabledChange = setSpatialAudioEnabled,
+            selectedMode = spatialAudioMode,
+            onModeSelect = setSpatialAudioMode,
+            onDismiss = { showSpatialAudioDialog = false }
         )
     }
 
@@ -702,6 +727,37 @@ fun PlayerMenu(
                                 )
                             },
                             modifier = Modifier.clickable { showEqualizerDialog = true },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 56.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+
+                        ListItem(
+                            headlineContent = { Text(text = "Spatial Audio (3D)") },
+                            supportingContent = {
+                                Text(
+                                    text = if (spatialAudioEnabled) spatialAudioMode.displayName else "Off",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    painter = painterResource(R.drawable.waves),
+                                    contentDescription = null,
+                                    tint = if (spatialAudioEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            },
+                            trailingContent = {
+                                Switch(
+                                    checked = spatialAudioEnabled,
+                                    onCheckedChange = setSpatialAudioEnabled,
+                                )
+                            },
+                            modifier = Modifier.clickable { showSpatialAudioDialog = true },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         )
 
@@ -1800,4 +1856,107 @@ private fun formatHz(hz: Int): String {
 private fun formatDb(db: Float): String {
     val rounded = round(db * 10f) / 10f
     return "${if (rounded > 0f) "+" else ""}$rounded dB"
+}
+
+@Composable
+fun SpatialAudioDialog(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    selectedMode: SpatialAudioMode,
+    onModeSelect: (SpatialAudioMode) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ListDialog(
+        onDismiss = onDismiss,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.waves),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Spatial Audio (3D)",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            Text(
+                                text = "Binaural 3D stage with centered punchy bass",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Switch(
+                        checked = enabled,
+                        onCheckedChange = onEnabledChange,
+                    )
+                }
+            }
+        }
+
+        item {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+        }
+
+        items(SpatialAudioMode.entries) { mode ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = enabled) {
+                        onModeSelect(mode)
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = selectedMode == mode,
+                    onClick = { onModeSelect(mode) },
+                    enabled = enabled,
+                )
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = mode.displayName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    )
+                    Text(
+                        text = mode.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                    )
+                }
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(android.R.string.ok))
+                }
+            }
+        }
+    }
 }

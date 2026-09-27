@@ -86,6 +86,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
@@ -157,6 +158,7 @@ import com.mudassir131.yt.constants.LyricsRomanizeJapaneseKey
 import com.mudassir131.yt.constants.LyricsRomanizeKoreanKey
 import com.mudassir131.yt.constants.LyricsScrollKey
 import com.mudassir131.yt.constants.LyricsTextPositionKey
+import com.mudassir131.yt.constants.DisableBlurKey
 import com.mudassir131.yt.constants.LyricsAnimationStyle
 import com.mudassir131.yt.constants.LyricsAnimationStyleKey
 import com.mudassir131.yt.constants.LyricsTextSizeKey
@@ -178,6 +180,7 @@ import com.mudassir131.yt.lyrics.LyricsUtils.romanizeKorean
 import com.mudassir131.yt.ui.component.shimmer.ShimmerHost
 import com.mudassir131.yt.ui.component.shimmer.TextPlaceholder
 import com.mudassir131.yt.ui.menu.LyricsMenu
+import com.mudassir131.yt.ui.component.AppleInstrumentalDots
 import com.mudassir131.yt.ui.screens.settings.DarkMode
 import com.mudassir131.yt.ui.screens.settings.LyricsPosition
 import com.mudassir131.yt.ui.utils.fadingEdge
@@ -463,6 +466,7 @@ fun Lyrics(
     val lyricsEntity by playerConnection.currentLyrics.collectAsState(initial = null)
     val lyrics = remember(lyricsEntity) { lyricsEntity?.lyrics?.trim() }
 
+    val (disableBlur) = rememberPreference(DisableBlurKey, true)
     val playerBackground by rememberEnumPreference(
         key = PlayerBackgroundStyleKey,
         defaultValue = PlayerBackgroundStyle.GLOW
@@ -505,7 +509,7 @@ fun Lyrics(
                 }
                 newEntry
             }.let {
-                listOf(LyricsEntry.HEAD_LYRICS_ENTRY) + it
+                insertInstrumentalBreaks(it)
             }
         } else if (isTtml(lyrics)) {
             val parsedLines = parseTtml(lyrics, mediaMetadata?.duration)
@@ -535,7 +539,7 @@ fun Lyrics(
                 }
                 newEntry
             }.let {
-                listOf(LyricsEntry.HEAD_LYRICS_ENTRY) + it
+                insertInstrumentalBreaks(it)
             }
         } else {
             lyrics.lines().mapIndexed { index, line ->
@@ -1024,6 +1028,16 @@ fun Lyrics(
                             vertical = 8.dp
                         )
                         .alpha(animatedAlpha)
+                        .let {
+                            val blurRadiusDp = when {
+                                disableBlur || !isSynced || index == displayedCurrentLineIndex -> 0.dp
+                                isManualScrolling -> 0.dp
+                                distance == 1 -> (animatedBlur * 1.8f).dp
+                                distance == 2 -> (animatedBlur * 3.0f).dp
+                                else -> 0.dp
+                            }
+                            if (blurRadiusDp > 0.dp) it.blur(blurRadiusDp) else it
+                        }
                         .graphicsLayer {
                             scaleX = animatedScale
                             scaleY = animatedScale
@@ -1077,7 +1091,26 @@ fun Lyrics(
                         val reduceMotionDuringScroll =
                             isSelectionModeActive
 
-                        if (effectiveAnimationStyle == LyricsAnimationStyle.KARAOKE) {
+                        val isInstrumentalItem = item.text == INSTRUMENTAL_MARKER ||
+                                item.text.trim() in listOf("•••", "...", "[instrumental]", "[music]")
+
+                        if (isInstrumentalItem) {
+                            val nextVocalLine = lines.subList((index + 1).coerceAtMost(lines.size), lines.size)
+                                .firstOrNull { it.text != INSTRUMENTAL_MARKER && it != LyricsEntry.HEAD_LYRICS_ENTRY && it.text.isNotBlank() }
+                            val remainingMs = nextVocalLine?.let { (it.time - currentPlaybackPosition).coerceAtLeast(0L) }
+
+                            AppleInstrumentalDots(
+                                isActive = isActiveLine,
+                                timeRemainingMs = if (isActiveLine) remainingMs else null,
+                                baseColor = lyricsBaseColor,
+                                dotSize = (lyricsTextSize * 0.38f).dp,
+                                horizontalAlignment = when (lyricsTextPosition) {
+                                    LyricsPosition.LEFT -> Alignment.Start
+                                    LyricsPosition.CENTER -> Alignment.CenterHorizontally
+                                    LyricsPosition.RIGHT -> Alignment.End
+                                }
+                            )
+                        } else if (effectiveAnimationStyle == LyricsAnimationStyle.KARAOKE) {
                             val isCjk = remember(item.text) {
                                 isChinese(item.text) || isJapanese(item.text) || isKorean(item.text)
                             }
@@ -2580,3 +2613,33 @@ private fun shouldAppendWordSpace(current: String, next: String): Boolean {
     if (!first.isLetterOrDigit()) return false
     return last !in NoSpaceAfterChars
 }
+
+private const val INSTRUMENTAL_MARKER = "♫♫♫"
+
+private fun insertInstrumentalBreaks(parsed: List<LyricsEntry>): List<LyricsEntry> {
+    if (parsed.isEmpty()) return listOf(LyricsEntry.HEAD_LYRICS_ENTRY)
+    val result = mutableListOf<LyricsEntry>()
+    val first = parsed.first()
+    if (first.time >= 3500L) {
+        result.add(LyricsEntry(time = 0L, text = INSTRUMENTAL_MARKER))
+    } else {
+        result.add(LyricsEntry.HEAD_LYRICS_ENTRY)
+    }
+
+    for (i in parsed.indices) {
+        val curr = parsed[i]
+        result.add(curr)
+        if (i < parsed.lastIndex) {
+            val next = parsed[i + 1]
+            if (next.time - curr.time >= 7000L) {
+                val vocalDuration = (curr.words?.lastOrNull()?.let { (it.endTime * 1000).toLong() - curr.time } ?: 3500L).coerceAtLeast(2500L)
+                val breakStart = curr.time + vocalDuration
+                if (next.time - breakStart >= 3500L) {
+                    result.add(LyricsEntry(time = breakStart, text = INSTRUMENTAL_MARKER))
+                }
+            }
+        }
+    }
+    return result
+}
+
