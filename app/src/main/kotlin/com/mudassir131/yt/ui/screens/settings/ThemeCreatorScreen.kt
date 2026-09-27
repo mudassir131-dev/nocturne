@@ -131,11 +131,11 @@ fun ThemeCreatorScreen(
 
     val (customThemeValue, setCustomThemeValue) = rememberPreference(
         key = CustomThemeColorKey,
-        defaultValue = ThemePalettes.Default.id,
+        defaultValue = "silver",
     )
     val (_, setDynamicThemeEnabled) = rememberPreference(
         key = DynamicThemeKey,
-        defaultValue = true,
+        defaultValue = false,
     )
 
     val seedFromPrefs = remember(customThemeValue) {

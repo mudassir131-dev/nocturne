@@ -163,6 +163,26 @@ val AiEnhancementHarmonicKey = floatPreferencesKey("aiEnhancementHarmonic")
 val AiEnhancementStereoKey = floatPreferencesKey("aiEnhancementStereo")
 val AiEnhancementAdvancedKey = booleanPreferencesKey("aiEnhancementAdvanced")
 
+// 3D Spatial Audio & Phone Speaker Spotify Sound Profile
+val SpatialAudioEnabledKey = booleanPreferencesKey("spatialAudioEnabled")
+val SpatialAudioModeKey = stringPreferencesKey("spatialAudioMode")
+val SpotifySoundProfileEnabledKey = booleanPreferencesKey("spotifySoundProfileEnabled")
+
+// App DPI / UI Display Sizing
+val AppDpiScaleKey = floatPreferencesKey("appDpiScale")
+
+enum class SpatialAudioMode(val displayName: String, val description: String, val nativeIndex: Int) {
+    WIDE("Wide Soundstage", "Expanded stereo separation and width", 1),
+    SPATIAL_3D("3D Spatial Surround", "Immersive 3D audio with head-space simulation", 2),
+    CINEMA("Cinema Hall", "Deep cinematic soundfield with room depth", 3);
+
+    companion object {
+        fun fromString(name: String?): SpatialAudioMode {
+            return entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: SPATIAL_3D
+        }
+    }
+}
+
 enum class AudioDspPreset {
     PURE,
     BALANCED,

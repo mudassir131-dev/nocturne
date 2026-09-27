@@ -37,12 +37,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
+import com.mudassir131.yt.constants.AppDpiScaleKey
+import kotlin.math.roundToInt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -132,7 +134,7 @@ fun AppearanceSettings(
 ) {
     val (dynamicTheme, onDynamicThemeChange) = rememberPreference(
         DynamicThemeKey,
-        defaultValue = true
+        defaultValue = false
     )
     val (randomThemeOnStartup, onRandomThemeOnStartupChange) = rememberPreference(
         RandomThemeOnStartupKey,
@@ -179,7 +181,7 @@ fun AppearanceSettings(
         defaultValue = false
     )
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = true)
-    val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = false)
+    val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = true)
     val (useSystemFont, onUseSystemFontChange) = rememberPreference(UseSystemFontKey, defaultValue = false)
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(
         DefaultOpenTabKey,
@@ -203,6 +205,12 @@ fun AppearanceSettings(
     val (lyricsLineSpacing, onLyricsLineSpacingChange) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
     val (useLyricsV2, onUseLyricsV2Change) = rememberPreference(UseLyricsV2Key, defaultValue = false)
 
+
+    val (appDpiScale, onAppDpiScaleChange) = rememberPreference(
+        AppDpiScaleKey,
+        defaultValue = 1.0f
+    )
+    var showDpiScaleDialog by rememberSaveable { mutableStateOf(false) }
 
     val (forcePeakRefreshRate, onForcePeakRefreshRateChange) = rememberPreference(
         ForcePeakRefreshRateKey,
@@ -342,8 +350,16 @@ fun AppearanceSettings(
             .verticalScroll(rememberScrollState()),
     ) {
         PreferenceGroup(
-            title = "Display & Refresh Rate",
+            title = "Display & Scaling",
             items = listOf<@Composable () -> Unit>(
+                {
+                    PreferenceEntry(
+                        title = { Text("App DPI / Display Sizing") },
+                        description = "${(appDpiScale * 100).roundToInt()}% — Scale app UI elements, icons, and text. Affects Nocturne only.",
+                        icon = { Icon(painterResource(R.drawable.fullscreen), null) },
+                        onClick = { showDpiScaleDialog = true }
+                    )
+                },
                 {
                     SwitchPreference(
                         title = { Text("Force Peak Refresh Rate") },
@@ -502,6 +518,95 @@ fun AppearanceSettings(
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
+                }
+            }
+        }
+
+        if (showDpiScaleDialog) {
+            var tempDpi by remember { mutableFloatStateOf(appDpiScale) }
+            DefaultDialog(
+                onDismiss = {
+                    tempDpi = appDpiScale
+                    showDpiScaleDialog = false
+                },
+                buttons = {
+                    TextButton(onClick = { tempDpi = 1.0f }) {
+                        Text(stringResource(R.string.reset))
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = {
+                        tempDpi = appDpiScale
+                        showDpiScaleDialog = false
+                    }) {
+                        Text(stringResource(android.R.string.cancel))
+                    }
+                    TextButton(onClick = {
+                        onAppDpiScaleChange(tempDpi)
+                        showDpiScaleDialog = false
+                    }) {
+                        Text(stringResource(android.R.string.ok))
+                    }
+                }
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "App Display Scaling (DPI)",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "Customize UI scale for Nocturne without changing your phone's system DPI.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Text(
+                        text = "${(tempDpi * 100).roundToInt()}% (${when {
+                            tempDpi <= 0.82f -> "Compact"
+                            tempDpi <= 0.95f -> "Small"
+                            tempDpi <= 1.05f -> "Default (Standard)"
+                            tempDpi <= 1.18f -> "Large"
+                            else -> "Extra Large"
+                        }})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Slider(
+                        value = tempDpi,
+                        onValueChange = { tempDpi = ((it * 20).roundToInt() / 20f).coerceIn(0.75f, 1.30f) },
+                        valueRange = 0.75f..1.30f,
+                        steps = 10,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            0.80f to "80%",
+                            0.90f to "90%",
+                            1.00f to "100%",
+                            1.10f to "110%",
+                            1.20f to "120%"
+                        ).forEach { (scale, label) ->
+                            val selected = kotlin.math.abs(tempDpi - scale) < 0.03f
+                            FilterChip(
+                                selected = selected,
+                                onClick = { tempDpi = scale },
+                                label = { Text(label) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                 }
             }
         }

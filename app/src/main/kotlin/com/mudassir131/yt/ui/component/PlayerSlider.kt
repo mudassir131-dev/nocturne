@@ -23,6 +23,8 @@ import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -46,7 +48,8 @@ fun CapsulePlayerSlider(
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
     activeColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    inactiveColor: Color? = null
 ) {
     // Identical component and styling to the Equalizer's band sliders
     // (see EqualizerDialog / EqToggleSliderRow in ui/menu/PlayerMenu.kt): the stock
@@ -54,15 +57,32 @@ fun CapsulePlayerSlider(
     // Expressive the default Slider already renders the gapped active/inactive track
     // segments, the tall vertical bar handle and the trailing stop indicator, so there
     // is deliberately no custom Canvas track or zero-size thumb here.
+    val isLight = MaterialTheme.colorScheme.surface.luminance() > 0.45f
+    // When activeColor is Color.White (e.g. Apple Music player), keep pure White!
+    val effectiveActiveColor = if (activeColor == Color.White) {
+        Color.White
+    } else if (isLight && activeColor.luminance() > 0.45f) {
+        Color(0xFF2C343D)
+    } else {
+        activeColor
+    }
+    val effectiveInactiveColor = inactiveColor ?: if (activeColor == Color.White) {
+        Color.White.copy(alpha = 0.22f)
+    } else if (isLight) {
+        Color(0xFFD6DBE2)
+    } else {
+        effectiveActiveColor.copy(alpha = 0.22f)
+    }
+
     Slider(
         value = value,
         valueRange = valueRange,
         onValueChange = onValueChange,
         onValueChangeFinished = onValueChangeFinished,
         colors = SliderDefaults.colors(
-            thumbColor = activeColor,
-            activeTrackColor = activeColor,
-            inactiveTrackColor = activeColor.copy(alpha = 0.22f),
+            thumbColor = effectiveActiveColor,
+            activeTrackColor = effectiveActiveColor,
+            inactiveTrackColor = effectiveInactiveColor,
         ),
         modifier = modifier
     )
@@ -81,6 +101,7 @@ fun PlayerSliderTrack(
         defaultValue = GlassEffectsMode.DISABLED
     )
     val isGlassActive = glassEffectsMode != GlassEffectsMode.DISABLED
+    val isLight = MaterialTheme.colorScheme.surface.luminance() > 0.45f
 
     if (isGlassActive) {
         val activeColor = colors.activeTrackColor
@@ -96,9 +117,9 @@ fun PlayerSliderTrack(
                 .height(trackHeight)
                 .glassmorphic(
                     shape = RoundedCornerShape(50),
-                    borderColor = Color.White.copy(alpha = 0.15f),
+                    borderColor = if (isLight) Color.Black.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.15f),
                     borderWidth = 0.5.dp,
-                    fallbackColor = Color.White.copy(alpha = 0.08f)
+                    fallbackColor = if (isLight) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.08f)
                 )
         ) {
             Box(

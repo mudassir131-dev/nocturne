@@ -246,6 +246,8 @@ import com.mudassir131.yt.ui.theme.NocturneTheme
 import com.mudassir131.yt.ui.theme.ColorSaver
 import com.mudassir131.yt.ui.theme.DefaultThemeColor
 import com.mudassir131.yt.ui.theme.extractThemeColor
+import androidx.compose.runtime.CompositionLocalProvider
+import com.mudassir131.yt.constants.AppDpiScaleKey
 import com.mudassir131.yt.constants.AppIconStyleKey
 import com.mudassir131.yt.ui.utils.appBarScrollBehavior
 import com.mudassir131.yt.ui.utils.backToMain
@@ -658,8 +660,8 @@ class MainActivity : ComponentActivity() {
             }
 
 
-            val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
-            val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "spotify_green")
+            val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = false)
+            val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "silver")
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val useSystemFont by rememberPreference(UseSystemFontKey, defaultValue = false)
             val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -746,14 +748,27 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            com.mudassir131.yt.ui.theme.ProvideGlassmorphismState {
-                NocturneTheme(
-                    darkTheme = useDarkTheme,
-                    pureBlack = pureBlack,
-                    themeColor = themeColor,
-                    seedPalette = if (!enableDynamicTheme) customThemeSeedPalette else null,
-                    useSystemFont = useSystemFont,
-                ) {
+            val (appDpiScale) = rememberPreference(AppDpiScaleKey, defaultValue = 1.0f)
+            val currentDensity = LocalDensity.current
+            val scaledDensity = remember(currentDensity, appDpiScale) {
+                val clamped = appDpiScale.coerceIn(0.70f, 1.40f)
+                androidx.compose.ui.unit.Density(
+                    density = currentDensity.density * clamped,
+                    fontScale = currentDensity.fontScale * clamped
+                )
+            }
+
+            CompositionLocalProvider(
+                LocalDensity provides scaledDensity
+            ) {
+                com.mudassir131.yt.ui.theme.ProvideGlassmorphismState {
+                    NocturneTheme(
+                        darkTheme = useDarkTheme,
+                        pureBlack = pureBlack,
+                        themeColor = themeColor,
+                        seedPalette = if (!enableDynamicTheme) customThemeSeedPalette else null,
+                        useSystemFont = useSystemFont,
+                    ) {
                     if (persistedOnboardingComplete == null) {
                         Box(
                             modifier = Modifier
@@ -848,7 +863,7 @@ class MainActivity : ComponentActivity() {
                     var searchPrimaryTab by rememberSaveable {
                         mutableStateOf(SearchPrimaryTab.EXPLORE)
                     }
-                    val (disableRootBlur) = rememberPreference(DisableBlurKey, defaultValue = false)
+                    val (disableRootBlur) = rememberPreference(DisableBlurKey, defaultValue = true)
                     var openSearchImmediately: Boolean by remember {
                         mutableStateOf(intent?.action == ACTION_SEARCH)
                     }
@@ -1735,6 +1750,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
     }
     }
 

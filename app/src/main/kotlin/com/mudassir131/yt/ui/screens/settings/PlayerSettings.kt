@@ -80,6 +80,10 @@ import com.mudassir131.yt.constants.AudioEnhancementTrebleKey
 import com.mudassir131.yt.constants.PlayerStreamClient
 import com.mudassir131.yt.constants.PlayerStreamClientKey
 import com.mudassir131.yt.constants.SeekExtraSeconds
+import com.mudassir131.yt.constants.SpatialAudioEnabledKey
+import com.mudassir131.yt.constants.SpatialAudioMode
+import com.mudassir131.yt.constants.SpatialAudioModeKey
+import com.mudassir131.yt.constants.SpotifySoundProfileEnabledKey
 import com.mudassir131.yt.playback.enhancement.model.AiProviderType
 import com.mudassir131.yt.playback.enhancement.model.EnhancementMode
 import com.mudassir131.yt.playback.enhancement.security.SecureKeyStorage
@@ -231,6 +235,16 @@ fun PlayerSettings(
         defaultValue = AiProviderType.GOOGLE_GEMINI
     )
 
+    val (spatialAudioEnabled, onSpatialAudioEnabledChange) = rememberPreference(
+        SpatialAudioEnabledKey,
+        defaultValue = false
+    )
+    val (spatialAudioMode, onSpatialAudioModeChange) = rememberEnumPreference(
+        SpatialAudioModeKey,
+        defaultValue = SpatialAudioMode.SPATIAL_3D
+    )
+    var showSpatialAudioModeDialog by remember { mutableStateOf(false) }
+
     val secureKeyStorage = remember { SecureKeyStorage(context) }
     var showArtistSeparatorsDialog by remember { mutableStateOf(false) }
     var showTagsManagementDialog by remember { mutableStateOf(false) }
@@ -243,6 +257,53 @@ fun PlayerSettings(
     var apiKeyInput by remember { mutableStateOf("") }
     var apiKeyRefreshTrigger by remember { mutableStateOf(0) }
     val database = LocalDatabase.current
+
+    if (showSpatialAudioModeDialog) {
+        ListDialog(
+            onDismiss = { showSpatialAudioModeDialog = false },
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            item {
+                Text(
+                    text = "Spatial Audio Mode",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            items(SpatialAudioMode.entries) { mode ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onSpatialAudioModeChange(mode)
+                            showSpatialAudioModeDialog = false
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = spatialAudioMode == mode,
+                        onClick = {
+                            onSpatialAudioModeChange(mode)
+                            showSpatialAudioModeDialog = false
+                        }
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = mode.displayName,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = mode.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     if (showAudioDspPresetDialog) {
         ListDialog(
@@ -650,6 +711,30 @@ fun PlayerSettings(
                         icon = { Icon(painterResource(R.drawable.bluetooth), null) },
                         checked = autoStartOnBluetooth,
                         onCheckedChange = onAutoStartOnBluetoothChange
+                    )
+                }
+            )
+        )
+
+        PreferenceGroup(
+            title = "Spatial Audio (3D)",
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text("Spatial Audio (3D)") },
+                        description = "Real-time 3D spatializer with binaural soundstage widening and mono-anchored punchy bass.",
+                        icon = { Icon(painterResource(R.drawable.waves), null) },
+                        checked = spatialAudioEnabled,
+                        onCheckedChange = onSpatialAudioEnabledChange
+                    )
+                },
+                {
+                    PreferenceEntry(
+                        title = { Text("Spatial Audio Mode") },
+                        description = "${spatialAudioMode.displayName} — ${spatialAudioMode.description}",
+                        icon = { Icon(painterResource(R.drawable.tune), null) },
+                        onClick = { showSpatialAudioModeDialog = true },
+                        isEnabled = spatialAudioEnabled
                     )
                 }
             )

@@ -157,6 +157,15 @@ private fun animateColorScheme(targetColorScheme: ColorScheme): ColorScheme {
     )
 }
 
+private fun safeOn(bg: Color, defaultOn: Color): Color {
+    val lum = bg.luminance()
+    return if (lum > 0.45f) {
+        if (defaultOn.luminance() > 0.35f) Color(0xFF14171A) else defaultOn
+    } else {
+        if (defaultOn.luminance() < 0.35f) Color(0xFFF0F3F6) else defaultOn
+    }
+}
+
 private fun exactPaletteColorScheme(
     palette: ThemeSeedPalette,
     isDark: Boolean,
@@ -166,31 +175,44 @@ private fun exactPaletteColorScheme(
     val tertiaryScheme = m3Scheme(palette.tertiary, isDark, 0.0)
     val neutralScheme = m3Scheme(palette.neutral, isDark, 0.0)
 
+    val prim = primaryScheme.primary.toComposeColor()
+    val primContainer = primaryScheme.primaryContainer.toComposeColor()
+    val sec = secondaryScheme.primary.toComposeColor()
+    val secContainer = secondaryScheme.primaryContainer.toComposeColor()
+    val tert = tertiaryScheme.primary.toComposeColor()
+    val tertContainer = tertiaryScheme.primaryContainer.toComposeColor()
+    val bg = neutralScheme.background.toComposeColor()
+    val surf = neutralScheme.surface.toComposeColor()
+    val surfVar = neutralScheme.surfaceVariant.toComposeColor()
+    val invSurf = neutralScheme.inverseSurface.toComposeColor()
+    val err = primaryScheme.error.toComposeColor()
+    val errContainer = primaryScheme.errorContainer.toComposeColor()
+
     return ColorScheme(
-        primary = primaryScheme.primary.toComposeColor(),
-        onPrimary = primaryScheme.onPrimary.toComposeColor(),
-        primaryContainer = primaryScheme.primaryContainer.toComposeColor(),
-        onPrimaryContainer = primaryScheme.onPrimaryContainer.toComposeColor(),
+        primary = prim,
+        onPrimary = safeOn(prim, primaryScheme.onPrimary.toComposeColor()),
+        primaryContainer = primContainer,
+        onPrimaryContainer = safeOn(primContainer, primaryScheme.onPrimaryContainer.toComposeColor()),
         inversePrimary = primaryScheme.inversePrimary.toComposeColor(),
 
-        secondary = secondaryScheme.primary.toComposeColor(),
-        onSecondary = secondaryScheme.onPrimary.toComposeColor(),
-        secondaryContainer = secondaryScheme.primaryContainer.toComposeColor(),
-        onSecondaryContainer = secondaryScheme.onPrimaryContainer.toComposeColor(),
+        secondary = sec,
+        onSecondary = safeOn(sec, secondaryScheme.onPrimary.toComposeColor()),
+        secondaryContainer = secContainer,
+        onSecondaryContainer = safeOn(secContainer, secondaryScheme.onPrimaryContainer.toComposeColor()),
 
-        tertiary = tertiaryScheme.primary.toComposeColor(),
-        onTertiary = tertiaryScheme.onPrimary.toComposeColor(),
-        tertiaryContainer = tertiaryScheme.primaryContainer.toComposeColor(),
-        onTertiaryContainer = tertiaryScheme.onPrimaryContainer.toComposeColor(),
+        tertiary = tert,
+        onTertiary = safeOn(tert, tertiaryScheme.onPrimary.toComposeColor()),
+        tertiaryContainer = tertContainer,
+        onTertiaryContainer = safeOn(tertContainer, tertiaryScheme.onPrimaryContainer.toComposeColor()),
 
-        background = neutralScheme.background.toComposeColor(),
-        onBackground = neutralScheme.onBackground.toComposeColor(),
-        surface = neutralScheme.surface.toComposeColor(),
-        onSurface = neutralScheme.onSurface.toComposeColor(),
-        surfaceVariant = neutralScheme.surfaceVariant.toComposeColor(),
-        onSurfaceVariant = neutralScheme.onSurfaceVariant.toComposeColor(),
-        inverseSurface = neutralScheme.inverseSurface.toComposeColor(),
-        inverseOnSurface = neutralScheme.inverseOnSurface.toComposeColor(),
+        background = bg,
+        onBackground = safeOn(bg, neutralScheme.onBackground.toComposeColor()),
+        surface = surf,
+        onSurface = safeOn(surf, neutralScheme.onSurface.toComposeColor()),
+        surfaceVariant = surfVar,
+        onSurfaceVariant = safeOn(surfVar, neutralScheme.onSurfaceVariant.toComposeColor()),
+        inverseSurface = invSurf,
+        inverseOnSurface = safeOn(invSurf, neutralScheme.inverseOnSurface.toComposeColor()),
 
         surfaceBright = neutralScheme.surfaceBright.toComposeColor(),
         surfaceDim = neutralScheme.surfaceDim.toComposeColor(),
@@ -203,16 +225,15 @@ private fun exactPaletteColorScheme(
         outline = neutralScheme.outline.toComposeColor(),
         outlineVariant = neutralScheme.outlineVariant.toComposeColor(),
 
-        error = primaryScheme.error.toComposeColor(),
-        onError = primaryScheme.onError.toComposeColor(),
-        errorContainer = primaryScheme.errorContainer.toComposeColor(),
-        onErrorContainer = primaryScheme.onErrorContainer.toComposeColor(),
+        error = err,
+        onError = safeOn(err, primaryScheme.onError.toComposeColor()),
+        errorContainer = errContainer,
+        onErrorContainer = safeOn(errContainer, primaryScheme.onErrorContainer.toComposeColor()),
 
         scrim = neutralScheme.scrim.toComposeColor(),
         surfaceTint = primaryScheme.surfaceTint.toComposeColor(),
     )
 }
-
 
 private fun m3DynamicColorScheme(
     seedPalette: ThemeSeedPalette?,
@@ -230,31 +251,44 @@ private fun m3DynamicColorScheme(
     val tertiaryScheme = m3Scheme(tertiarySeed, isDark, contrastLevel)
     val neutralScheme = m3Scheme(neutralSeed, isDark, contrastLevel)
 
+    val prim = primaryScheme.primary.toComposeColor()
+    val primContainer = primaryScheme.primaryContainer.toComposeColor()
+    val sec = secondaryScheme.primary.toComposeColor()
+    val secContainer = secondaryScheme.primaryContainer.toComposeColor()
+    val tert = tertiaryScheme.primary.toComposeColor()
+    val tertContainer = tertiaryScheme.primaryContainer.toComposeColor()
+    val bg = neutralScheme.background.toComposeColor()
+    val surf = neutralScheme.surface.toComposeColor()
+    val surfVar = neutralScheme.surfaceVariant.toComposeColor()
+    val invSurf = neutralScheme.inverseSurface.toComposeColor()
+    val err = primaryScheme.error.toComposeColor()
+    val errContainer = primaryScheme.errorContainer.toComposeColor()
+
     return ColorScheme(
-        primary = primaryScheme.primary.toComposeColor(),
-        onPrimary = primaryScheme.onPrimary.toComposeColor(),
-        primaryContainer = primaryScheme.primaryContainer.toComposeColor(),
-        onPrimaryContainer = primaryScheme.onPrimaryContainer.toComposeColor(),
+        primary = prim,
+        onPrimary = safeOn(prim, primaryScheme.onPrimary.toComposeColor()),
+        primaryContainer = primContainer,
+        onPrimaryContainer = safeOn(primContainer, primaryScheme.onPrimaryContainer.toComposeColor()),
         inversePrimary = primaryScheme.inversePrimary.toComposeColor(),
 
-        secondary = secondaryScheme.primary.toComposeColor(),
-        onSecondary = secondaryScheme.onPrimary.toComposeColor(),
-        secondaryContainer = secondaryScheme.primaryContainer.toComposeColor(),
-        onSecondaryContainer = secondaryScheme.onPrimaryContainer.toComposeColor(),
+        secondary = sec,
+        onSecondary = safeOn(sec, secondaryScheme.onPrimary.toComposeColor()),
+        secondaryContainer = secContainer,
+        onSecondaryContainer = safeOn(secContainer, secondaryScheme.onPrimaryContainer.toComposeColor()),
 
-        tertiary = tertiaryScheme.primary.toComposeColor(),
-        onTertiary = tertiaryScheme.onPrimary.toComposeColor(),
-        tertiaryContainer = tertiaryScheme.primaryContainer.toComposeColor(),
-        onTertiaryContainer = tertiaryScheme.onPrimaryContainer.toComposeColor(),
+        tertiary = tert,
+        onTertiary = safeOn(tert, tertiaryScheme.onPrimary.toComposeColor()),
+        tertiaryContainer = tertContainer,
+        onTertiaryContainer = safeOn(tertContainer, tertiaryScheme.onPrimaryContainer.toComposeColor()),
 
-        background = neutralScheme.background.toComposeColor(),
-        onBackground = neutralScheme.onBackground.toComposeColor(),
-        surface = neutralScheme.surface.toComposeColor(),
-        onSurface = neutralScheme.onSurface.toComposeColor(),
-        surfaceVariant = neutralScheme.surfaceVariant.toComposeColor(),
-        onSurfaceVariant = neutralScheme.onSurfaceVariant.toComposeColor(),
-        inverseSurface = neutralScheme.inverseSurface.toComposeColor(),
-        inverseOnSurface = neutralScheme.inverseOnSurface.toComposeColor(),
+        background = bg,
+        onBackground = safeOn(bg, neutralScheme.onBackground.toComposeColor()),
+        surface = surf,
+        onSurface = safeOn(surf, neutralScheme.onSurface.toComposeColor()),
+        surfaceVariant = surfVar,
+        onSurfaceVariant = safeOn(surfVar, neutralScheme.onSurfaceVariant.toComposeColor()),
+        inverseSurface = invSurf,
+        inverseOnSurface = safeOn(invSurf, neutralScheme.inverseOnSurface.toComposeColor()),
 
         surfaceBright = neutralScheme.surfaceBright.toComposeColor(),
         surfaceDim = neutralScheme.surfaceDim.toComposeColor(),
@@ -267,10 +301,10 @@ private fun m3DynamicColorScheme(
         outline = neutralScheme.outline.toComposeColor(),
         outlineVariant = neutralScheme.outlineVariant.toComposeColor(),
 
-        error = primaryScheme.error.toComposeColor(),
-        onError = primaryScheme.onError.toComposeColor(),
-        errorContainer = primaryScheme.errorContainer.toComposeColor(),
-        onErrorContainer = primaryScheme.onErrorContainer.toComposeColor(),
+        error = err,
+        onError = safeOn(err, primaryScheme.onError.toComposeColor()),
+        errorContainer = errContainer,
+        onErrorContainer = safeOn(errContainer, primaryScheme.onErrorContainer.toComposeColor()),
 
         scrim = neutralScheme.scrim.toComposeColor(),
         surfaceTint = primaryScheme.surfaceTint.toComposeColor(),

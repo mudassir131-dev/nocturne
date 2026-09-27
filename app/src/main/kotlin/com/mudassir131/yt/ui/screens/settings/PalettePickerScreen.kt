@@ -485,10 +485,10 @@ object ThemePalettes {
     val Silver = ThemePalette(
         id = "silver",
         nameResId = R.string.palette_silver,
-        primary = Color(0xFFC0C0C0),
-        secondary = Color(0xFFC0C0C0),
-        tertiary = Color(0xFFC0C0C0),
-        neutral = Color(0xFFC0C0C0)
+        primary = Color(0xFFBDC7D0),
+        secondary = Color(0xFFA6B1BC),
+        tertiary = Color(0xFF8E9AA6),
+        neutral = Color(0xFF5A626A)
     )
     
     val Slate = ThemePalette(
@@ -900,7 +900,7 @@ fun PalettePickerScreen(
     val scope = rememberCoroutineScope()
     val (customThemeColor, onCustomThemeColorChange) = rememberPreference(
         CustomThemeColorKey,
-        defaultValue = ThemePalettes.Default.id
+        defaultValue = "silver"
     )
     
     val selectedPalette = remember(customThemeColor) {
@@ -1411,18 +1411,19 @@ private fun PaletteCard(
             }
             
             if (isSelected) {
+                val isLightColor = palette.primary.luminance() > 0.45f
                 Box(
                     modifier = Modifier
                         .size(24.dp)
                         .shadow(2.dp, CircleShape)
                         .clip(CircleShape)
-                        .background(Color.White),
+                        .background(if (isLightColor) Color(0xFF1E232A) else Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.check),
                         contentDescription = null,
-                        tint = palette.primary,
+                        tint = if (isLightColor) Color.White else palette.primary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
