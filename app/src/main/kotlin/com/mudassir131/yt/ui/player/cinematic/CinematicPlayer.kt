@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -40,9 +41,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.mudassir131.yt.ui.appleplayer.lyrics.AppleLyricsPipeline
+import com.mudassir131.yt.ui.appleplayer.lyrics.AppleLyricsResult
+import com.mudassir131.yt.ui.player.PlayerLyricsTeaser
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -130,6 +141,15 @@ fun CinematicPlayerView(
         key = SliderStyleKey,
         defaultValue = sliderStyle
     )
+    val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
+    var lyricsResult by remember(mediaMetadata.id) { mutableStateOf<AppleLyricsResult?>(null) }
+    LaunchedEffect(mediaMetadata.id) {
+        if (lyricsResult == null) {
+            lyricsResult = withContext(Dispatchers.IO) {
+                AppleLyricsPipeline.resolve(context.applicationContext, mediaMetadata)
+            }
+        }
+    }
 
     val artistLine = remember(mediaMetadata.artists) {
         mediaMetadata.artists.joinToString(", ") { it.name }
@@ -143,6 +163,12 @@ fun CinematicPlayerView(
         ),
         label = "cinematicPlayPauseCorner"
     )
+
+    val isLightMode = MaterialTheme.colorScheme.surface.luminance() > 0.45f || textBackgroundColor == Color.Black
+
+    val buttonBgColor = if (isLightMode) Color(0xFFECEFF3) else if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f)
+    val buttonBorder = if (isLightMode) BorderStroke(0.8.dp, Color(0xFFD3D8E0)) else null
+    val buttonIconTint = if (isLightMode) Color(0xFF1E232A) else textBackgroundColor.copy(alpha = 0.85f)
 
     // ──────────────────────────────────────────────────────────────────────────
     // Layout geometry, measured from the ArchiveTune reference player.
@@ -160,7 +186,7 @@ fun CinematicPlayerView(
     val headerTopGap = 16.dp          // status bar inset -> "Now Playing"
     val headerTitleGap = 4.dp         // "Now Playing" -> subtitle
     val artworkToTitleGap = 54.dp     // artwork bottom -> song title
-    val metadataToSliderGap = 16.dp   // artist/action buttons -> slider
+    val metadataToSliderGap = 8.dp    // artist/action buttons -> lyrics teaser & slider
     val sliderToTimeGap = 6.dp        // slider -> time labels
     val timeToControlsGap = 14.dp     // time labels -> playback controls
     val controlsToBottomGap = 38.dp   // playback controls -> Queue/Sleep/Lyrics
@@ -331,11 +357,12 @@ fun CinematicPlayerView(
                         context.startActivity(Intent.createChooser(intent, null))
                     },
                     shape = actionShape,
-                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                    color = buttonBgColor,
+                    border = buttonBorder,
                     modifier = Modifier
                         .size(actionButtonSize)
                         .then(
-                            if (isGlassActive) {
+                            if (isGlassActive && !isLightMode) {
                                 Modifier.glassmorphicButton(
                                     isGlassActive = true,
                                     shape = actionShape,
@@ -348,7 +375,7 @@ fun CinematicPlayerView(
                         Icon(
                             painter = painterResource(R.drawable.share),
                             contentDescription = "Share",
-                            tint = textBackgroundColor.copy(alpha = 0.85f),
+                            tint = buttonIconTint,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -361,11 +388,12 @@ fun CinematicPlayerView(
                         playerConnection.toggleLike()
                     },
                     shape = actionShape,
-                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                    color = buttonBgColor,
+                    border = buttonBorder,
                     modifier = Modifier
                         .size(actionButtonSize)
                         .then(
-                            if (isGlassActive) {
+                            if (isGlassActive && !isLightMode) {
                                 Modifier.glassmorphicButton(
                                     isGlassActive = true,
                                     shape = actionShape,
@@ -380,7 +408,7 @@ fun CinematicPlayerView(
                                 if (currentSongLiked) R.drawable.favorite else R.drawable.favorite_border
                             ),
                             contentDescription = "Favorite",
-                            tint = if (currentSongLiked) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.85f),
+                            tint = if (currentSongLiked) MaterialTheme.colorScheme.primary else buttonIconTint,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -404,11 +432,12 @@ fun CinematicPlayerView(
                         }
                     },
                     shape = actionShape,
-                    color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.12f),
+                    color = buttonBgColor,
+                    border = buttonBorder,
                     modifier = Modifier
                         .size(actionButtonSize)
                         .then(
-                            if (isGlassActive) {
+                            if (isGlassActive && !isLightMode) {
                                 Modifier.glassmorphicButton(
                                     isGlassActive = true,
                                     shape = actionShape,
@@ -421,7 +450,7 @@ fun CinematicPlayerView(
                         Icon(
                             painter = painterResource(R.drawable.more_horiz),
                             contentDescription = "More Options",
-                            tint = textBackgroundColor.copy(alpha = 0.85f),
+                            tint = buttonIconTint,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -441,13 +470,25 @@ fun CinematicPlayerView(
         Column(
             modifier = Modifier.fillMaxWidth(contentWidth)
         ) {
+            PlayerLyricsTeaser(
+                mediaMetadata = mediaMetadata,
+                position = sliderPosition ?: position,
+                duration = duration,
+                lyricsEntity = currentLyrics,
+                appleLyricsResult = lyricsResult,
+                textBackgroundColor = textBackgroundColor,
+                onShowLyrics = { lyricsSheetState.expandSoft() },
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+
+            val sliderActiveColor = if (isLightMode) Color(0xFF2C343D) else textButtonColor
             StyledPlaybackSlider(
                 sliderStyle = activeSliderStyle,
                 value = safePosition,
                 valueRange = 0f..safeDuration.coerceAtLeast(0f),
                 onValueChange = { onSliderValueChange(it.toLong()) },
                 onValueChangeFinished = onSliderValueChangeFinished,
-                activeColor = textButtonColor,
+                activeColor = sliderActiveColor,
                 isPlaying = isPlaying,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -493,13 +534,14 @@ fun CinematicPlayerView(
                     playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
                 },
                 shape = smallShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
+                color = if (isLightMode) (if (shuffleModeEnabled) Color(0xFFDCE1E7) else Color(0xFFECEFF3)) else if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
                     alpha = if (shuffleModeEnabled) 0.22f else 0.12f
                 ),
+                border = if (isLightMode) BorderStroke(0.8.dp, if (shuffleModeEnabled) Color(0xFFB0B7C3) else Color(0xFFD3D8E0)) else null,
                 modifier = Modifier
                     .size(sideControlSize)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = smallShape,
@@ -512,7 +554,7 @@ fun CinematicPlayerView(
                     Icon(
                         painter = painterResource(R.drawable.shuffle),
                         contentDescription = "Shuffle",
-                        tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.65f),
+                        tint = if (isLightMode) (if (shuffleModeEnabled) Color(0xFF1E232A) else Color(0xFF6B7280)) else textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.65f),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -529,11 +571,12 @@ fun CinematicPlayerView(
                 },
                 enabled = canSkipPrevious,
                 shape = mediumShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
+                color = if (isLightMode) Color(0xFFECEFF3) else if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
+                border = buttonBorder,
                 modifier = Modifier
                     .size(skipControlSize)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = mediumShape,
@@ -550,7 +593,7 @@ fun CinematicPlayerView(
                     Icon(
                         painter = painterResource(R.drawable.apple_skip_previous),
                         contentDescription = null,
-                        tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
+                        tint = if (isLightMode) (if (canSkipPrevious) Color(0xFF1E232A) else Color(0xFF9CA3AF)) else textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
                         modifier = Modifier.size(27.dp)
                     )
                 }
@@ -559,7 +602,9 @@ fun CinematicPlayerView(
             Spacer(Modifier.width(controlGapInner))
 
             // Play / Pause — the deliberately larger centre control
-            val playShape = RoundedCornerShape(28.dp)
+            val playShape = RoundedCornerShape(playPauseCorner)
+            val playBgColor = if (isLightMode) Color(0xFF1E232A) else if (isGlassActive) Color.Transparent else textButtonColor
+            val playBorder = if (isLightMode) BorderStroke(0.8.dp, Color(0xFF14171A)) else null
             Surface(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -571,11 +616,12 @@ fun CinematicPlayerView(
                     }
                 },
                 shape = playShape,
-                color = if (isGlassActive) Color.Transparent else textButtonColor,
+                color = playBgColor,
+                border = playBorder,
                 modifier = Modifier
                     .size(playControlSize)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = playShape,
@@ -589,8 +635,17 @@ fun CinematicPlayerView(
                     }
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    val playIconTint = if (isLightMode) {
+                        Color.White
+                    } else if (isGlassActive) {
+                        textBackgroundColor
+                    } else if (textButtonColor.luminance() > 0.45f) {
+                        Color(0xFF14171A)
+                    } else {
+                        Color.White
+                    }
                     if (isLoading) {
-                        NocturneLoader(size = 36.dp, color = Color.Black)
+                        NocturneLoader(size = 36.dp, color = playIconTint)
                     } else {
                         Icon(
                             painter = painterResource(
@@ -601,7 +656,7 @@ fun CinematicPlayerView(
                                 }
                             ),
                             contentDescription = null,
-                            tint = if (isGlassActive) textBackgroundColor else Color.Black,
+                            tint = playIconTint,
                             modifier = Modifier.size(40.dp)
                         )
                     }
@@ -618,11 +673,12 @@ fun CinematicPlayerView(
                 },
                 enabled = canSkipNext,
                 shape = mediumShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
+                color = if (isLightMode) Color(0xFFECEFF3) else if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.14f),
+                border = buttonBorder,
                 modifier = Modifier
                     .size(skipControlSize)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = mediumShape,
@@ -639,7 +695,7 @@ fun CinematicPlayerView(
                     Icon(
                         painter = painterResource(R.drawable.apple_skip_next),
                         contentDescription = null,
-                        tint = textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.4f),
+                        tint = if (isLightMode) (if (canSkipNext) Color(0xFF1E232A) else Color(0xFF9CA3AF)) else textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.4f),
                         modifier = Modifier.size(27.dp)
                     )
                 }
@@ -654,13 +710,14 @@ fun CinematicPlayerView(
                     playerConnection.player.toggleRepeatMode()
                 },
                 shape = smallShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
+                color = if (isLightMode) (if (repeatMode != Player.REPEAT_MODE_OFF) Color(0xFFDCE1E7) else Color(0xFFECEFF3)) else if (isGlassActive) Color.Transparent else textBackgroundColor.copy(
                     alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.22f else 0.12f
                 ),
+                border = if (isLightMode) BorderStroke(0.8.dp, if (repeatMode != Player.REPEAT_MODE_OFF) Color(0xFFB0B7C3) else Color(0xFFD3D8E0)) else null,
                 modifier = Modifier
                     .size(sideControlSize)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = smallShape,
@@ -678,7 +735,7 @@ fun CinematicPlayerView(
                             }
                         ),
                         contentDescription = "Repeat",
-                        tint = textBackgroundColor.copy(alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.65f else 1f),
+                        tint = if (isLightMode) (if (repeatMode != Player.REPEAT_MODE_OFF) Color(0xFF1E232A) else Color(0xFF6B7280)) else textBackgroundColor.copy(alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.65f else 1f),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -703,12 +760,13 @@ fun CinematicPlayerView(
                     queueSheetState.expandSoft()
                 },
                 shape = bottomPillShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.13f),
+                color = buttonBgColor,
+                border = buttonBorder,
                 modifier = Modifier
                     .weight(1f)
                     .height(bottomPillHeight)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = bottomPillShape,
@@ -725,13 +783,13 @@ fun CinematicPlayerView(
                     Icon(
                         painter = painterResource(R.drawable.apple_queue),
                         contentDescription = null,
-                        tint = textBackgroundColor,
+                        tint = buttonIconTint,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Queue",
-                        color = textBackgroundColor,
+                        color = buttonIconTint,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Medium
                     )
@@ -746,11 +804,12 @@ fun CinematicPlayerView(
                     onShowSleepTimer()
                 },
                 shape = sleepShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.13f),
+                color = buttonBgColor,
+                border = buttonBorder,
                 modifier = Modifier
                     .size(bottomPillHeight)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = sleepShape,
@@ -763,7 +822,7 @@ fun CinematicPlayerView(
                     Icon(
                         painter = painterResource(R.drawable.bedtime),
                         contentDescription = "Sleep Timer",
-                        tint = textBackgroundColor,
+                        tint = buttonIconTint,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -776,12 +835,13 @@ fun CinematicPlayerView(
                     lyricsSheetState.expandSoft()
                 },
                 shape = bottomPillShape,
-                color = if (isGlassActive) Color.Transparent else textBackgroundColor.copy(alpha = 0.13f),
+                color = buttonBgColor,
+                border = buttonBorder,
                 modifier = Modifier
                     .weight(1f)
                     .height(bottomPillHeight)
                     .then(
-                        if (isGlassActive) {
+                        if (isGlassActive && !isLightMode) {
                             Modifier.glassmorphicButton(
                                 isGlassActive = true,
                                 shape = bottomPillShape,
@@ -798,13 +858,13 @@ fun CinematicPlayerView(
                     Icon(
                         painter = painterResource(R.drawable.ic_apple_lyrics),
                         contentDescription = null,
-                        tint = textBackgroundColor,
+                        tint = buttonIconTint,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Lyrics",
-                        color = textBackgroundColor,
+                        color = buttonIconTint,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Medium
                     )

@@ -1519,10 +1519,12 @@ fun PlayerControlsContent(
     context: Context,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onShowLyrics: () -> Unit = {}
 ) {
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
+    val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
     val currentSongLiked = currentSong?.song?.liked == true
 
     val playPauseRoundness by animateDpAsState(
@@ -1568,7 +1570,17 @@ fun PlayerControlsContent(
         )
     }
 
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(8.dp))
+
+    PlayerLyricsTeaser(
+        mediaMetadata = mediaMetadata,
+        position = sliderPosition ?: position,
+        duration = duration,
+        lyricsEntity = currentLyrics,
+        textBackgroundColor = textBackgroundColor,
+        onShowLyrics = onShowLyrics,
+        modifier = Modifier.padding(horizontal = PlayerHorizontalPadding, vertical = 2.dp)
+    )
 
     PlayerSlider(
         sliderStyle = sliderStyle,

@@ -172,7 +172,7 @@ fun BottomSheetPlayer(
     val (playerCustomContrast) = rememberPreference(PlayerCustomContrastKey, 1f)
     val (playerCustomBrightness) = rememberPreference(PlayerCustomBrightnessKey, 1f)
 
-    val (disableBlur) = rememberPreference(DisableBlurKey, false)
+    val (disableBlur) = rememberPreference(DisableBlurKey, true)
     val (showCodecOnPlayer) = rememberPreference(
         booleanPreferencesKey("show_codec_on_player"),
         false
@@ -449,10 +449,10 @@ fun BottomSheetPlayer(
         )
     }
 
-    LaunchedEffect(playbackState) {
+    LaunchedEffect(playbackState, isPlaying) {
         if (playbackState == STATE_READY) {
             while (isActive) {
-                delay(100)
+                delay(if (isPlaying) 32L else 100L)
                 position = playerConnection.player.currentPosition
                 duration = playerConnection.player.duration
             }
@@ -608,7 +608,8 @@ fun BottomSheetPlayer(
                 context = context,
                 onSliderValueChange = onSliderValueChange,
                 onSliderValueChangeFinished = onSliderValueChangeFinished,
-                onShareClick = { showShareOptionsDialog = true }
+                onShareClick = { showShareOptionsDialog = true },
+                onShowLyrics = { lyricsSheetState.expandSoft() }
             )
         }
 
