@@ -161,6 +161,28 @@ class NativeAudioEngine(
         nativeSetEqBandGains(nativeHandle, gains)
     }
 
+    fun setSpotifyProfileEnabled(enabled: Boolean) {
+        if (!isAvailable()) return
+        nativeSetSpotifyProfileEnabled(nativeHandle, enabled)
+        updateOutputMetrics()
+    }
+
+    fun setSpatialAudio(enabled: Boolean, mode: Int) {
+        if (!isAvailable()) return
+        nativeSetSpatialAudio(nativeHandle, enabled, mode)
+        updateOutputMetrics()
+    }
+
+    fun isSpatialAudioEnabled(): Boolean {
+        if (!isAvailable()) return false
+        return nativeIsSpatialAudioEnabled(nativeHandle)
+    }
+
+    fun getSpatialAudioMode(): Int {
+        if (!isAvailable()) return 0
+        return nativeGetSpatialAudioMode(nativeHandle)
+    }
+
     fun getFramesWritten(): Long {
         if (!isAvailable()) return 0
         return nativeGetFramesWritten(nativeHandle)
@@ -317,6 +339,10 @@ class NativeAudioEngine(
     private external fun nativeSetVolume(handle: Long, volume: Float)
     private external fun nativeSetDspEnabled(handle: Long, enabled: Boolean)
     private external fun nativeSetEqBandGains(handle: Long, gains: FloatArray)
+    private external fun nativeSetSpotifyProfileEnabled(handle: Long, enabled: Boolean)
+    private external fun nativeSetSpatialAudio(handle: Long, enabled: Boolean, mode: Int)
+    private external fun nativeIsSpatialAudioEnabled(handle: Long): Boolean
+    private external fun nativeGetSpatialAudioMode(handle: Long): Int
 
     companion object {
         private const val TAG = "NativeAudioEngine"

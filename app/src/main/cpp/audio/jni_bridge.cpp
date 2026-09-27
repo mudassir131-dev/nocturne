@@ -316,4 +316,43 @@ Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeSetEqBandGa
     }
 }
 
+JNIEXPORT void JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeSetSpotifyProfileEnabled(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle,
+    jboolean enabled) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    if (engine) engine->setSpotifyProfileEnabled(enabled == JNI_TRUE);
+}
+
+JNIEXPORT void JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeSetSpatialAudio(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle,
+    jboolean enabled,
+    jint mode) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    if (engine) engine->setSpatialAudio(enabled == JNI_TRUE, mode);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeIsSpatialAudioEnabled(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return (engine && engine->isSpatialAudioEnabled()) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_mudassir131_yt_playback_nativeaudio_NativeAudioEngine_nativeGetSpatialAudioMode(
+    JNIEnv* /*env*/,
+    jobject /*thiz*/,
+    jlong handle) {
+    auto* engine = reinterpret_cast<AudioEngine*>(handle);
+    return engine ? engine->getSpatialAudioMode() : 0;
+}
+
 } // extern "C"

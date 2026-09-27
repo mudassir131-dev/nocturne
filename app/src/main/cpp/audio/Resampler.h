@@ -1,15 +1,15 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 
 namespace nocturne::audio {
 
 /**
- * High-quality bandlimited sinc audio resampler.
- * Preserves fractional phase and sample history across chunk boundaries
- * to ensure glitch-free, click-free continuous audio streaming.
+ * Ultra-fast, zero-allocation cubic Hermite (Catmull-Rom) resampler.
+ * Ensures glitch-free, click-free continuous audio streaming across chunk boundaries
+ * with zero dynamic memory allocation and negligible CPU usage.
  */
 class Resampler final {
 public:
@@ -56,11 +56,10 @@ private:
     double ratio_{1.0};
     double phase_{0.0};
 
-    // Filter parameters
-    static constexpr std::size_t K_TAPS = 32; // Half-length of windowed sinc
-    static constexpr std::size_t K_HIST_SIZE = K_TAPS * 2;
-    std::vector<float> historyL_;
-    std::vector<float> historyR_;
+    // 4-point history buffer per channel for continuous boundary interpolation
+    std::array<float, 4> histL_{};
+    std::array<float, 4> histR_{};
+    bool hasHistory_{false};
 };
 
 } // namespace nocturne::audio

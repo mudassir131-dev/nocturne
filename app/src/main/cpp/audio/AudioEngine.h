@@ -135,10 +135,16 @@ public:
     [[nodiscard]] bool isBitPerfect() const noexcept;
     [[nodiscard]] bool isResampled() const noexcept;
 
-    // Volume & DSP control
+    // Volume, Spotify Profile, Spatial Audio & DSP control
     void setVolume(float volume) noexcept;
     void setDspEnabled(bool enabled) noexcept;
     void setEqGains(const float* gainsDb, std::size_t count);
+    void setSpotifyProfileEnabled(bool enabled) noexcept;
+    void setSpatialAudio(bool enabled, std::int32_t mode) noexcept;
+
+    [[nodiscard]] bool isSpatialAudioEnabled() const noexcept;
+    [[nodiscard]] std::int32_t getSpatialAudioMode() const noexcept;
+    [[nodiscard]] bool isSpotifyProfileEnabled() const noexcept;
 
     // Oboe Callbacks
     oboe::DataCallbackResult onAudioReady(

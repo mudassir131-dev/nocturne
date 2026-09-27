@@ -130,6 +130,10 @@ import com.mudassir131.yt.constants.InnerTubeCookieKey
 import com.mudassir131.yt.constants.LastFMUseNowPlaying
 import com.mudassir131.yt.constants.ListenBrainzEnabledKey
 import com.mudassir131.yt.constants.ListenBrainzTokenKey
+import com.mudassir131.yt.constants.SpatialAudioEnabledKey
+import com.mudassir131.yt.constants.SpatialAudioMode
+import com.mudassir131.yt.constants.SpatialAudioModeKey
+import com.mudassir131.yt.constants.SpotifySoundProfileEnabledKey
 import com.mudassir131.yt.constants.MaxSongCacheSizeKey
 import com.mudassir131.yt.constants.MediaSessionConstants.CommandToggleLike
 import com.mudassir131.yt.constants.MediaSessionConstants.CommandToggleRepeatMode
@@ -910,6 +914,22 @@ class MusicService :
             .collectLatest(scope) { settings ->
                 desiredEqSettings.value = settings
                 applyEqSettingsToEffects(settings)
+            }
+
+        dataStore.data
+            .map { prefs ->
+                Triple(
+                    prefs[SpatialAudioEnabledKey] ?: false,
+                    SpatialAudioMode.fromString(prefs[SpatialAudioModeKey]),
+                    prefs[SpotifySoundProfileEnabledKey] ?: true,
+                )
+            }
+            .distinctUntilChanged()
+            .collectLatest(scope) { (spatialEnabled, spatialMode, spotifyProfileEnabled) ->
+                if (nativeAudioEngine.isAvailable()) {
+                    nativeAudioEngine.setSpotifyProfileEnabled(spotifyProfileEnabled)
+                    nativeAudioEngine.setSpatialAudio(spatialEnabled, spatialMode.nativeIndex)
+                }
             }
 
         combine(
@@ -3597,6 +3617,15 @@ class MusicService :
             val gainMb = if (settings.outputGainEnabled) settings.outputGainMb.coerceIn(-1500, 1500) else 0
             runCatching { le.setTargetGain(gainMb) }
             runCatching { le.enabled = settings.outputGainEnabled }
+        }
+
+        if (nativeAudioEngine.isAvailable()) {
+            nativeAudioEngine.setDspEnabled(settings.enabled)
+            val resampled10 = resampleLevelsByIndex(settings.bandLevelsMb, 10)
+            val gainsDb = FloatArray(10) { i ->
+                (resampled10.getOrNull(i) ?: 0) / 100.0f
+            }
+            nativeAudioEngine.setEqGains(gainsDb)
         }
     }
 

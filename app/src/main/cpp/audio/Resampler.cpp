@@ -8,31 +8,18 @@ namespace nocturne::audio {
 
 namespace {
 
-constexpr double M_PI_D = 3.14159265358979323846;
-
-// Blackman-Nutall windowed sinc kernel evaluation
-inline double sinc(double x) noexcept {
-    if (std::abs(x) < 1e-9) return 1.0;
-    const double px = M_PI_D * x;
-    return std::sin(px) / px;
-}
-
-inline double blackmanNutall(double x, double halfTaps) noexcept {
-    const double nx = (x + halfTaps) / (2.0 * halfTaps);
-    if (nx < 0.0 || nx > 1.0) return 0.0;
-    constexpr double a0 = 0.3635819;
-    constexpr double a1 = 0.4891775;
-    constexpr double a2 = 0.1365995;
-    constexpr double a3 = 0.0106411;
-    const double angle = 2.0 * M_PI_D * nx;
-    return a0 - a1 * std::cos(angle) + a2 * std::cos(2.0 * angle) - a3 * std::cos(3.0 * angle);
+inline float catmullRom(float y0, float y1, float y2, float y3, float t) noexcept {
+    const float a0 = -0.5f * y0 + 1.5f * y1 - 1.5f * y2 + 0.5f * y3;
+    const float a1 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
+    const float a2 = -0.5f * y0 + 0.5f * y2;
+    const float a3 = y1;
+    return ((a0 * t + a1) * t + a2) * t + a3;
 }
 
 } // namespace
 
 Resampler::Resampler() {
-    historyL_.resize(K_HIST_SIZE, 0.0f);
-    historyR_.resize(K_HIST_SIZE, 0.0f);
+    reset();
 }
 
 void Resampler::setup(std::int32_t inputSampleRate, std::int32_t outputSampleRate) {
@@ -47,8 +34,9 @@ void Resampler::setup(std::int32_t inputSampleRate, std::int32_t outputSampleRat
 
 void Resampler::reset() noexcept {
     phase_ = 0.0;
-    std::fill(historyL_.begin(), historyL_.end(), 0.0f);
-    std::fill(historyR_.begin(), historyR_.end(), 0.0f);
+    histL_.fill(0.0f);
+    histR_.fill(0.0f);
+    hasHistory_ = false;
 }
 
 std::size_t Resampler::process(
@@ -66,73 +54,73 @@ std::size_t Resampler::process(
         return copyCount;
     }
 
-    // Combine previous history with input stream
-    const std::size_t totalInput = K_HIST_SIZE + inFrameCount;
-    std::vector<float> inputBufferL(totalInput);
-    std::vector<float> inputBufferR(totalInput);
-
-    // Copy history
-    std::memcpy(inputBufferL.data(), historyL_.data(), K_HIST_SIZE * sizeof(float));
-    std::memcpy(inputBufferR.data(), historyR_.data(), K_HIST_SIZE * sizeof(float));
-
-    // Deinterleave new input
-    for (std::size_t i = 0; i < inFrameCount; ++i) {
-        inputBufferL[K_HIST_SIZE + i] = inFrames[i * 2];
-        inputBufferR[K_HIST_SIZE + i] = inFrames[i * 2 + 1];
-    }
-
-    // Save end of input buffer into history for next chunk
-    if (inFrameCount >= K_HIST_SIZE) {
-        std::memcpy(historyL_.data(), &inputBufferL[totalInput - K_HIST_SIZE], K_HIST_SIZE * sizeof(float));
-        std::memcpy(historyR_.data(), &inputBufferR[totalInput - K_HIST_SIZE], K_HIST_SIZE * sizeof(float));
-    } else {
-        const std::size_t keep = K_HIST_SIZE - inFrameCount;
-        std::memmove(historyL_.data(), &historyL_[inFrameCount], keep * sizeof(float));
-        std::memmove(historyR_.data(), &historyR_[inFrameCount], keep * sizeof(float));
-        for (std::size_t i = 0; i < inFrameCount; ++i) {
-            historyL_[keep + i] = inFrames[i * 2];
-            historyR_[keep + i] = inFrames[i * 2 + 1];
+    auto getSampleL = [&](std::int64_t idx) noexcept -> float {
+        if (idx < 0) {
+            const std::int64_t hIdx = 4 + idx;
+            return (hIdx >= 0 && hIdx < 4) ? histL_[static_cast<std::size_t>(hIdx)] : inFrames[0];
         }
-    }
+        if (idx >= static_cast<std::int64_t>(inFrameCount)) {
+            return inFrames[(inFrameCount - 1) * 2];
+        }
+        return inFrames[idx * 2];
+    };
 
-    // Bandlimiting cutoff for downsampling
-    const double cutoff = (ratio_ > 1.0) ? (0.95 / ratio_) : 0.95;
-    const double halfTaps = static_cast<double>(K_TAPS);
+    auto getSampleR = [&](std::int64_t idx) noexcept -> float {
+        if (idx < 0) {
+            const std::int64_t hIdx = 4 + idx;
+            return (hIdx >= 0 && hIdx < 4) ? histR_[static_cast<std::size_t>(hIdx)] : inFrames[1];
+        }
+        if (idx >= static_cast<std::int64_t>(inFrameCount)) {
+            return inFrames[(inFrameCount - 1) * 2 + 1];
+        }
+        return inFrames[idx * 2 + 1];
+    };
 
     std::size_t outIndex = 0;
-    while (outIndex < maxOutFrames) {
-        const double centerPos = static_cast<double>(K_TAPS) + phase_;
-        const auto centerIndex = static_cast<std::int64_t>(std::floor(centerPos));
+    const auto totalInputFrames = static_cast<std::int64_t>(inFrameCount);
 
-        if (centerIndex + static_cast<std::int64_t>(K_TAPS) >= static_cast<std::int64_t>(totalInput)) {
-            // Reached end of current input block
-            phase_ -= static_cast<double>(inFrameCount);
+    while (outIndex < maxOutFrames) {
+        const auto baseIndex = static_cast<std::int64_t>(std::floor(phase_));
+        if (baseIndex + 2 >= totalInputFrames) {
+            // Need next chunk to interpolate past boundary
             break;
         }
 
-        double sumL = 0.0;
-        double sumR = 0.0;
-        double weightSum = 0.0;
+        const float t = static_cast<float>(phase_ - static_cast<double>(baseIndex));
 
-        for (std::int64_t tap = -static_cast<std::int64_t>(K_TAPS); tap <= static_cast<std::int64_t>(K_TAPS); ++tap) {
-            const double tapPos = centerPos - (centerIndex + tap);
-            const double w = blackmanNutall(tapPos, halfTaps) * sinc(tapPos * cutoff) * cutoff;
-            const std::int64_t sampleIdx = centerIndex + tap;
+        const float y0_L = getSampleL(baseIndex - 1);
+        const float y1_L = getSampleL(baseIndex);
+        const float y2_L = getSampleL(baseIndex + 1);
+        const float y3_L = getSampleL(baseIndex + 2);
 
-            if (sampleIdx >= 0 && sampleIdx < static_cast<std::int64_t>(totalInput)) {
-                sumL += inputBufferL[sampleIdx] * w;
-                sumR += inputBufferR[sampleIdx] * w;
-                weightSum += w;
-            }
-        }
+        const float y0_R = getSampleR(baseIndex - 1);
+        const float y1_R = getSampleR(baseIndex);
+        const float y2_R = getSampleR(baseIndex + 1);
+        const float y3_R = getSampleR(baseIndex + 2);
 
-        const double norm = (std::abs(weightSum) > 1e-7) ? (1.0 / weightSum) : 1.0;
-        outFrames[outIndex * 2] = static_cast<float>(sumL * norm);
-        outFrames[outIndex * 2 + 1] = static_cast<float>(sumR * norm);
+        outFrames[outIndex * 2] = catmullRom(y0_L, y1_L, y2_L, y3_L, t);
+        outFrames[outIndex * 2 + 1] = catmullRom(y0_R, y1_R, y2_R, y3_R, t);
 
         outIndex++;
         phase_ += ratio_;
     }
+
+    // Save history from end of input chunk for smooth next chunk boundary
+    if (inFrameCount >= 4) {
+        for (std::size_t k = 0; k < 4; ++k) {
+            histL_[k] = inFrames[(inFrameCount - 4 + k) * 2];
+            histR_[k] = inFrames[(inFrameCount - 4 + k) * 2 + 1];
+        }
+    } else {
+        for (std::size_t k = 0; k < 4; ++k) {
+            histL_[k] = inFrames[0];
+            histR_[k] = inFrames[1];
+        }
+    }
+    hasHistory_ = true;
+
+    // Adjust fractional phase for next chunk
+    phase_ -= static_cast<double>(inFrameCount);
 
     return outIndex;
 }

@@ -134,6 +134,7 @@ bool AudioEngine::openStream(std::int32_t sampleRate) {
            ->setChannelCount(oboe::ChannelCount::Stereo)
            ->setUsage(oboe::Usage::Media)
            ->setContentType(oboe::ContentType::Music)
+           ->setBufferCapacityInFrames(8192)
            ->setDataCallback(this)
            ->setErrorCallback(this);
 
@@ -185,6 +186,17 @@ bool AudioEngine::openStream(std::int32_t sampleRate) {
          (sharing == oboe::SharingMode::Exclusive ? "Exclusive" : "Shared"));
 
     dspProcessor_->setSampleRate(actualRate);
+
+    // Set buffer size to 4 bursts or at least 2048 frames to prevent buffer underruns and crackling
+    const std::int32_t burst = stream_->getFramesPerBurst();
+    if (burst > 0) {
+        std::int32_t targetBuffer = std::max(burst * 4, 2048);
+        const std::int32_t cap = stream_->getBufferCapacityInFrames();
+        if (cap > 0) {
+            targetBuffer = std::min(targetBuffer, cap);
+        }
+        stream_->setBufferSizeInFrames(targetBuffer);
+    }
 
     result = stream_->requestStart();
     if (result != oboe::Result::OK) {
@@ -269,10 +281,8 @@ std::size_t AudioEngine::writePcm(
         resamplerOutputFrames_.fetch_add(static_cast<std::int64_t>(readyFrameCount), std::memory_order_relaxed);
     }
 
-    // 3. DSP processing (bypassed if disabled)
-    if (dspEnabled_.load(std::memory_order_relaxed)) {
-        dspProcessor_->process(const_cast<float*>(readyFrames), readyFrameCount);
-    }
+    // 3. DSP processing (Spotify profile, EQ, 3D Spatial Audio, and true-peak soft limiter)
+    dspProcessor_->process(const_cast<float*>(readyFrames), readyFrameCount);
 
     // 4. Write to lock-free ring buffer (in stereo float elements = readyFrameCount * 2)
     const std::size_t elementsWritten = ringBuffer_->write(readyFrames, readyFrameCount * 2);
@@ -477,11 +487,34 @@ void AudioEngine::setVolume(float volume) noexcept {
 
 void AudioEngine::setDspEnabled(bool enabled) noexcept {
     dspEnabled_.store(enabled, std::memory_order_relaxed);
-    dspProcessor_->setEnabled(enabled);
+    if (dspProcessor_) dspProcessor_->setEnabled(enabled);
 }
 
 void AudioEngine::setEqGains(const float* gainsDb, std::size_t count) {
-    dspProcessor_->setEqGains(gainsDb, count);
+    if (dspProcessor_) dspProcessor_->setEqGains(gainsDb, count);
+}
+
+void AudioEngine::setSpotifyProfileEnabled(bool enabled) noexcept {
+    if (dspProcessor_) dspProcessor_->setSpotifyProfileEnabled(enabled);
+}
+
+void AudioEngine::setSpatialAudio(bool enabled, std::int32_t mode) noexcept {
+    if (dspProcessor_) {
+        dspProcessor_->setSpatialAudioEnabled(enabled);
+        dspProcessor_->setSpatialAudioMode(static_cast<SpatialMode>(mode));
+    }
+}
+
+bool AudioEngine::isSpatialAudioEnabled() const noexcept {
+    return dspProcessor_ ? dspProcessor_->isSpatialAudioEnabled() : false;
+}
+
+std::int32_t AudioEngine::getSpatialAudioMode() const noexcept {
+    return dspProcessor_ ? static_cast<std::int32_t>(dspProcessor_->getSpatialAudioMode()) : 0;
+}
+
+bool AudioEngine::isSpotifyProfileEnabled() const noexcept {
+    return dspProcessor_ ? dspProcessor_->isSpotifyProfileEnabled() : false;
 }
 
 } // namespace nocturne::audio
