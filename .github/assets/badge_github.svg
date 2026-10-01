@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="48" viewBox="0 0 180 48" fill="none">
+  <rect width="180" height="48" rx="10" fill="#181717" stroke="#30363D" stroke-width="1.5"/>
+  <g transform="translate(14, 10)">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M14 0C6.27 0 0 6.27 0 14c0 6.19 4.01 11.44 9.58 13.29.7.13.96-.3.96-.67 0-.33-.01-1.42-.02-2.6-3.89.85-4.71-1.65-4.71-1.65-.64-1.62-1.56-2.05-1.56-2.05-1.27-.87.1-.85.1-.85 1.4.1 2.14 1.44 2.14 1.44 1.25 2.14 3.28 1.52 4.08 1.16.13-.91.49-1.52.89-1.87-3.11-.35-6.38-1.55-6.38-6.92 0-1.53.55-2.78 1.44-3.76-.14-.35-.63-1.78.14-3.71 0 0 1.18-.38 3.85 1.44 1.12-.31 2.32-.47 3.52-.47 1.2 0 2.4.16 3.52.47 2.67-1.82 3.85-1.44 3.85-1.44.77 1.93.28 3.36.14 3.71.9 0.98 1.44 2.23 1.44 3.76 0 5.38-3.28 6.56-6.4 6.91.5.43.95 1.29.95 2.6 0 1.88-.02 3.39-.02 3.85 0 .37.26.81.97.67A14.01 14.01 0 0028 14C28 6.27 21.73 0 14 0z" fill="#FFFFFF"/>
+  </g>
+  <text x="52" y="18" fill="#8B949E" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="500" letter-spacing="0.5">DOWNLOAD ON</text>
+  <text x="52" y="34" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="700">GitHub</text>
+</svg>

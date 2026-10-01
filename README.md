@@ -231,34 +231,19 @@ graph TD
 
 <h2>Official Stable Release</h2>
 
-<table>
-  <thead>
-    <tr>
-      <th align="center" width="33.3%">GitHub</th>
-      <th align="center" width="33.3%">Uptodown</th>
-      <th align="center" width="33.3%">Official Website</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/mudassir131-dev/nocturne/releases/latest">
-          <img src="https://img.shields.io/badge/GitHub-Releases-181717?style=for-the-badge&logo=github&logoColor=white" height="42" alt="GitHub Releases" />
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://nocturne.en.uptodown.com/android">
-          <img src="https://img.shields.io/badge/Uptodown-Download%20APK-002F6C?style=for-the-badge&logo=uptodown&logoColor=white" height="42" alt="Download on Uptodown" />
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://nocturne-music.vercel.app">
-          <img src="https://img.shields.io/badge/Nocturne-Official%20Web-6366f1?style=for-the-badge&logo=vercel&logoColor=white" height="42" alt="Official Website" />
-        </a>
-      </td>
-    </tr>
-  </tbody>
-</table>
+<div align="center">
+  <a href="https://github.com/mudassir131-dev/nocturne/releases/latest">
+    <img src=".github/assets/badge_github.svg" height="48" alt="Download on GitHub" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://nocturne.en.uptodown.com/android">
+    <img src=".github/assets/badge_uptodown.svg" height="48" alt="Download on Uptodown" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://nocturne-music.vercel.app">
+    <img src="https://img.shields.io/badge/Official%20Web-Direct%20Download-6366f1?style=for-the-badge&logo=vercel&logoColor=white" height="48" alt="Official Website" />
+  </a>
+</div>
 
 <br />
 
@@ -387,19 +372,15 @@ If Nocturne elevated your music experience, consider supporting ongoing developm
 
   <p>
     <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
-      <img src="https://img.shields.io/badge/Google%20Pay-Pay%20via%20GPay-4285F4?style=for-the-badge&logo=google-pay&logoColor=white" height="42" alt="Pay via Google Pay" />
+      <img src=".github/assets/badge_gpay.svg" height="48" alt="Pay via Google Pay" />
     </a>
     &nbsp;&nbsp;
     <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
-      <img src="https://img.shields.io/badge/POP%20UPI-Pay%20via%20POP-FF3366?style=for-the-badge&logo=bhim&logoColor=white" height="42" alt="Pay via POP UPI" />
+      <img src=".github/assets/badge_pop_upi.svg" height="48" alt="Pay via POP UPI" />
     </a>
     &nbsp;&nbsp;
     <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
-      <img src="https://img.shields.io/badge/J%26K%20Bank-Pay%20via%20JKB%20UPI-0A4874?style=for-the-badge&logo=shield&logoColor=white" height="42" alt="Pay via J&K Bank" />
-    </a>
-    &nbsp;&nbsp;
-    <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
-      <img src="https://img.shields.io/badge/PhonePe-Pay%20via%20PhonePe-5f259f?style=for-the-badge&logo=phonepe&logoColor=white" height="42" alt="Pay via PhonePe" />
+      <img src=".github/assets/badge_jk_bank.svg" height="48" alt="Pay via J&amp;K Bank" />
     </a>
   </p>
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="48" viewBox="0 0 200 48" fill="none">
+  <rect width="200" height="48" rx="10" fill="#0A3161" stroke="#1D5399" stroke-width="1.5"/>
+  <!-- Official J&K Bank Emblem -->
+  <g transform="translate(14, 11)">
+    <circle cx="13" cy="13" r="13" fill="#FFFFFF"/>
+    <circle cx="13" cy="13" r="11.5" fill="#0A3161"/>
+    <!-- Iconic 3 Petals / Chinar Motif -->
+    <path d="M13 4c-1.8 3.2-3.8 6.5-1.5 9.5 1.5-1.2 3-1.2 4.5 0 2.3-3 .3-6.3-1.5-9.5z" fill="#D32F2F"/>
+    <path d="M6 16c2.8.5 5.5.2 6.5-2.5-1.8-.7-2.6-1.9-2.6-3.8-3.2 1.3-4.8 4.2-3.9 6.3z" fill="#FFFFFF"/>
+    <path d="M20 16c-2.8.5-5.5.2-6.5-2.5 1.8-.7 2.6-1.9 2.6-3.8 3.2 1.3 4.8 4.2 3.9 6.3z" fill="#D32F2F"/>
+  </g>
+  <text x="50" y="18" fill="#B0C4DE" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" letter-spacing="0.6">PAY VIA</text>
+  <text x="50" y="34" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="700">J&amp;K Bank UPI</text>
+</svg>
