@@ -33,6 +33,7 @@
     <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><img src="https://img.shields.io/github/v/release/mudassir131-dev/nocturne?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github" alt="Latest Version" /></a>
     <img src="https://img.shields.io/github/downloads/mudassir131-dev/nocturne/total?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github" alt="Downloads" />
     <a href="https://github.com/mudassir131-dev/nocturne/stargazers"><img src="https://img.shields.io/github/stars/mudassir131-dev/nocturne?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github" alt="Stars" /></a>
+    <a href="https://nocturne.en.uptodown.com/android"><img src="https://img.shields.io/badge/Uptodown-Download-002F6C?style=for-the-badge&logo=uptodown&logoColor=white" alt="Uptodown" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/mudassir131-dev/nocturne?style=for-the-badge&color=6366f1&labelColor=1e1e2e" alt="License" /></a>
     <img src="https://img.shields.io/badge/Architecture-Clean_MVI-6366f1?style=for-the-badge&labelColor=1e1e2e&logo=kotlin" alt="Clean MVI Architecture" />
     <img src="https://img.shields.io/badge/Language-Kotlin-7f52ff?style=for-the-badge&logo=kotlin&color=6366f1&labelColor=1e1e2e" alt="Kotlin Language" />
@@ -233,20 +234,26 @@ graph TD
 <table>
   <thead>
     <tr>
-      <th align="center" width="50%">GitHub Releases</th>
-      <th align="center" width="50%">Official Website</th>
+      <th align="center" width="33.3%">GitHub</th>
+      <th align="center" width="33.3%">Uptodown</th>
+      <th align="center" width="33.3%">Official Website</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td align="center">
         <a href="https://github.com/mudassir131-dev/nocturne/releases/latest">
-          <img src="https://img.shields.io/badge/GitHub%20Releases-Download%20APK-181717?style=for-the-badge&logo=github&logoColor=white" height="42" alt="Download on GitHub" />
+          <img src="https://img.shields.io/badge/GitHub-Releases-181717?style=for-the-badge&logo=github&logoColor=white" height="42" alt="GitHub Releases" />
+        </a>
+      </td>
+      <td align="center">
+        <a href="https://nocturne.en.uptodown.com/android">
+          <img src="https://img.shields.io/badge/Uptodown-Download%20APK-002F6C?style=for-the-badge&logo=uptodown&logoColor=white" height="42" alt="Download on Uptodown" />
         </a>
       </td>
       <td align="center">
         <a href="https://nocturne-music.vercel.app">
-          <img src="https://img.shields.io/badge/Nocturne%20Web-Direct%20Download-6366f1?style=for-the-badge&logo=vercel&logoColor=white" height="42" alt="Download on Nocturne Website" />
+          <img src="https://img.shields.io/badge/Nocturne-Official%20Web-6366f1?style=for-the-badge&logo=vercel&logoColor=white" height="42" alt="Official Website" />
         </a>
       </td>
     </tr>
@@ -260,7 +267,7 @@ graph TD
     <tr>
       <th align="center">Package Variant</th>
       <th align="center">Target ABI Architecture</th>
-      <th align="center">Recommended Devices</th>
+      <th align="center">Compatibility</th>
       <th align="center">Download Link</th>
     </tr>
   </thead>
@@ -268,17 +275,9 @@ graph TD
     <tr>
       <td align="center"><b>Universal Release APK</b></td>
       <td align="center"><code>arm64-v8a</code>, <code>armeabi-v7a</code>, <code>x86_64</code></td>
-      <td align="center">All Android devices (Full compatibility)</td>
+      <td align="center">All Android devices (Universal compatibility)</td>
       <td align="center">
         <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><b>📦 Download Universal APK</b></a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center"><b>ARM64 Optimized APK</b></td>
-      <td align="center"><code>arm64-v8a</code></td>
-      <td align="center">Modern 64-bit phones (Smaller package footprint)</td>
-      <td align="center">
-        <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><b>⚡ Download ARM64 APK</b></a>
       </td>
     </tr>
   </tbody>
@@ -297,6 +296,7 @@ graph TD
 Join the community, report bugs, or request features directly via our channels:
 
 [![Website](https://img.shields.io/badge/Website-nocturne--music.vercel.app-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://nocturne-music.vercel.app)
+[![Uptodown](https://img.shields.io/badge/Uptodown-nocturne-002F6C?style=for-the-badge&logo=uptodown&logoColor=white)](https://nocturne.en.uptodown.com/android)
 [![Issues](https://img.shields.io/badge/GitHub%20Issues-Submit%20Bug-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mudassir131-dev/nocturne/issues)
 [![Discord RPC](https://img.shields.io/badge/Discord%20RPC-Supported-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://github.com/mudassir131-dev/nocturne)
 
@@ -379,24 +379,33 @@ cd nocturne
 
 ## 💖 Support the Developer
 
-If Nocturne elevated your music experience, consider supporting ongoing development, servers, and future features:
+If Nocturne elevated your music experience, consider supporting ongoing development, server costs, and new features directly via UPI:
 
 <div align="center">
 
   <br />
 
-  <img src=".github/assets/upi_qr.png" width="180" height="180" alt="UPI QR Code" style="border-radius: 18px; border: 3px solid #6366f1; padding: 6px; background-color: #ffffff; box-shadow: 0 10px 30px rgba(99,102,241,0.35);" />
+  <p>
+    <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
+      <img src="https://img.shields.io/badge/Google%20Pay-Pay%20via%20GPay-4285F4?style=for-the-badge&logo=google-pay&logoColor=white" height="42" alt="Pay via Google Pay" />
+    </a>
+    &nbsp;&nbsp;
+    <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
+      <img src="https://img.shields.io/badge/POP%20UPI-Pay%20via%20POP-FF3366?style=for-the-badge&logo=bhim&logoColor=white" height="42" alt="Pay via POP UPI" />
+    </a>
+    &nbsp;&nbsp;
+    <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
+      <img src="https://img.shields.io/badge/J%26K%20Bank-Pay%20via%20JKB%20UPI-0A4874?style=for-the-badge&logo=shield&logoColor=white" height="42" alt="Pay via J&K Bank" />
+    </a>
+    &nbsp;&nbsp;
+    <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Mudassir%20-%20Nocturne&cu=INR">
+      <img src="https://img.shields.io/badge/PhonePe-Pay%20via%20PhonePe-5f259f?style=for-the-badge&logo=phonepe&logoColor=white" height="42" alt="Pay via PhonePe" />
+    </a>
+  </p>
 
-  <br /><br />
+  <br />
 
-  <a href="upi://pay?pa=touseeparay7-1@okicici&pn=Nocturne&cu=INR">
-    <img src="https://img.shields.io/badge/Pay%20via%20UPI-0084FF?style=for-the-badge&logo=google-pay&logoColor=white" alt="Pay via UPI" />
-  </a>
-  <img src="https://img.shields.io/badge/GPay%20%7C%20PhonePe%20%7C%20Paytm-6366f1?style=for-the-badge" alt="UPI Apps" />
-
-  <br /><br />
-
-  <p><b>UPI ID:</b> <code>touseeparay7-1@okicici</code></p>
+  <p><b>Direct UPI ID:</b> <code>touseeparay7-1@okicici</code></p>
 
 </div>
 
