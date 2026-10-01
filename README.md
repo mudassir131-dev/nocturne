@@ -1,22 +1,23 @@
 <div align="center">
 
-  <img src=".github/assets/app_logo.jpg" width="150" height="150" alt="Nocturne Logo" style="border-radius: 26%; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" />
+  <img src=".github/assets/app_logo.jpg" width="140" height="140" alt="Nocturne Logo" style="border-radius: 28%; box-shadow: 0 12px 35px rgba(99, 102, 241, 0.35);" />
 
   <h1>Nocturne</h1>
 
   <p align="center">
-    <strong>Redefining the YouTube Music Experience on Android.</strong>
+    <strong>The Next-Generation Native YouTube Music Experience for Android.</strong>
     <br />
-    <em>High-performance, privacy-focused, and packed with an Apple Music-inspired player, live canvas artwork, and word-by-word synced lyrics.</em>
+    <em>Engineered with pure Kotlin & C++17 for audiophile-grade bit-perfect playback, an Apple Music-inspired fluid UI, dynamic live canvas artwork, and word-by-word synchronized lyrics.</em>
   </p>
 
   <p align="center">
     <a href="https://nocturne-music.vercel.app"><b>🌐 Official Website</b></a> •
-    <a href="#-features"><b>✨ Features</b></a> •
+    <a href="#-system-architecture"><b>🏛️ Architecture</b></a> •
     <a href="#-showcase"><b>📸 Showcase</b></a> •
+    <a href="#-features"><b>✨ Features</b></a> •
     <a href="#-download-now"><b>📥 Download</b></a> •
-    <a href="#-support-the-developer"><b>💖 Donate</b></a> •
-    <a href="https://github.com/mudassir131-dev/nocturne/issues"><b>🐛 Issues</b></a>
+    <a href="#-lead-developer--contributions"><b>👨‍💻 Contributor</b></a> •
+    <a href="#-support-the-developer"><b>💖 Support</b></a>
   </p>
 
   <div align="center">
@@ -24,13 +25,13 @@
     <img src="https://img.shields.io/github/downloads/mudassir131-dev/nocturne/total?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github" alt="Downloads" />
     <a href="https://github.com/mudassir131-dev/nocturne/stargazers"><img src="https://img.shields.io/github/stars/mudassir131-dev/nocturne?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github" alt="Stars" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/mudassir131-dev/nocturne?style=for-the-badge&color=6366f1&labelColor=1e1e2e" alt="License" /></a>
-    <img src="https://img.shields.io/badge/Architecture-MVVM-6366f1?style=for-the-badge&labelColor=1e1e2e&logo=kotlin" alt="MVVM Architecture" />
-    <img src="https://img.shields.io/badge/Language-Kotlin-7f52ff?style=for-the-badge&logo=kotlin&color=6366f1&labelColor=1e1e2e" alt="Kotlin Language" />
-    <img src="https://img.shields.io/badge/Language-C%2B%2B17-00599C?style=for-the-badge&logo=c%2B%2B&color=6366f1&labelColor=1e1e2e" alt="C++17 Language" />
-    <img src="https://img.shields.io/badge/Audio_Engine-Oboe%20%2F%20AAudio-3DDC84?style=for-the-badge&logo=android&logoColor=white&color=6366f1&labelColor=1e1e2e" alt="Oboe / AAudio Native Engine" />
-    <img src="https://img.shields.io/badge/Toolkit-Jetpack_Compose-4285f4?style=for-the-badge&logo=jetpack-compose&color=6366f1&labelColor=1e1e2e" alt="Jetpack Compose" />
-    <img src="https://img.shields.io/badge/Design-Material_3-000000?style=for-the-badge&logo=material-design&color=6366f1&labelColor=1e1e2e" alt="Material 3" />
-    <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=1e1e2e" alt="Android 8.0+" />
+    <img src="https://img.shields.io/badge/Architecture-Clean%20MVI%2FMVVM-6366f1?style=for-the-badge&labelColor=1e1e2e&logo=kotlin" alt="Clean Architecture" />
+    <img src="https://img.shields.io/badge/Core-Kotlin%202.0-7f52ff?style=for-the-badge&logo=kotlin&color=6366f1&labelColor=1e1e2e" alt="Kotlin 2.0" />
+    <img src="https://img.shields.io/badge/Native_DSP-C%2B%2B17-00599C?style=for-the-badge&logo=c%2B%2B&color=6366f1&labelColor=1e1e2e" alt="C++17 Language" />
+    <img src="https://img.shields.io/badge/Audio_Pipeline-Google_Oboe_%2F_AAudio-3DDC84?style=for-the-badge&logo=android&logoColor=white&color=6366f1&labelColor=1e1e2e" alt="Google Oboe Native Engine" />
+    <img src="https://img.shields.io/badge/UI_Toolkit-Jetpack_Compose-4285f4?style=for-the-badge&logo=jetpack-compose&color=6366f1&labelColor=1e1e2e" alt="Jetpack Compose" />
+    <img src="https://img.shields.io/badge/Design_Language-Material_3_Expressive-000000?style=for-the-badge&logo=material-design&color=6366f1&labelColor=1e1e2e" alt="Material 3" />
+    <img src="https://img.shields.io/badge/Min_Android-8.0%2B_(API_26)-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=1e1e2e" alt="Android 8.0+" />
   </div>
 
 </div>
@@ -38,9 +39,66 @@
 <hr />
 
 > [!IMPORTANT]
-> **Website**: Explore features and stay up to date at [nocturne-music.vercel.app](https://nocturne-music.vercel.app).
->
-> **Nocturne** isn't just another generic YouTube Music wrapper. It is a high-performance native Android music player crafted from the ground up using **Kotlin**, **C++17 (Google Oboe / AAudio)**, **Jetpack Compose**, and **AndroidX Media3/ExoPlayer** for genuine bit-perfect Hi-Res lossless playback, strict privacy, and modern visual elegance.
+> **Nocturne** is not an electron app, hybrid wrapper, or generic WebView skin. It is an unapologetically native, high-performance Android music workstation designed from first principles. Powered by a **custom C++17 audio engine (Google Oboe / AAudio)**, **hardware-accelerated Jetpack Compose UI**, and **AndroidX Media3**, Nocturne delivers bit-perfect audio streaming, zero-latency DSP rendering, and complete freedom from advertisements and telemetry.
+
+---
+
+## 🏛️ System Architecture
+
+Nocturne follows modern **Clean Architecture** with a strict **Unidirectional Data Flow (UDF / MVI-MVVM)** pattern. Audio playback is completely decoupled from the UI thread and driven through an asynchronous JNI bridge into a high-priority native C++ audio processing unit.
+
+```mermaid
+graph TD
+    subgraph UI_Presentation ["📱 Presentation Layer (Jetpack Compose)"]
+        UI_Home["Home & Explore Screen"]
+        UI_Player["Apple Music Player & Cinematic Canvas"]
+        UI_Lyrics["Word-by-Word Synced Lyrics Engine"]
+        UI_Settings["Theme, DSP & Audio Telemetry UI"]
+    end
+
+    subgraph State_Domain ["🧠 State & Domain Layer (Kotlin Coroutines / Hilt)"]
+        VM["ViewModels & StateFlow (MVI / UDF)"]
+        UseCase["Domain UseCases & Repositories"]
+        AudioService["Foreground MusicService (AndroidX Media3)"]
+    end
+
+    subgraph Audio_Pipeline ["🔊 Native C++17 Audio Engine (Google Oboe / AAudio)"]
+        JNI["JNI Native Audio Bridge"]
+        RingBuffer["Lock-Free SPSC Ring Buffer (Zero-Allocation)"]
+        DSP["DSP Processor (Biquad Filter EQ / Bandlimited Sinc Resampler)"]
+        AAudio["AAudio / OpenSL ES Stream (Exclusive Low-Latency Mode)"]
+        DAC["Hardware DAC Output (Bit-Perfect up to 24-bit / 192kHz)"]
+    end
+
+    subgraph Data_Network ["🌐 Data & Extractor Layer"]
+        YT["InnerTube & YouTube Extractor"]
+        LyricsProvider["Multi-Source Lyrics (LRCLIB, KuGou, BetterLyrics)"]
+        LocalCache["Encrypted DataStore & Offline Cache"]
+        Importer["Playlist Importer (Spotify, Apple Music, CSV, YouTube)"]
+    end
+
+    UI_Presentation <-->|StateFlow / Events| VM
+    VM --> UseCase
+    UseCase --> AudioService
+    AudioService -->|PCM Stream via JNI| JNI
+    JNI --> RingBuffer
+    RingBuffer --> DSP
+    DSP --> AAudio
+    AAudio --> DAC
+    UseCase <--> Data_Network
+```
+
+### 🔬 Architectural Highlights
+
+| Component | Technology | Responsibility |
+| :--- | :--- | :--- |
+| **Presentation** | **Jetpack Compose + Material 3** | Declarative UI, specular glassmorphism, dynamic color extraction, and hardware-accelerated animations. |
+| **State Machine** | **Kotlin Flow + StateFlow + Hilt** | Strict unidirectional state updates, lifecycle-aware coroutines, and dependency injection. |
+| **Media Controller** | **AndroidX Media3 (ExoPlayer)** | MediaSession tokens, audio routing, background service lifecycle, Android Auto, and system lockscreen controls. |
+| **Native Engine** | **C++17 + Google Oboe / AAudio** | Low-latency audio processing in Exclusive mode to bypass the Android system mixer when possible. |
+| **DSP Core** | **Direct Form II Transposed Biquads** | 10-Band parametric EQ, Bandlimited Sinc Resampling (Blackman-Nuttall windowed), and zero-phase distortion. |
+| **Lock-Free Buffer** | **Atomic SPSC Ring Buffer** | Guarantees audio-thread safety with zero memory allocations or locks, preventing audio buffer underruns and stutter. |
+| **Metadata & Lyrics** | **Ktor Client + Multi-Provider** | High-concurrency network extraction with multi-provider fallback for synced and romanized lyrics. |
 
 ---
 
@@ -48,16 +106,36 @@
 
 <div align="center">
 
-  <p>
-    <img src=".github/assets/screen_home.jpg" alt="Home Screen" width="31%" style="border-radius: 12px; margin: 4px;" />
-    <img src=".github/assets/screen_search.jpg" alt="Search & Exploration" width="31%" style="border-radius: 12px; margin: 4px;" />
-    <img src=".github/assets/screen_cinematic.jpg" alt="Cinematic Player" width="31%" style="border-radius: 12px; margin: 4px;" />
-  </p>
-  <p>
-    <img src=".github/assets/screen_synced_lyrics.jpg" alt="Live Synced Lyrics" width="31%" style="border-radius: 12px; margin: 4px;" />
-    <img src=".github/assets/screen_player.jpg" alt="Apple Music Player Style" width="31%" style="border-radius: 12px; margin: 4px;" />
-    <img src=".github/assets/screen_lyrics.jpg" alt="Lyrics & Romaji" width="31%" style="border-radius: 12px; margin: 4px;" />
-  </p>
+  <table>
+    <tr>
+      <td width="33.3%" align="center">
+        <img src=".github/assets/screen_home.jpg" alt="Home Screen" style="border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" /><br />
+        <b>🏠 Adaptive Home & Recommendations</b>
+      </td>
+      <td width="33.3%" align="center">
+        <img src=".github/assets/screen_search.jpg" alt="Search & Exploration" style="border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" /><br />
+        <b>🔍 Instant Search & Global Filters</b>
+      </td>
+      <td width="33.3%" align="center">
+        <img src=".github/assets/screen_cinematic.jpg" alt="Cinematic Player" style="border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" /><br />
+        <b>🎬 Cinematic Player with Dynamic Blur</b>
+      </td>
+    </tr>
+    <tr>
+      <td width="33.3%" align="center">
+        <img src=".github/assets/screen_synced_lyrics.jpg" alt="Live Synced Lyrics" style="border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" /><br />
+        <b>✨ Word-by-Word Syllable Synced Lyrics</b>
+      </td>
+      <td width="33.3%" align="center">
+        <img src=".github/assets/screen_player.jpg" alt="Apple Music Player Style" style="border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" /><br />
+        <b>🍎 Apple Music-Inspired Full Bleed UI</b>
+      </td>
+      <td width="33.3%" align="center">
+        <img src=".github/assets/screen_lyrics.jpg" alt="Lyrics & Romaji" style="border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" /><br />
+        <b>🇯🇵 Automatic Romaji & Translation</b>
+      </td>
+    </tr>
+  </table>
 
 </div>
 
@@ -73,52 +151,23 @@
       <div align="left">
         <h3>🎧 Playback & Streaming</h3>
         <ul>
-          <li>Ad-free background streaming and instant playback</li>
-          <li>YouTube Music & YouTube stream integration</li>
-          <li>Local audio file and downloaded track playback</li>
-          <li>Queue management, shuffle, repeat, and play-next</li>
-          <li>Ultra-fast startup and smooth memory footprint</li>
-          <li>Offline caching and full media downloads</li>
+          <li><b>Ad-Free Background Playback:</b> Uninterrupted audio playback with screen off and system multitasking.</li>
+          <li><b>High-Yield Stream Resolver:</b> Native YouTube Music stream extraction with multi-format fallback.</li>
+          <li><b>Universal Queue Management:</b> Infinite auto-queue, shuffle, crossfade, and smart "play-next" stacking.</li>
+          <li><b>Lossless Offline Downloads:</b> Cache tracks and full albums locally with embedded album artwork and metadata.</li>
+          <li><b>Integrated Local Library:</b> Seamless playback of device audio files alongside online streams.</li>
         </ul>
       </div>
     </td>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>🔊 Native Hi-Res Audio Engine</h3>
+        <h3>🔊 Native Audiophile Audio Engine</h3>
         <ul>
-          <li><b>Native C++ Audio Pipeline</b> powered by Google Oboe & AAudio</li>
-          <li><b>Hi-Res Lossless & Bit-Perfect Playback</b> up to 24-bit / 192 kHz FLAC</li>
-          <li><b>Lock-Free SPSC Ring Buffer</b> for zero-allocation, glitch-free streaming</li>
-          <li><b>Bandlimited Sinc Resampler</b> (Blackman-Nuttall windowed)</li>
-          <li><b>10-Band Parametric Equalizer</b> with Direct Form II Transposed biquad filters</li>
-          <li><b>Live Audio Telemetry Badge</b> (Source vs DAC Sample Rate, Bit Depth, Route)</li>
-        </ul>
-      </div>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <div align="left">
-        <h3>📜 Lyrics & Discovery</h3>
-        <ul>
-          <li>Real-time syllable & word-by-word synchronized lyrics</li>
-          <li>Multi-source provider fallback (BetterLyrics, LRCLIB, KuGou, YouTube)</li>
-          <li>Interactive lyrics seeking (tap to jump)</li>
-          <li>Automatic romanization for Japanese and non-Latin scripts</li>
-          <li>Personalized recommendations, Quick Picks & Forgotten Favorites</li>
-          <li>Listening statistics across daily, weekly, and monthly periods</li>
-        </ul>
-      </div>
-    </td>
-    <td width="50%" valign="top">
-      <div align="left">
-        <h3>🤝 Sync & Social</h3>
-        <ul>
-          <li>Import & sync playlists directly from YouTube, Spotify, and Apple Music</li>
-          <li>Discord Rich Presence with live playback metadata</li>
-          <li>Last.fm and ListenBrainz scrobbling integration</li>
-          <li>Music Together real-time synchronized listening rooms</li>
-          <li>Android Auto and Glance home-screen widgets</li>
+          <li><b>Google Oboe & AAudio Backend:</b> Ultra low-latency C++17 audio engine utilizing Android Exclusive hardware streams.</li>
+          <li><b>Bit-Perfect Hi-Res Output:</b> Studio-quality audio support up to 24-bit / 192 kHz FLAC and ALAC.</li>
+          <li><b>Bandlimited Sinc Resampler:</b> Windowed sinc interpolation (Blackman-Nuttall) ensuring pristine audio fidelity.</li>
+          <li><b>10-Band Parametric Equalizer:</b> Zero-phase biquad filters with customizable frequency presets.</li>
+          <li><b>Live Audio Telemetry:</b> Real-time in-app badge showing input vs DAC sample rate, bit depth, and audio route.</li>
         </ul>
       </div>
     </td>
@@ -126,26 +175,48 @@
   <tr>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>🎨 Visual System & Themes</h3>
+        <h3>📜 Lyrics & Romaji Subsystem</h3>
         <ul>
-          <li>Apple Music-inspired full-bleed player design</li>
-          <li>Nocturne Live Canvas dynamic video backdrops</li>
-          <li>Material You dynamic color palette extraction</li>
-          <li>Liquid Glassmorphism with customizable specular blur</li>
-          <li>Floating responsive island navigation bar</li>
-          <li>Dark, Light, and Pure Black AMOLED themes</li>
+          <li><b>Word-by-Word Syllable Sync:</b> Ultra-precise karaoke timing inspired by Apple Music.</li>
+          <li><b>Multi-Source Redundancy:</b> Fallback chain spanning BetterLyrics, LRCLIB, KuGou, and YouTube.</li>
+          <li><b>Tap-to-Seek Navigation:</b> Tap any lyric line or word to jump playback instantaneously.</li>
+          <li><b>Automatic Romanization:</b> Converts Japanese (Kanji/Kana), Korean (Hangul), and Chinese into romanized script.</li>
+          <li><b>Custom Typography:</b> Granular lyrics sizing, line spacing, and auto-centering scroll algorithms.</li>
         </ul>
       </div>
     </td>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>⚙️ Customization</h3>
+        <h3>🔄 Playlist Migration & Discovery</h3>
         <ul>
-          <li>Multiple app launcher icons (Eclipse, Midnight, Aura, Pulse)</li>
-          <li>Configurable player background styles and sliders</li>
-          <li>Custom gesture actions (swipe-to-queue, seek jumps)</li>
-          <li>Granular lyrics font size and auto-scroll duration settings</li>
-          <li>Comprehensive privacy and network proxy controls</li>
+          <li><b>Multi-Platform Importers:</b> One-click playlist import from Spotify, YouTube, and Apple Music (up to 5,000+ tracks).</li>
+          <li><b>CSV Batch Importer:</b> Import large music catalogs via standard spreadsheet CSV files.</li>
+          <li><b>Curated Recommendations:</b> Personalized Quick Picks, Forgotten Favorites, and Artist Radios.</li>
+          <li><b>Listening Analytics:</b> Comprehensive listening statistics categorized across daily, weekly, and monthly trends.</li>
+        </ul>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <div align="left">
+        <h3>🎨 Visual System & Fluid Animations</h3>
+        <ul>
+          <li><b>Live Canvas Video Backdrops:</b> Immersive animated background artwork for popular tracks.</li>
+          <li><b>Liquid Glassmorphism:</b> Specular blur and dynamic luminance adaptation designed for OLED displays.</li>
+          <li><b>Material 3 Expressive:</b> Morphing icons, dynamic theme palettes (Silver, Lavender, AMOLED, Sakura).</li>
+          <li><b>Floating Island Navigation:</b> Sleek floating navigation bar responsive to user scroll state.</li>
+        </ul>
+      </div>
+    </td>
+    <td width="50%" valign="top">
+      <div align="left">
+        <h3>🌐 Connectivity & Social</h3>
+        <ul>
+          <li><b>Discord Rich Presence:</b> Real-time playback status, album art, and timestamps synced to your Discord profile.</li>
+          <li><b>Scrobbler Integrations:</b> Native Last.fm and ListenBrainz background scrobbling.</li>
+          <li><b>Android Auto Support:</b> Clean in-car audio controls and voice-compatible browsing.</li>
+          <li><b>Interactive Widgets:</b> Glance home-screen widgets with playback controls and live album covers.</li>
         </ul>
       </div>
     </td>
@@ -153,6 +224,53 @@
 </table>
 
 </div>
+
+---
+
+## 👨‍💻 Lead Developer & Contributions
+
+Nocturne is conceptualized, designed, and actively engineered by **Mudassir**:
+
+<div align="center">
+
+  <table style="border: none;">
+    <tr>
+      <td align="center" width="180">
+        <a href="https://github.com/mudassir131-dev">
+          <img src="https://github.com/mudassir131-dev.png" width="130" height="130" alt="Mudassir" style="border-radius: 50%; border: 3px solid #6366f1; box-shadow: 0 8px 24px rgba(99,102,241,0.3);" />
+        </a>
+      </td>
+      <td align="left">
+        <h3>Mudassir (mudassir131-dev)</h3>
+        <p><b>Creator, Lead Architect & Maintainer</b></p>
+        <p>
+          <a href="https://github.com/mudassir131-dev"><img src="https://img.shields.io/badge/GitHub-mudassir131--dev-181717?style=flat-square&logo=github" alt="GitHub" /></a>
+          <a href="https://nocturne-music.vercel.app"><img src="https://img.shields.io/badge/Website-nocturne--music.vercel.app-6366f1?style=flat-square&logo=vercel" alt="Website" /></a>
+          <a href="https://portfolioooooss.vercel.app"><img src="https://img.shields.io/badge/Portfolio-Mudassir-000000?style=flat-square" alt="Portfolio" /></a>
+          <a href="mailto:touseefparay7@gmail.com"><img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white" alt="Email" /></a>
+        </p>
+        <ul>
+          <li>Engineered the <b>native C++17 DSP and Google Oboe / AAudio</b> low-latency audio processing pipeline.</li>
+          <li>Designed and built the entire <b>Jetpack Compose Material 3 Expressive UI</b> with Liquid Glassmorphism.</li>
+          <li>Created the <b>word-by-word syllable synced lyrics engine</b> with multi-source fallback and Romanization.</li>
+          <li>Implemented high-capacity <b>Spotify & YouTube playlist importers</b> capable of handling thousands of songs.</li>
+          <li>Integrated <b>Discord Rich Presence</b>, <b>Live Canvas Video Backdrops</b>, and <b>Audio Telemetry</b>.</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+</div>
+
+### 🤝 Contributing to Nocturne
+
+We warmly welcome community contributions! Whether you want to improve audio processing, fix bugs, optimize performance, or add localizations:
+
+1. **Fork the Repository** to your own GitHub account.
+2. **Create a Feature Branch**: `git checkout -b feat/your-feature-name`.
+3. **Commit your changes**: `git commit -m "feat: describe your change"`.
+4. **Push to the branch**: `git push origin feat/your-feature-name`.
+5. **Open a Pull Request** with detailed screenshots and explanations.
 
 ---
 
@@ -160,35 +278,38 @@
 
 <div align="center">
 
-<h3>Stable Release</h3>
+<h3>Official Release Packages</h3>
 
 <table>
   <thead>
     <tr>
-      <th align="center">Package</th>
-      <th align="center">Target Architecture</th>
-      <th align="center">Download Link</th>
+      <th align="center">Package Variant</th>
+      <th align="center">Target ABI Architecture</th>
+      <th align="center">Recommended For</th>
+      <th align="center">Download</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td align="center"><b>Universal Release APK</b></td>
-      <td align="center">All devices (arm64, armeabi-v7a, x86_64)</td>
+      <td align="center"><code>arm64-v8a</code>, <code>armeabi-v7a</code>, <code>x86_64</code></td>
+      <td align="center">All Android devices (Universal compatibility)</td>
       <td align="center">
-        <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><b>Download Universal APK</b></a>
+        <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><b>📦 Download Universal</b></a>
       </td>
     </tr>
     <tr>
-      <td align="center"><b>ARM64-v8a Release APK</b></td>
-      <td align="center">Modern 64-bit Android devices (smaller size)</td>
+      <td align="center"><b>ARM64 Optimized APK</b></td>
+      <td align="center"><code>arm64-v8a</code></td>
+      <td align="center">Modern 64-bit phones (Smaller package footprint)</td>
       <td align="center">
-        <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><b>Download ARM64 APK</b></a>
+        <a href="https://github.com/mudassir131-dev/nocturne/releases/latest"><b>⚡ Download ARM64</b></a>
       </td>
     </tr>
   </tbody>
 </table>
 
-<p><em>Minimum requirement: Android 8.0 (Oreo) or higher.</em></p>
+<p><em>Compatible with Android 8.0 (API Level 26) through Android 15 & 16 Developer Previews.</em></p>
 
 </div>
 
@@ -196,7 +317,7 @@
 
 ## 🌍 Supported Languages
 
-Nocturne is fully localized across multiple regions:
+Nocturne is fully localized across 20+ languages worldwide:
 
 | Language | Locale | Language | Locale |
 | :--- | :--- | :--- | :--- |
@@ -215,37 +336,42 @@ Nocturne is fully localized across multiple regions:
 
 ## 🛠️ Building from Source
 
-Nocturne is built on a high-performance modern Android toolchain:
+Nocturne requires modern Android development tools to compile native C++ and Kotlin code:
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/mudassir131-dev/nocturne.git
-   cd nocturne
-   ```
+### Prerequisites
+- **Android Studio** Ladybug (2024.2.1+) or newer
+- **Android NDK** `27.0.12077973`
+- **CMake** `3.22.1+`
+- **JDK** `17` or `21`
 
-2. **Compile with Gradle**:
-   ```bash
-   # Build Universal Debug APK
-   ./gradlew assembleUniversalDebug
+### Build Instructions
 
-   # Run Unit Tests
-   ./gradlew testUniversalDebugUnitTest
-   ```
+```bash
+# 1. Clone the repository
+git clone https://github.com/mudassir131-dev/nocturne.git
+cd nocturne
 
-3. Output APK will be generated at:
-   `app/build/outputs/apk/universal/debug/app-universal-debug.apk`
+# 2. Build the Universal Debug APK
+./gradlew assembleUniversalDebug
+
+# 3. Run all unit tests
+./gradlew testUniversalDebugUnitTest
+```
+
+The compiled APK will be located at:
+`app/build/outputs/apk/universal/debug/app-universal-debug.apk`
 
 ---
 
 ## 💖 Support the Developer
 
-If you love using Nocturne and want to support its ongoing development, features, and server maintenance, you can donate directly via UPI:
+If Nocturne made your music listening smoother, richer, and ad-free, consider supporting ongoing development, server costs, and new features:
 
 <div align="center">
 
   <br />
 
-  <img src=".github/assets/upi_qr.png" width="180" height="180" alt="UPI QR Code" style="border-radius: 18px; border: 3px solid #6366f1; padding: 6px; background-color: #ffffff; box-shadow: 0 8px 24px rgba(99,102,241,0.25);" />
+  <img src=".github/assets/upi_qr.png" width="180" height="180" alt="UPI QR Code" style="border-radius: 18px; border: 3px solid #6366f1; padding: 6px; background-color: #ffffff; box-shadow: 0 10px 30px rgba(99,102,241,0.35);" />
 
   <br /><br />
 
@@ -265,21 +391,22 @@ If you love using Nocturne and want to support its ongoing development, features
 ## 📄 Open-Source Acknowledgments & Legal Disclaimer
 
 ### Acknowledgments
-Nocturne is made possible thanks to the open-source community:
-- [Google Oboe](https://github.com/google/oboe) for high-performance native audio streaming on Android.
-- [BetterLyrics](https://better-lyrics.boidu.dev/) for word-by-word synchronization and live artwork provider support.
-- [SimpMusic](https://github.com/maxrave-dev/SimpMusic) & [LRCLIB](https://lrclib.net/) for lyrics backend services.
-- [AndroidX Media3](https://developer.android.com/media/media3) & ExoPlayer for media playback.
-- [Material Design 3](https://m3.material.io/) for expressive UI design tokens.
+Nocturne stands on the shoulders of remarkable open-source projects:
+- [Google Oboe](https://github.com/google/oboe) — Low-latency native audio streaming on Android.
+- [BetterLyrics](https://better-lyrics.boidu.dev/) — Word-by-word synced lyrics and rich artwork provider.
+- [SimpMusic](https://github.com/maxrave-dev/SimpMusic) & [LRCLIB](https://lrclib.net/) — Open lyrics catalog.
+- [AndroidX Media3](https://developer.android.com/media/media3) & ExoPlayer — Modern media engine.
+- [Material Design 3](https://m3.material.io/) — Expressive UI guidelines and token system.
 
-### Disclaimer
+### Legal Disclaimer
 *Nocturne is an independent, community-driven open-source project and is not affiliated with, endorsed by, or sponsored by Google LLC, YouTube, Apple Inc., Spotify, or any of their subsidiaries.*
 
 ### License
-Nocturne is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the [LICENSE](LICENSE) file for complete details.
+Nocturne is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
-  <p><b>If Nocturne elevated your music experience, please consider giving us a ⭐ on GitHub!</b></p>
+  <p><b>Crafted with ❤️ by <a href="https://github.com/mudassir131-dev">Mudassir</a> for music lovers worldwide.</b></p>
+  <p><em>If you love Nocturne, don't forget to star ⭐ the repository!</em></p>
 </div>
