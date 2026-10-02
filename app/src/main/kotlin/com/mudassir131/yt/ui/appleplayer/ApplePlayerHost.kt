@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
@@ -140,6 +141,23 @@ import com.mudassir131.yt.utils.makeTimeString
 import com.mudassir131.yt.utils.rememberPreference
 import com.mudassir131.yt.playback.alac.AudioFormatInfo
 import com.mudassir131.yt.playback.alac.toAudioFormatInfo
+import android.net.ConnectivityManager
+import android.app.PictureInPictureParams
+import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Rational
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.mudassir131.yt.ui.appleplayer.visual.VisualContent
+import com.mudassir131.yt.ui.appleplayer.visual.VisualMode
+import com.mudassir131.yt.ui.appleplayer.visual.VisualResolutionResult
+import com.mudassir131.yt.ui.appleplayer.visual.VisualResolver
+import com.mudassir131.yt.ui.appleplayer.visual.VisualContainer
+import com.mudassir131.yt.ui.appleplayer.visual.SegmentedVisualToggle
+import com.mudassir131.yt.ui.appleplayer.visual.FullscreenVideoPlayer
+import com.mudassir131.yt.ui.appleplayer.visual.MusicVideoPlayer
+import com.mudassir131.yt.ui.appleplayer.visual.MusicVideoResolver
+import androidx.media3.ui.AspectRatioFrameLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -197,6 +215,9 @@ fun ApplePlayerHost(
     var sleepTimerActive by remember { mutableStateOf(connection.service.sleepTimer.isActive) }
     var sleepTimerTimeLeft by remember { mutableLongStateOf(0L) }
     var liveArtwork by remember(metadata?.id) { mutableStateOf<CanvasArtwork?>(null) }
+    var visualResult by remember(metadata?.id) { mutableStateOf(VisualResolutionResult()) }
+    var activeVisualMode by remember(metadata?.id) { mutableStateOf(VisualMode.ARTWORK) }
+    var isFullscreenVideo by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var lyricsFullScreen by rememberSaveable { mutableStateOf(false) }
     var lyricsToolsOpened by rememberSaveable(metadata?.id) { mutableStateOf(false) }
@@ -223,11 +244,60 @@ fun ApplePlayerHost(
         }
     }
 
+    val connectivityManager = remember {
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+    }
+    val isMetered = connectivityManager?.isActiveNetworkMetered == true
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(metadata?.id, dataSaver) {
-        liveArtwork = if (dataSaver) {
-            null
+        val current = metadata
+        if (current == null) {
+            visualResult = VisualResolutionResult()
+            activeVisualMode = VisualMode.ARTWORK
+            liveArtwork = null
         } else {
-            metadata?.let { withContext(Dispatchers.IO) { AppleLiveArtworkResolver.resolve(it) } }
+            val res = VisualResolver.resolve(
+                metadata = current,
+                dataSaver = dataSaver,
+                isMetered = isMetered,
+            )
+            visualResult = res
+            activeVisualMode = res.activeMode
+            liveArtwork = res.canvas?.artwork
+        }
+    }
+
+    val onSelectVideoQuality: (Int) -> Unit = { targetItag ->
+        metadata?.let { current ->
+            coroutineScope.launch {
+                val updated = MusicVideoResolver.resolveVideoStream(
+                    videoId = visualResult.musicVideo?.videoId ?: current.id,
+                    title = visualResult.musicVideo?.title ?: current.title,
+                    artist = visualResult.musicVideo?.artist ?: current.artists.firstOrNull()?.name.orEmpty(),
+                    thumbnailUrl = visualResult.musicVideo?.thumbnailUrl ?: current.thumbnailUrl,
+                    durationMs = visualResult.musicVideo?.durationMs ?: (current.duration * 1000L),
+                    isMetered = isMetered,
+                    dataSaver = dataSaver,
+                    targetItag = targetItag,
+                )
+                if (updated != null) {
+                    visualResult = visualResult.copy(musicVideo = updated)
+                }
+            }
+        }
+    }
+
+    val onEnterPip: () -> Unit = {
+        val activity = context as? Activity
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null) {
+            val hasPip = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+            if (hasPip) {
+                val params = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+                activity.enterPictureInPictureMode(params)
+            }
         }
     }
 
@@ -386,6 +456,12 @@ fun ApplePlayerHost(
                     showSleepTimer = true
                 }
             },
+            visualResult = visualResult,
+            activeVisualMode = activeVisualMode,
+            onVisualModeChange = { activeVisualMode = it },
+            onEnterFullscreenVideo = { isFullscreenVideo = true },
+            onEnterPip = onEnterPip,
+            onSelectVideoQuality = onSelectVideoQuality,
         )
 
         val queueTextColor = if (pureBlack) Color.White else MaterialTheme.colorScheme.onSurface
@@ -430,6 +506,23 @@ fun ApplePlayerHost(
         )
     }
 
+    if (isFullscreenVideo && activeVisualMode == VisualMode.MUSIC_VIDEO && visualResult.musicVideo != null) {
+        FullscreenVideoPlayer(
+            musicVideo = visualResult.musicVideo!!,
+            isPlaying = isPlaying,
+            position = draggedPosition ?: position,
+            duration = duration,
+            onTogglePlayPause = adapter::togglePlayback,
+            onSeek = { targetPos ->
+                draggedPosition = null
+                connection.player.seekTo(targetPos)
+            },
+            onDismiss = { isFullscreenVideo = false },
+            onEnterPip = onEnterPip,
+            onSelectQuality = onSelectVideoQuality,
+        )
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -437,6 +530,8 @@ fun ApplePlayerHost(
 private fun AppleExpandedPlayer(
     metadata: MediaMetadata?,
     liveArtwork: CanvasArtwork?,
+    visualResult: VisualResolutionResult = VisualResolutionResult(),
+    activeVisualMode: VisualMode = VisualMode.ARTWORK,
     showLyrics: Boolean,
     lyricsFullScreen: Boolean,
     lyricsResult: AppleLyricsResult?,
@@ -468,6 +563,10 @@ private fun AppleExpandedPlayer(
     sleepTimerActive: Boolean,
     sleepTimerTimeLeft: Long,
     onSleepTimer: () -> Unit,
+    onVisualModeChange: (VisualMode) -> Unit = {},
+    onEnterFullscreenVideo: () -> Unit = {},
+    onEnterPip: () -> Unit = {},
+    onSelectVideoQuality: ((Int) -> Unit)? = null,
 ) {
     val playPauseRoundness by animateDpAsState(
         targetValue = if (isPlaying) 24.dp else 36.dp,
@@ -475,13 +574,51 @@ private fun AppleExpandedPlayer(
         label = "playPauseRoundness",
     )
 
+    val context = LocalContext.current
+    val preferredArtworkUrl = remember(metadata?.id, metadata?.thumbnailUrl) {
+        metadata?.thumbnailUrl?.toAppleExpandedArtworkUrl()
+    }
+    var resolvedArtworkUrl by remember(metadata?.id, preferredArtworkUrl) {
+        mutableStateOf(preferredArtworkUrl)
+    }
+    val artworkRequest = remember(context, metadata?.id, resolvedArtworkUrl) {
+        ImageRequest.Builder(context)
+            .data(resolvedArtworkUrl)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .networkCachePolicy(CachePolicy.ENABLED)
+            .build()
+    }
+    val blurArtworkUrl = metadata?.thumbnailUrl ?: resolvedArtworkUrl
+    val blurArtworkRequest = remember(context, metadata?.id, blurArtworkUrl) {
+        ImageRequest.Builder(context)
+            .data(blurArtworkUrl)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .networkCachePolicy(CachePolicy.ENABLED)
+            .build()
+    }
+    val useFallbackArtwork = {
+        resolvedArtworkUrl?.appleExpandedArtworkFallback()?.let { fallback ->
+            resolvedArtworkUrl = fallback
+        }
+        Unit
+    }
+
     Box(Modifier.fillMaxSize().background(Color(0xFF202023))) {
         AppleMusicBackdrop(
             metadata = metadata,
-            liveArtwork = liveArtwork,
+            visualResult = visualResult,
+            activeVisualMode = activeVisualMode,
             isPlaying = isPlaying,
+            position = position,
             showLyrics = showLyrics,
             backgroundStyle = playerBackgroundStyle,
+            artworkRequest = artworkRequest,
+            blurArtworkRequest = blurArtworkRequest,
+            blurArtworkUrl = blurArtworkUrl,
+            useFallbackArtwork = useFallbackArtwork,
+            onVisualModeChange = onVisualModeChange,
         )
 
         Column(
@@ -491,7 +628,7 @@ private fun AppleExpandedPlayer(
             AnimatedContent(
                 targetState = showLyrics,
                 transitionSpec = { fadeIn().togetherWith(fadeOut()) },
-                label = "Lyrics",
+                label = "LyricsOrVisual",
                 modifier = Modifier.weight(1f),
             ) { lyricsVisible ->
                 if (lyricsVisible) {
@@ -509,7 +646,34 @@ private fun AppleExpandedPlayer(
                         )
                     }
                 } else {
-                    Spacer(Modifier.fillMaxSize())
+                    // Transparent interactive area directly over the full-bleed visual backdrop
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    if (activeVisualMode == VisualMode.MUSIC_VIDEO && visualResult.musicVideo != null) {
+                                        onEnterFullscreenVideo()
+                                    }
+                                },
+                            ),
+                    ) {
+                        if (visualResult.hasBothVideoAndCanvas) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .statusBarsPadding()
+                                    .padding(top = 16.dp),
+                            ) {
+                                SegmentedVisualToggle(
+                                    activeMode = activeVisualMode,
+                                    onModeChange = onVisualModeChange,
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -769,50 +933,22 @@ private fun AppleExpandedPlayer(
 @Composable
 private fun AppleMusicBackdrop(
     metadata: MediaMetadata?,
-    liveArtwork: CanvasArtwork?,
+    visualResult: VisualResolutionResult = VisualResolutionResult(),
+    activeVisualMode: VisualMode = VisualMode.ARTWORK,
     isPlaying: Boolean,
+    position: Long = 0L,
     showLyrics: Boolean,
     backgroundStyle: ApplePlayerBackgroundStyle,
+    artworkRequest: ImageRequest,
+    blurArtworkRequest: ImageRequest,
+    blurArtworkUrl: String?,
+    useFallbackArtwork: () -> Unit,
+    onVisualModeChange: (VisualMode) -> Unit = {},
 ) {
-    val context = LocalContext.current
-    val preferredArtworkUrl = remember(metadata?.id, metadata?.thumbnailUrl) {
-        metadata?.thumbnailUrl?.toAppleExpandedArtworkUrl()
-    }
-    var resolvedArtworkUrl by remember(metadata?.id, preferredArtworkUrl) {
-        mutableStateOf(preferredArtworkUrl)
-    }
-    val artworkRequest = remember(context, metadata?.id, resolvedArtworkUrl) {
-        ImageRequest.Builder(context)
-            .data(resolvedArtworkUrl)
-            .memoryCachePolicy(CachePolicy.ENABLED)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .networkCachePolicy(CachePolicy.ENABLED)
-            .build()
-    }
-    // A blurred RenderEffect layer can be created before AsyncImage has a painter.
-    // On some devices that empty layer stays cached until the player is reopened.
-    // Wait for Coil success before creating the blur layer. The source thumbnail is
-    // normally already cached by the list or mini-player, so its artwork-derived
-    // colour appears immediately while the high-resolution foreground loads.
-    val blurArtworkUrl = metadata?.thumbnailUrl ?: resolvedArtworkUrl
-    val blurArtworkRequest = remember(context, metadata?.id, blurArtworkUrl) {
-        ImageRequest.Builder(context)
-            .data(blurArtworkUrl)
-            .memoryCachePolicy(CachePolicy.ENABLED)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .networkCachePolicy(CachePolicy.ENABLED)
-            .build()
-    }
     var blurArtworkReady by remember(metadata?.id, blurArtworkUrl) {
         mutableStateOf(false)
     }
 
-    val useFallbackArtwork = {
-        resolvedArtworkUrl?.appleExpandedArtworkFallback()?.let { fallback ->
-            resolvedArtworkUrl = fallback
-        }
-        Unit
-    }
     val clearArtworkAlpha by animateFloatAsState(
         targetValue = if (showLyrics) 0f else 1f,
         animationSpec = tween(500),
@@ -861,6 +997,7 @@ private fun AppleMusicBackdrop(
                     }
             }
             Box(modifier = artworkModifier) {
+                // 1. Base thumbnail artwork
                 AsyncImage(
                     model = artworkRequest,
                     contentDescription = null,
@@ -868,12 +1005,31 @@ private fun AppleMusicBackdrop(
                     onError = { useFallbackArtwork() },
                     modifier = Modifier.fillMaxSize(),
                 )
-                CanvasArtworkPlayer(
-                    primaryUrl = liveArtwork?.preferredAnimationUrl,
-                    fallbackUrl = liveArtwork?.videoUrl,
-                    isPlaying = isPlaying,
-                    modifier = Modifier.fillMaxSize(),
-                )
+
+                // 2. Apple / Spotify Canvas (ambient looping visual)
+                if (activeVisualMode == VisualMode.CANVAS && visualResult.canvas != null) {
+                    CanvasArtworkPlayer(
+                        primaryUrl = visualResult.canvas.primaryUrl,
+                        fallbackUrl = visualResult.canvas.fallbackUrl,
+                        isPlaying = isPlaying,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+
+                // 3. YouTube Music Video (upto 4K resolution) directly replacing thumbnail seamlessly
+                if (activeVisualMode == VisualMode.MUSIC_VIDEO && visualResult.musicVideo != null) {
+                    MusicVideoPlayer(
+                        musicVideo = visualResult.musicVideo,
+                        isPlaying = isPlaying,
+                        position = position,
+                        modifier = Modifier.fillMaxSize(),
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
+                        onPlaybackFailed = {
+                            val fallbackMode = if (visualResult.hasCanvas) VisualMode.CANVAS else VisualMode.ARTWORK
+                            onVisualModeChange(fallbackMode)
+                        },
+                    )
+                }
             }
         }
 
