@@ -40,15 +40,17 @@ object LosslessStreamResolver {
     )
 
     init {
-        // Priority 2: Local FLAC / ALAC files
-        registerProvider(LocalAlacFileProvider)
         // Priority 1: Self-Hosted Navidrome / Subsonic Lossless Server
         registerProvider(SelfHostedLosslessAudioProvider)
+        // Priority 2: Local FLAC / ALAC files
+        registerProvider(LocalAlacFileProvider)
+        // Priority 3: Online High-Res 320kbps / Lossless Catalog Provider
+        registerProvider(OnlineLosslessAudioProvider)
     }
 
     fun registerProvider(provider: LosslessAudioProvider) {
         if (!providers.any { it.name == provider.name }) {
-            providers.add(0, provider)
+            providers.add(provider)
             clearCache()
             Timber.tag(TAG).d("Registered LosslessAudioProvider: ${provider.name}")
         }
@@ -63,14 +65,15 @@ object LosslessStreamResolver {
         providers.clear()
         providers.add(SelfHostedLosslessAudioProvider)
         providers.add(LocalAlacFileProvider)
+        providers.add(OnlineLosslessAudioProvider)
         clearCache()
     }
 
     var enablePreflightValidation: Boolean = true
 
     /**
-     * Resolves a lossless ALAC audio stream for the given song.
-     * Returns null if no lossless source is available or if network check fails.
+     * Resolves a lossless ALAC audio stream or high-fidelity fallback for the given song.
+     * Returns null if no eligible source is available or if network check fails.
      */
     suspend fun resolve(
         videoId: String,
@@ -78,15 +81,17 @@ object LosslessStreamResolver {
         artist: String,
         durationSeconds: Int = -1,
         isMetered: Boolean = false,
+        allowHighResLossy: Boolean = false,
     ): ResolvedLosslessResult? = withContext(Dispatchers.IO) {
         if (videoId.isBlank() && title.isBlank()) return@withContext null
 
         Timber.tag(TAG).i("----------------------------------------------------------------")
-        Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Starting Lossless Resolution for: '$title' by '$artist' (id=$videoId, duration=${durationSeconds}s)")
+        Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Starting Stream Resolution for: '$title' by '$artist' (id=$videoId, duration=${durationSeconds}s, allowHighResLossy=$allowHighResLossy)")
         Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Registered Providers (${providers.size}): [${providers.joinToString { it.name }}]")
 
         // 1. Check in-memory cache
-        val cacheKey = videoId.ifBlank { "$title:$artist" }
+        val baseKey = videoId.ifBlank { "$title:$artist" }
+        val cacheKey = if (allowHighResLossy) "$baseKey:lossy_ok" else "$baseKey:strict"
         streamCache[cacheKey]?.let { cached ->
             if (cached.expiresAtMs > System.currentTimeMillis()) {
                 Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Cache HIT for key '$cacheKey' -> using cached ${cached.stream.codec} stream (${cached.stream.url})")
@@ -117,13 +122,15 @@ object LosslessStreamResolver {
                 Timber.tag(TAG).i("                    - BIT DEPTH: ${candidate.bitDepth}-bit")
                 Timber.tag(TAG).i("                    - SOURCE NAME: ${candidate.sourceName}")
 
-                // Strict codec validation: only accept genuinely lossless audio (ALAC or FLAC)
+                // Strict codec validation: only accept genuinely lossless audio (ALAC or FLAC),
+                // unless allowHighResLossy is enabled (e.g. 320kbps CD-quality fallback when YouTube fails or is blocked)
                 val isLossless = isGenuinelyLossless(candidate)
-                Timber.tag(TAG).i("[CODEC_GATE] isGenuinelyLossless(candidate) evaluated to: $isLossless")
+                val isAccepted = isLossless || (allowHighResLossy && (candidate.bitrate ?: 0) >= 192000)
+                Timber.tag(TAG).i("[CODEC_GATE] isLossless=$isLossless, allowHighResLossy=$allowHighResLossy -> isAccepted=$isAccepted")
 
-                if (!isLossless) {
+                if (!isAccepted) {
                     val rejectionReason = if (candidate.codec.contains("mp4a", ignoreCase = true) || candidate.codec.contains("aac", ignoreCase = true)) {
-                        "Lossy AAC (codec=${candidate.codec}, bitrate=${candidate.bitrate}bps). AAC 320 kbps in MP4 container is NOT lossless audio."
+                        "Lossy AAC (codec=${candidate.codec}, bitrate=${candidate.bitrate}bps). AAC 320 kbps in MP4 container is NOT strictly lossless."
                     } else if (candidate.codec.contains("opus", ignoreCase = true)) {
                         "Lossy Opus stream. Cannot be treated as ALAC/lossless."
                     } else if (candidate.codec.contains("mp3", ignoreCase = true)) {

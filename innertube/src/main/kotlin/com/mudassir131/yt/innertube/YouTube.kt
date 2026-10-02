@@ -496,6 +496,10 @@ object YouTube {
         innerTube.player(client, videoId, playlistId, signatureTimestamp, resolvedPoToken).body<PlayerResponse>()
     }
 
+    suspend fun rawPlayer(videoId: String, client: YouTubeClient): String {
+        return innerTube.player(client, videoId, null, null).bodyAsText()
+    }
+
     suspend fun playlist(playlistId: String): Result<PlaylistPage> = runCatching {
         val browseId = when {
             playlistId.startsWith("VL") -> playlistId

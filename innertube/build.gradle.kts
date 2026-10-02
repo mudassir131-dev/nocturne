@@ -18,8 +18,8 @@ dependencies {
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.client.encoding)
     implementation(libs.brotli)
-    implementation(libs.newpipe.extractor)
+    api(libs.newpipe.extractor)
     implementation(libs.re2j)
-    implementation(libs.rhino)
+    api(libs.rhino)
     testImplementation(libs.junit)
 }

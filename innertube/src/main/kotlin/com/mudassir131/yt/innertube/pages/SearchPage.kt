@@ -37,8 +37,14 @@ object SearchPage {
                 ?: return null
         return when {
             renderer.isSong -> {
+                val watchEp = renderer.navigationEndpoint?.watchEndpoint
+                    ?: renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint
+                val resolvedSongId = renderer.playlistItemData?.videoId
+                    ?: watchEp?.videoId
+                    ?: return null
+
                 SongItem(
-                    id = renderer.playlistItemData?.videoId ?: return null,
+                    id = resolvedSongId,
                     title =
                         renderer.flexColumns
                             .firstOrNull()
@@ -72,6 +78,7 @@ object SearchPage {
                         renderer.badges?.find {
                             it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"
                         } != null,
+                    endpoint = watchEp,
                 )
             }
             renderer.isArtist -> {

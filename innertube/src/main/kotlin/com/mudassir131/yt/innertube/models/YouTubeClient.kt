@@ -30,6 +30,9 @@ data class YouTubeClient(
     val useSignatureTimestamp: Boolean = false,
     val isEmbedded: Boolean = false,
 ) {
+    val isMusic: Boolean
+        get() = clientName == "WEB_REMIX" || clientName == "ANDROID_MUSIC" || clientName == "IOS_MUSIC"
+
     fun toContext(locale: YouTubeLocale, visitorData: String?, dataSyncId: String?) = Context(
         client = Context.Client(
             clientName = clientName,
@@ -56,7 +59,9 @@ data class YouTubeClient(
         const val API_URL_YOUTUBE_MUSIC = "$ORIGIN_YOUTUBE_MUSIC/youtubei/v1/"
 
         const val ORIGIN_YOUTUBE = "https://www.youtube.com"
+        const val REFERER_YOUTUBE = "$ORIGIN_YOUTUBE/"
         const val REFERER_YOUTUBE_TV = "$ORIGIN_YOUTUBE/tv"
+        const val API_URL_YOUTUBE = "$ORIGIN_YOUTUBE/youtubei/v1/"
 
         val WEB = YouTubeClient(
             clientName = "WEB",

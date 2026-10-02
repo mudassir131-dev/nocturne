@@ -41,6 +41,9 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import com.mudassir131.yt.playback.alac.LosslessStreamResolver
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
+import org.schabi.newpipe.extractor.stream.AudioStream
 
 object YTPlayerUtils {
     private const val logTag = "YTPlayerUtils"
@@ -168,6 +171,9 @@ object YTPlayerUtils {
         networkMetered: Boolean? = null,
         avoidCodecs: Set<String> = emptySet(),
         dataSaver: Boolean = false,
+        trackTitle: String? = null,
+        trackArtist: String? = null,
+        trackDuration: Int? = null,
     ): Result<PlaybackData> = coroutineScope {
         val dedupeKey = "$videoId:$audioQuality:${preferredStreamClient.name}:$dataSaver"
         
@@ -185,6 +191,9 @@ object YTPlayerUtils {
                         networkMetered = networkMetered,
                         avoidCodecs = avoidCodecs,
                         dataSaver = dataSaver,
+                        trackTitle = trackTitle,
+                        trackArtist = trackArtist,
+                        trackDuration = trackDuration,
                     )
                 }
             }
@@ -208,6 +217,9 @@ object YTPlayerUtils {
         networkMetered: Boolean?,
         avoidCodecs: Set<String>,
         dataSaver: Boolean = false,
+        trackTitle: String? = null,
+        trackArtist: String? = null,
+        trackDuration: Int? = null,
     ): PlaybackData {
         Timber.tag(logTag).i("Fetching player response for videoId: $videoId, playlistId: $playlistId")
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
@@ -268,9 +280,9 @@ object YTPlayerUtils {
         val expectedDurationMs = videoDetails?.lengthSeconds?.toLongOrNull()?.takeIf { it > 0 }?.times(1000L)
 
         if (audioQuality == AudioQuality.LOSSLESS && !dataSaver) {
-            val title = videoDetails?.title.orEmpty()
-            val artist = videoDetails?.author.orEmpty()
-            val durationSecs = videoDetails?.lengthSeconds?.toIntOrNull() ?: -1
+            val title = videoDetails?.title?.takeIf { it.isNotBlank() } ?: trackTitle.orEmpty()
+            val artist = videoDetails?.author?.takeIf { it.isNotBlank() } ?: trackArtist.orEmpty()
+            val durationSecs = videoDetails?.lengthSeconds?.toIntOrNull() ?: trackDuration ?: -1
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] User preference: Hi-Res Lossless (AudioQuality.LOSSLESS)")
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] Target Track: '$title' by '$artist' (videoId=$videoId, duration=${durationSecs}s)")
@@ -281,6 +293,7 @@ object YTPlayerUtils {
                 artist = artist,
                 durationSeconds = durationSecs,
                 isMetered = networkMetered ?: connectivityManager.isActiveNetworkMetered,
+                allowHighResLossy = true,
             )
             if (losslessResult != null) {
                 Timber.tag(logTag).i("[LOSSLESS_PIPELINE] -> SUCCESS: Genuinely lossless stream resolved: ${losslessResult.streamUrl} (source=${losslessResult.source})")
@@ -298,6 +311,34 @@ object YTPlayerUtils {
                 Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> Gracefully routing to standard YouTube stream pipeline (Opus itag 251 @ ~134-160 kbps lossy).")
                 Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
             }
+        }
+
+        // 1. Primary Direct High-Fidelity Audio Stream Resolution via NewPipe
+        // Bypasses YouTube bot-guard / signature blocks on InnerTube clients and extracts genuine Opus & AAC streams
+        val newPipeAudio = resolveAudioWithNewPipe(
+            videoId = videoId,
+            audioQuality = audioQuality,
+            isMetered = networkMetered ?: connectivityManager.isActiveNetworkMetered,
+            dataSaver = dataSaver,
+            avoidCodecs = avoidCodecs,
+        )
+        if (newPipeAudio != null) {
+            val (audioFormat, audioUrl, extractedDetails) = newPipeAudio
+            val effectiveVideoDetails = videoDetails ?: extractedDetails
+            Timber.tag(logTag).i("Direct YouTube audio stream resolved via NewPipe: itag=${audioFormat.itag}, mime=${audioFormat.mimeType} for videoId=$videoId")
+            streamUrlCache[buildCacheKey(videoId, audioFormat.itag)] =
+                CachedStreamUrl(
+                    url = audioUrl,
+                    expiresAtMs = System.currentTimeMillis() + (21600 * 1000L),
+                )
+            return PlaybackData(
+                audioConfig = audioConfig,
+                videoDetails = effectiveVideoDetails,
+                playbackTracking = playbackTracking,
+                format = audioFormat,
+                streamUrl = audioUrl,
+                streamExpiresInSeconds = 21600,
+            )
         }
 
         val streamClients =
@@ -424,7 +465,50 @@ object YTPlayerUtils {
             break
         }
 
-        if (streamPlayerResponse == null) {
+        if (streamPlayerResponse == null || format == null || streamUrl == null || streamExpiresInSeconds == null) {
+            val candidateTitle = videoDetails?.title?.takeIf { it.isNotBlank() } ?: trackTitle.orEmpty()
+            val candidateArtist = videoDetails?.author?.takeIf { it.isNotBlank() } ?: trackArtist.orEmpty()
+            val candidateDuration = videoDetails?.lengthSeconds?.toIntOrNull() ?: trackDuration ?: -1
+
+            var resolvedTitle = candidateTitle
+            var resolvedArtist = candidateArtist
+            var resolvedDuration = candidateDuration
+
+            // If metadata is completely missing, attempt to fetch basic track info via YouTube.queue
+            if (resolvedTitle.isBlank()) {
+                val queueItem = runCatching {
+                    YouTube.queue(listOf(videoId)).getOrNull()?.firstOrNull()
+                }.getOrNull()
+                if (queueItem != null) {
+                    resolvedTitle = queueItem.title
+                    resolvedArtist = queueItem.artists.joinToString { it.name }
+                    resolvedDuration = queueItem.duration ?: -1
+                }
+            }
+
+            if (resolvedTitle.isNotBlank()) {
+                Timber.tag(logTag).w("All YouTube stream clients failed or triggered bot detection. Attempting high-fidelity online stream fallback for '$resolvedTitle' by '$resolvedArtist'...")
+                val fallbackResult = LosslessStreamResolver.resolve(
+                    videoId = videoId,
+                    title = resolvedTitle,
+                    artist = resolvedArtist,
+                    durationSeconds = resolvedDuration,
+                    isMetered = networkMetered ?: connectivityManager.isActiveNetworkMetered,
+                    allowHighResLossy = true,
+                )
+                if (fallbackResult != null) {
+                    Timber.tag(logTag).i("Fallback stream resolved successfully: ${fallbackResult.streamUrl} (source=${fallbackResult.source})")
+                    return PlaybackData(
+                        audioConfig = audioConfig,
+                        videoDetails = videoDetails,
+                        playbackTracking = playbackTracking,
+                        format = fallbackResult.format,
+                        streamUrl = fallbackResult.streamUrl,
+                        streamExpiresInSeconds = fallbackResult.expiresInSeconds,
+                    )
+                }
+            }
+
             if (botDetectedClients.isNotEmpty()) {
                 Timber.tag(logTag).e("Bot detection triggered on clients: $botDetectedClients - all clients failed")
                 throw PlaybackException(
@@ -692,4 +776,94 @@ object YTPlayerUtils {
         }
         return false
     }
+
+    private data class NewPipeAudioResult(
+        val format: PlayerResponse.StreamingData.Format,
+        val streamUrl: String,
+        val videoDetails: PlayerResponse.VideoDetails?,
+    )
+
+    private fun resolveAudioWithNewPipe(
+        videoId: String,
+        audioQuality: AudioQuality,
+        isMetered: Boolean,
+        dataSaver: Boolean,
+        avoidCodecs: Set<String> = emptySet(),
+    ): NewPipeAudioResult? {
+        return try {
+            NewPipeUtils.ensureInitialized()
+            val service = ServiceList.YouTube
+            val extractor = service.getStreamExtractor("https://www.youtube.com/watch?v=$videoId") as YoutubeStreamExtractor
+            extractor.fetchPage()
+
+            val streams = extractor.audioStreams.orEmpty().filter { !it.url.isNullOrBlank() }
+            if (streams.isEmpty()) return null
+
+            // Prioritize streams based on user's audio quality preference
+            // AudioQuality.OPUS -> Opus (itag 251 @ 160kbps, 250, 249) > AAC (itag 140, 139)
+            // AudioQuality.SAAVN -> AAC (itag 140, 139) > Opus (itag 251, etc.)
+            // AudioQuality.LOSSLESS -> Opus 251 (highest quality available on YouTube) > AAC 140
+            val sortedStreams = streams.filter { stream ->
+                val codec = stream.codec?.lowercase().orEmpty()
+                avoidCodecs.none { codec.contains(it.lowercase()) }
+            }.sortedWith(
+                compareByDescending<AudioStream> { stream ->
+                    val isOpus = stream.codec?.contains("opus", ignoreCase = true) == true || stream.itag in listOf(249, 250, 251)
+                    val isAac = stream.codec?.contains("mp4a", ignoreCase = true) == true || stream.itag in listOf(139, 140)
+                    when (audioQuality) {
+                        AudioQuality.OPUS -> if (isOpus) 10 else if (isAac) 5 else 1
+                        AudioQuality.SAAVN -> if (isAac) 10 else if (isOpus) 5 else 1
+                        AudioQuality.LOSSLESS -> if (isOpus) 10 else if (isAac) 5 else 1
+                    }
+                }.thenByDescending { stream ->
+                    if (dataSaver) -stream.averageBitrate else stream.averageBitrate
+                }
+            )
+
+            val selectedStream = sortedStreams.firstOrNull() ?: streams.firstOrNull() ?: return null
+            val streamUrl = selectedStream.url ?: return null
+            val isOpus = selectedStream.codec?.contains("opus", ignoreCase = true) == true || selectedStream.itag in listOf(249, 250, 251)
+            val mimeType = if (isOpus) "audio/webm; codecs=\"opus\"" else "audio/mp4; codecs=\"mp4a.40.2\""
+            val bitrateBps = if (selectedStream.averageBitrate > 0) selectedStream.averageBitrate * 1000 else if (selectedStream.itag == 251) 160_000 else 128_000
+
+            val format = PlayerResponse.StreamingData.Format(
+                itag = if (selectedStream.itag > 0) selectedStream.itag else if (isOpus) 251 else 140,
+                url = streamUrl,
+                mimeType = mimeType,
+                bitrate = bitrateBps,
+                width = null,
+                height = null,
+                contentLength = null,
+                quality = "tiny",
+                fps = null,
+                qualityLabel = null,
+                averageBitrate = bitrateBps,
+                audioQuality = if (selectedStream.itag == 251 || bitrateBps >= 150_000) "AUDIO_QUALITY_MEDIUM" else "AUDIO_QUALITY_LOW",
+                approxDurationMs = (extractor.length * 1000L).toString(),
+                audioSampleRate = if (isOpus) 48000 else 44100,
+                audioChannels = 2,
+                loudnessDb = null,
+                lastModified = null,
+                signatureCipher = null,
+                cipher = null,
+            )
+
+            val fallbackDetails = PlayerResponse.VideoDetails(
+                videoId = videoId,
+                title = extractor.name.orEmpty(),
+                author = extractor.uploaderName.orEmpty(),
+                channelId = extractor.uploaderUrl.orEmpty(),
+                lengthSeconds = extractor.length.toString(),
+                musicVideoType = null,
+                viewCount = "0",
+                thumbnail = com.mudassir131.yt.innertube.models.Thumbnails(emptyList()),
+            )
+
+            NewPipeAudioResult(format, streamUrl, fallbackDetails)
+        } catch (e: Exception) {
+            Timber.tag(logTag).w(e, "NewPipe audio stream extraction failed for $videoId")
+            null
+        }
+    }
 }
+

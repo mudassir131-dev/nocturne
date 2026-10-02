@@ -3834,6 +3834,7 @@ class MusicService :
                 scope.launch(Dispatchers.IO) {
                     try {
                         val dataSaverEnabled = dataStore.get(DataSaverKey, false)
+                        val nextMetadata = nextItem.mediaMetadata
                         YTPlayerUtils.playerResponseForPlayback(
                             nextMediaId,
                             audioQuality = audioQuality,
@@ -3841,6 +3842,8 @@ class MusicService :
                             preferredStreamClient = preferredStreamClient,
                             avoidCodecs = avoidStreamCodecs,
                             dataSaver = dataSaverEnabled,
+                            trackTitle = nextMetadata.title?.toString(),
+                            trackArtist = nextMetadata.artist?.toString(),
                         ).onSuccess { nonNullPlayback ->
                             playbackUrlCache[nextMediaId] =
                                 nonNullPlayback.streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)
@@ -4538,6 +4541,18 @@ class MusicService :
             }
 
             val dataSaverEnabled = runBlocking(Dispatchers.IO) { dataStore.get(DataSaverKey, false) }
+            val currentDbSong = runBlocking(Dispatchers.IO) { runCatching { database.song(mediaId).first() }.getOrNull() }
+            val matchingQueueItem = (0 until player.mediaItemCount)
+                .map { player.getMediaItemAt(it) }
+                .firstOrNull { it.mediaId == mediaId }
+            val resolvedTitle = currentDbSong?.song?.title
+                ?: matchingQueueItem?.mediaMetadata?.title?.toString()
+                ?: player.currentMediaItem?.mediaMetadata?.title?.toString()
+            val resolvedArtist = currentDbSong?.artists?.firstOrNull()?.name
+                ?: matchingQueueItem?.mediaMetadata?.artist?.toString()
+                ?: player.currentMediaItem?.mediaMetadata?.artist?.toString()
+            val resolvedDuration = currentDbSong?.song?.duration
+
             val playbackData = runBlocking(Dispatchers.IO) {
                 YTPlayerUtils.playerResponseForPlayback(
                     mediaId,
@@ -4546,6 +4561,9 @@ class MusicService :
                     preferredStreamClient = preferredStreamClient,
                     avoidCodecs = avoidStreamCodecs,
                     dataSaver = dataSaverEnabled,
+                    trackTitle = resolvedTitle,
+                    trackArtist = resolvedArtist,
+                    trackDuration = resolvedDuration,
                 )
             }.getOrElse { throwable ->
                 when (throwable) {
