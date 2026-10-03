@@ -35,7 +35,11 @@ fun FluidSlidingNavigationBar(
     pureBlack: Boolean,
     onTabSelected: (Screens) -> Unit
 ) {
-    val selectedIndex = items.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
+    val selectedIndex = if (items.isNotEmpty()) {
+        items.indexOfFirst { it.route == currentRoute }.coerceIn(0, items.size - 1)
+    } else {
+        0
+    }
 
     val barColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
 
@@ -59,13 +63,16 @@ fun FluidSlidingNavigationBar(
             .fillMaxWidth()
             .height(80.dp)
     ) {
-        val tabWidth = maxWidth / items.size
+        val tabWidth = if (items.isNotEmpty()) maxWidth / items.size else 0.dp
 
         val pillWidth = 48.dp
         val pillHeight = 32.dp
 
+        val rawOffset = if (items.isNotEmpty()) (tabWidth * selectedIndex) + ((tabWidth - pillWidth) / 2) else 0.dp
+        val safeOffset = if (rawOffset.value.isNaN()) 0.dp else rawOffset
+
         val indicatorOffset by animateDpAsState(
-            targetValue = (tabWidth * selectedIndex) + ((tabWidth - pillWidth) / 2),
+            targetValue = safeOffset,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
                 stiffness = Spring.StiffnessLow

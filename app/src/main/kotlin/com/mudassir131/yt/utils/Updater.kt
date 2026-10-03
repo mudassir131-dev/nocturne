@@ -73,12 +73,13 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.35
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.36
 
-* **Apple Music Inspired Player & Lyrics** — Pure white player slider preserved, ultra-smooth synchronized lyrics teaser with 32ms precision polling, and immersive optical depth-of-field blur on non-active lyrics lines with standard shader backdrop blur.
-* **Cinematic Player Light Mode Overhaul** — Complete contrast redesign for light mode featuring a dedicated white-grey slider aesthetic, bold hero Play/Pause control, and high-contrast bordered action pills.
-* **Silver Color Palette & Adaptive Contrast** — Silver palette set as default with intelligent adaptive luminance text contrast across all 18+ screens and dialogs.
-* **Performance & Stability** — Disable Blur enabled by default for maximum framerates, native audio engine optimizations, and fast offline Gradle build pipeline caching."""
+* **YouTube Video & Canvas in Apple Music Player** — Full video canvas integration seamlessly embedded into the Apple Music inspired player interface with dynamic video playback controls.
+* **Preserved Apple Music Canvas Experience** — Native Apple Music artwork canvas and fluid ambient visuals are fully preserved alongside the new video canvas toggle.
+* **Playback & Search Bug Fixes** — Resolved critical playback stall/pause issue when initiating songs from Search results or the Home screen, with thread-safe stream resolving and improved queue handling.
+* **Navbar Crash Prevention & Audit** — Hardened bottom navigation bar and navigation rail against NaN dimension rendering and layout range coercion exceptions for ultra-stable navigation.
+* **Enhanced App Quality & Stability** — Optimized audio pipeline streaming resilience, improved UI smoothness, and comprehensive stability enhancements across all screens."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L

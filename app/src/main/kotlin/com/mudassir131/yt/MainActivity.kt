@@ -147,6 +147,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -1321,12 +1322,16 @@ class MainActivity : ComponentActivity() {
                                                         searchBarScrollBehavior.state.resetHeightOffset()
                                                     }
                                                 } else {
-                                                    navController.navigate(screen.route) {
-                                                        popUpTo(navController.graph.startDestinationId) {
-                                                            saveState = true
+                                                    runCatching {
+                                                        navController.navigate(screen.route) {
+                                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                                saveState = true
+                                                            }
+                                                            launchSingleTop = true
+                                                            restoreState = true
                                                         }
-                                                        launchSingleTop = true
-                                                        restoreState = true
+                                                    }.onFailure { e ->
+                                                        timber.log.Timber.tag("Navigation").e(e, "Failed to navigate to ${screen.route}")
                                                     }
                                                 }
                                             },
@@ -1366,15 +1371,17 @@ class MainActivity : ComponentActivity() {
                                                             y = navSlideDistance.roundToPx(),
                                                         )
                                                     } else {
-                                                        val slideOffset =
-                                                            navSlideDistance *
-                                                                playerBottomSheetState.progress.coerceIn(0f, 1f)
-                                                        val hideOffset =
-                                                            navSlideDistance *
-                                                                (1 - bottomNavigationBarHeight / navVisibleHeight)
+                                                        val rawProgress = playerBottomSheetState.progress
+                                                        val safeProgress = if (rawProgress.isNaN()) 0f else rawProgress.coerceIn(0f, 1f)
+                                                        val slideOffset = navSlideDistance * safeProgress
+                                                        val rawRatio = if (navVisibleHeight > 0.dp) bottomNavigationBarHeight / navVisibleHeight else 1f
+                                                        val safeRatio = if (rawRatio.isNaN()) 1f else rawRatio.coerceIn(0f, 1f)
+                                                        val hideOffset = navSlideDistance * (1f - safeRatio)
+                                                        val totalOffset = slideOffset + hideOffset
+                                                        val totalY = if (totalOffset.value.isNaN()) navSlideDistance.roundToPx() else totalOffset.roundToPx()
                                                         IntOffset(
                                                             x = 0,
-                                                            y = (slideOffset + hideOffset).roundToPx(),
+                                                            y = totalY,
                                                         )
                                                     }
                                                 },
@@ -1405,12 +1412,16 @@ class MainActivity : ComponentActivity() {
                                                         searchBarScrollBehavior.state.resetHeightOffset()
                                                     }
                                                 } else {
-                                                    navController.navigate(screen.route) {
-                                                        popUpTo(navController.graph.startDestinationId) {
-                                                            saveState = true
+                                                    runCatching {
+                                                        navController.navigate(screen.route) {
+                                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                                saveState = true
+                                                            }
+                                                            launchSingleTop = true
+                                                            restoreState = true
                                                         }
-                                                        launchSingleTop = true
-                                                        restoreState = true
+                                                    }.onFailure { e ->
+                                                        timber.log.Timber.tag("Navigation").e(e, "Failed to navigate to ${screen.route}")
                                                     }
                                                 }
                                             },

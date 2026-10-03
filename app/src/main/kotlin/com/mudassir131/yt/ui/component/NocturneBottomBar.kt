@@ -119,7 +119,13 @@ fun NocturneBottomBar(
                 val targetCenter = if (selectedIndex >= 0 && pillItems.isNotEmpty()) {
                     val naturalCenter = slotWidth * (selectedIndex + 0.5f)
                     val halfWidth = targetWidth / 2
-                    naturalCenter.coerceIn(halfWidth + 6.dp, (totalWidth - halfWidth - 6.dp).coerceAtLeast(halfWidth + 6.dp))
+                    val minCenter = halfWidth + 6.dp
+                    val maxCenter = (totalWidth - halfWidth - 6.dp).coerceAtLeast(minCenter)
+                    if (minCenter <= maxCenter && !minCenter.value.isNaN() && !maxCenter.value.isNaN() && !naturalCenter.value.isNaN()) {
+                        naturalCenter.coerceIn(minCenter, maxCenter)
+                    } else {
+                        minCenter
+                    }
                 } else {
                     0.dp
                 }
@@ -133,9 +139,11 @@ fun NocturneBottomBar(
                 )
 
                 if (selectedIndex >= 0) {
+                    val rawX = capsuleCenter - capsuleWidth / 2
+                    val capsuleX = if (rawX.value.isNaN()) 0.dp else rawX.coerceAtLeast(0.dp)
                     Box(
                         modifier = Modifier
-                            .offset(x = (capsuleCenter - capsuleWidth / 2).coerceAtLeast(0.dp))
+                            .offset(x = capsuleX)
                             .width(capsuleWidth)
                             .fillMaxHeight()
                             .padding(vertical = 7.dp)
@@ -149,19 +157,22 @@ fun NocturneBottomBar(
                 ) {
                     pillItems.forEachIndexed { index, item ->
                         val isActive = selectedIndex == index
-                        val label = labels[index]
+                        val label = labels.getOrElse(index) { "" }
+                        val currentTextWidth = textWidths.getOrElse(index) { 0.dp }
                         val expandedCenter = slotWidth * (index + 0.5f)
                         val centerAdjustment = if (isActive) targetCenter - expandedCenter else 0.dp
-                        val iconOffsetTarget = if (isActive) {
-                            -(textWidths[index] + spacerWidth) / 2 + centerAdjustment
+                        val rawIconOffset = if (isActive) {
+                            -(currentTextWidth + spacerWidth) / 2 + centerAdjustment
                         } else {
                             0.dp
                         }
-                        val labelOffsetTarget = if (isActive) {
+                        val rawLabelOffset = if (isActive) {
                             (iconSize + spacerWidth) / 2 + centerAdjustment
                         } else {
                             0.dp
                         }
+                        val iconOffsetTarget = if (rawIconOffset.value.isNaN()) 0.dp else rawIconOffset
+                        val labelOffsetTarget = if (rawLabelOffset.value.isNaN()) 0.dp else rawLabelOffset
                         val iconOffset by animateDpAsState(iconOffsetTarget, label = "icon_offset")
                         val labelOffset by animateDpAsState(labelOffsetTarget, label = "label_offset")
                         val labelAlpha by animateFloatAsState(

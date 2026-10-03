@@ -316,6 +316,7 @@ class MusicService :
         private set
     private val playbackUrlCache = ConcurrentHashMap<String, Pair<String, Long>>()
     private val streamRecoveryState = ConcurrentHashMap<String, Pair<Int, Long>>()
+    private val mediaMetadataCache = ConcurrentHashMap<String, com.mudassir131.yt.models.MediaMetadata>()
     @Volatile
     private var pendingStreamRefreshValidationMediaId: String? = null
     @Volatile
@@ -1629,7 +1630,7 @@ class MusicService :
         playbackData: YTPlayerUtils.PlaybackData? = null
     ) {
         val song = database.song(mediaId).first()
-        val mediaMetadata = withContext(Dispatchers.Main) {
+        val mediaMetadata = mediaMetadataCache[mediaId] ?: withContext(Dispatchers.Main) {
             player.findNextMediaItemById(mediaId)?.metadata
         } ?: return
         val duration = song?.song?.duration?.takeIf { it != -1 }
@@ -1740,7 +1741,10 @@ class MusicService :
         automixSeedMediaId = null
         autoAddedMediaIds.clear()
         if (queue.preloadItem != null) {
-            player.setMediaItem(queue.preloadItem!!.toMediaItem())
+            val preloadMeta = queue.preloadItem!!
+            mediaMetadataCache[preloadMeta.id] = preloadMeta
+            currentMediaMetadata.value = preloadMeta
+            player.setMediaItem(preloadMeta.toMediaItem())
             player.prepare()
             player.playWhenReady = playWhenReady
         }
@@ -1756,17 +1760,32 @@ class MusicService :
                 queueTitle = initialStatus.title
             }
             if (initialStatus.items.isEmpty()) return@launch
+            initialStatus.items.forEach { item ->
+                item.metadata?.let { meta -> mediaMetadataCache[meta.id] = meta }
+            }
             if (queue.preloadItem != null) {
-                player.addMediaItems(
-                    0,
-                    initialStatus.items.subList(0, initialStatus.mediaItemIndex)
-                )
-                player.addMediaItems(
-                    initialStatus.items.subList(
-                        initialStatus.mediaItemIndex + 1,
-                        initialStatus.items.size
-                    )
-                )
+                val preloadId = queue.preloadItem!!.id
+                val matchingIndex = initialStatus.items.indexOfFirst { it.mediaId == preloadId }
+                val targetIndex = if (matchingIndex != -1) matchingIndex else initialStatus.mediaItemIndex.coerceIn(0, initialStatus.items.size)
+
+                if (targetIndex in initialStatus.items.indices && initialStatus.items[targetIndex].mediaId == preloadId) {
+                    if (targetIndex > 0) {
+                        player.addMediaItems(
+                            0,
+                            initialStatus.items.subList(0, targetIndex)
+                        )
+                    }
+                    if (targetIndex + 1 < initialStatus.items.size) {
+                        player.addMediaItems(
+                            initialStatus.items.subList(
+                                targetIndex + 1,
+                                initialStatus.items.size
+                            )
+                        )
+                    }
+                } else {
+                    player.addMediaItems(initialStatus.items)
+                }
                 if (player.shuffleModeEnabled) {
                     applyCurrentFirstShuffleOrder()
                 }
@@ -2251,6 +2270,7 @@ class MusicService :
             return
         }
         suppressAutoPlayback = false
+        items.forEach { item -> item.metadata?.let { mediaMetadataCache[it.id] = it } }
         player.addMediaItems(
             if (player.mediaItemCount == 0) 0 else player.currentMediaItemIndex + 1,
             items
@@ -2280,6 +2300,7 @@ class MusicService :
             return
         }
         suppressAutoPlayback = false
+        items.forEach { item -> item.metadata?.let { mediaMetadataCache[it.id] = it } }
         player.addMediaItems(items)
         player.prepare()
     }
@@ -3723,7 +3744,11 @@ class MusicService :
     }
 
     val timelineEmpty = player.currentTimeline.isEmpty || player.mediaItemCount == 0 || player.currentMediaItem == null
-    currentMediaMetadata.value = if (timelineEmpty) null else (mediaItem?.metadata ?: player.currentMetadata)
+    val currentMeta = if (timelineEmpty) null else (mediaItem?.metadata ?: player.currentMetadata)
+    currentMediaMetadata.value = currentMeta
+    if (currentMeta != null) {
+        mediaMetadataCache[currentMeta.id] = currentMeta
+    }
 
     scrobbleManager?.onSongStop()
 
@@ -3828,6 +3853,7 @@ class MusicService :
             val nextItem = player.getMediaItemAt(nextIndex)
             val nextMediaId = nextItem.mediaId.trim()
             if (nextMediaId.isBlank()) continue
+            nextItem.metadata?.let { meta -> mediaMetadataCache[meta.id] = meta }
 
             // 1. Prefetch Audio Stream URL
             if (!playbackUrlCache.containsKey(nextMediaId)) {
@@ -4542,16 +4568,13 @@ class MusicService :
 
             val dataSaverEnabled = runBlocking(Dispatchers.IO) { dataStore.get(DataSaverKey, false) }
             val currentDbSong = runBlocking(Dispatchers.IO) { runCatching { database.song(mediaId).first() }.getOrNull() }
-            val matchingQueueItem = (0 until player.mediaItemCount)
-                .map { player.getMediaItemAt(it) }
-                .firstOrNull { it.mediaId == mediaId }
+            val cachedMeta = mediaMetadataCache[mediaId] ?: currentMediaMetadata.value?.takeIf { it.id == mediaId }
             val resolvedTitle = currentDbSong?.song?.title
-                ?: matchingQueueItem?.mediaMetadata?.title?.toString()
-                ?: player.currentMediaItem?.mediaMetadata?.title?.toString()
+                ?: cachedMeta?.title
             val resolvedArtist = currentDbSong?.artists?.firstOrNull()?.name
-                ?: matchingQueueItem?.mediaMetadata?.artist?.toString()
-                ?: player.currentMediaItem?.mediaMetadata?.artist?.toString()
+                ?: cachedMeta?.artists?.joinToString { it.name }
             val resolvedDuration = currentDbSong?.song?.duration
+                ?: cachedMeta?.duration
 
             val playbackData = runBlocking(Dispatchers.IO) {
                 YTPlayerUtils.playerResponseForPlayback(

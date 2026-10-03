@@ -108,7 +108,9 @@
     "isVerified": true,
     "authorName": "Mudassir",
     "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1787676462430.gif",
-    "reactions": {"👍": 1},
+    "reactions": {
+      "👍": 1
+    },
     "id": "msg-3cd0380d",
     "tag": "ANNOUNCEMENT",
     "title": "",
