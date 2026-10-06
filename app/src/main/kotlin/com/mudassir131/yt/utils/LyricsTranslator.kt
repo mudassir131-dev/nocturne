@@ -24,3 +24,31 @@ object LyricsTranslator {
         .connectTimeout(12, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
+
+    private val TIMESTAMP_REGEX = Regex("^((?:\\[[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?\\])+)")
+
+    private val LANGUAGE_CODE_MAP = mapOf(
+        "AFRIKAANS" to "af",
+        "ALBANIAN" to "sq",
+        "AMHARIC" to "am",
+        "ARABIC" to "ar",
+        "ARMENIAN" to "hy",
+        "AZERBAIJANI" to "az",
+        "BASQUE" to "eu",
+        "BELARUSIAN" to "be",
+        "BENGALI" to "bn",
+        "BOSNIAN" to "bs",
+        "BULGARIAN" to "bg",
+        "BURMESE" to "my",
+        "CATALAN" to "ca",
+        "CEBUANO" to "ceb",
+        "CHICHEWA" to "ny",
+        "CHINESE" to "zh-CN",
+        "CHINESE_SIMPLIFIED" to "zh-CN",
+        "CHINESE_TRADITIONAL" to "zh-TW",
+        "CORSICAN" to "co",
+        "CROATIAN" to "hr",
+        "CZECH" to "cs",
+        "DANISH" to "da",
+        "DUTCH" to "nl",
+        "ENGLISH" to "en",
