@@ -34,3 +34,14 @@ class SpotifyCsvSerializerTest {
         assertEquals(2, parsed.size)
         assertEquals("Shape of You", parsed[0].title)
         assertEquals("Ed Sheeran", parsed[0].artist)
+        assertEquals("Divide", parsed[0].album)
+        assertEquals(233000L, parsed[0].durationMs)
+    }
+
+    @Test
+    fun testAlternativeHeaderAliases() {
+        val csv = """
+            Song,Performer,Album
+            Levitating,Dua Lipa,Future Nostalgia
+            Don't Start Now,Dua Lipa,Future Nostalgia
+        """.trimIndent()
