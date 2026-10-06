@@ -187,3 +187,30 @@ object LyricsTranslator {
     suspend fun translateLyrics(lyricsText: String, targetLanguage: String): String = withContext(Dispatchers.IO) {
         if (lyricsText.isBlank()) return@withContext lyricsText
         val targetCode = resolveLanguageCode(targetLanguage)
+
+        val rawLines = lyricsText.split("\n")
+        val timestamps = mutableListOf<String?>()
+        val textContents = mutableListOf<String?>()
+
+        for (line in rawLines) {
+            val trimmed = line.trimEnd()
+            val match = TIMESTAMP_REGEX.find(trimmed)
+            if (match != null) {
+                val stamps = match.groupValues[1]
+                val content = trimmed.substring(match.range.last + 1).trimStart()
+                timestamps.add(stamps)
+                textContents.add(if (content.isBlank()) null else content)
+            } else {
+                timestamps.add(null)
+                textContents.add(if (trimmed.isBlank()) null else trimmed)
+            }
+        }
+
+        val translatableIndices = textContents.indices.filter { textContents[it] != null }
+        if (translatableIndices.isEmpty()) return@withContext lyricsText
+
+        val translatedMap = mutableMapOf<Int, String>()
+        val maxBatchSize = 35
+        val maxBatchChars = 1600
+
+        var cursor = 0
