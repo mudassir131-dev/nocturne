@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 8: // delegate to applyShuffleOrderWithQueuedItems
+// queue improvement step 9: // safe insertion index for playNext
