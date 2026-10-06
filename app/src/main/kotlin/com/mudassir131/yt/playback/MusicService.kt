@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 5: // isolate queued tracks range
+// queue improvement step 6: // pin queued items directly after current track
