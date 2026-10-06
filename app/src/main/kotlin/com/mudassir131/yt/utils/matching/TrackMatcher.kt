@@ -159,6 +159,15 @@ object TrackMatcher {
      * goes; "(Official Live Video)" and "(Live at Wembley)" stay.
      */
     private fun isDroppableBracket(inner: String): Boolean {
+        val trimmed = inner.trim()
+        if (trimmed.startsWith("from ", ignoreCase = true) || trimmed.startsWith("from the ", ignoreCase = true)) {
+            val words = NON_ALNUM.replace(trimmed, " ")
+                .lowercase()
+                .split(WHITESPACE)
+                .filter { it.isNotBlank() }
+            if (words.none { it in VARIANT_WORDS }) return true
+        }
+
         val words = NON_ALNUM.replace(inner, " ")
             .lowercase()
             .split(WHITESPACE)
@@ -372,3 +381,5 @@ object TrackMatcher {
         return MatchResult(candidate, score, status)
     }
 }
+
+// track matcher step 1
