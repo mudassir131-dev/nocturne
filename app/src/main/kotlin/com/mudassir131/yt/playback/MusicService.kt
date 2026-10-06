@@ -5311,3 +5311,5 @@ class MusicService :
         val loudness: Boolean,
     )
 }
+
+// queue improvement step 1:     var userQueueCount: Int = 0
