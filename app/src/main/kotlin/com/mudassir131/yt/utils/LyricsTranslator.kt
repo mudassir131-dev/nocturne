@@ -133,3 +133,30 @@ object LyricsTranslator {
         "URDU" to "ur",
         "UYGHUR" to "ug",
         "UZBEK" to "uz",
+        "VIETNAMESE" to "vi",
+        "WELSH" to "cy",
+        "XHOSA" to "xh",
+        "YIDDISH" to "yi",
+        "YORUBA" to "yo",
+        "ZULU" to "zu"
+    )
+
+    fun resolveLanguageCode(input: String): String {
+        val trimmed = input.trim()
+        if (trimmed.length in 2..5 && (trimmed.contains('-') || trimmed.all { it.isLowerCase() })) {
+            return trimmed
+        }
+        val upper = trimmed.uppercase(Locale.ROOT).replace(' ', '_').replace("-", "_")
+        return LANGUAGE_CODE_MAP[upper]
+            ?: LANGUAGE_CODE_MAP.entries.firstOrNull { it.key.contains(upper) || upper.contains(it.key) }?.value
+            ?: trimmed.lowercase(Locale.ROOT)
+    }
+
+    suspend fun translateSingleText(text: String, targetLangCode: String): String = withContext(Dispatchers.IO) {
+        if (text.isBlank()) return@withContext text
+        val encodedText = URLEncoder.encode(text, "UTF-8")
+        val url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=$targetLangCode&dt=t&q=$encodedText"
+
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
