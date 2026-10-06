@@ -624,7 +624,11 @@ fun Queue(
                                 )
                             ) {
                                 processedDismiss = true
-                                playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                val player = playerConnection.player
+                                val removeIdx = (0 until player.mediaItemCount).indexOfFirst {
+                                    player.getMediaItemAt(it).mediaId == currentItem.mediaItem.mediaId
+                                }.takeIf { it != -1 } ?: currentItem.firstPeriodIndex.coerceIn(0, (player.mediaItemCount - 1).coerceAtLeast(0))
+                                player.removeMediaItem(removeIdx)
                                 dismissJob?.cancel()
                                 dismissJob = coroutineScope.launch {
                                     val snackbarResult = snackbarHostState.showSnackbar(
@@ -633,10 +637,10 @@ fun Queue(
                                         duration = SnackbarDuration.Short,
                                     )
                                     if (snackbarResult == SnackbarResult.ActionPerformed) {
-                                        playerConnection.player.addMediaItem(currentItem.mediaItem)
-                                        playerConnection.player.moveMediaItem(
+                                        player.addMediaItem(currentItem.mediaItem)
+                                        player.moveMediaItem(
                                             mutableQueueWindows.size,
-                                            currentItem.firstPeriodIndex,
+                                            removeIdx.coerceIn(0, (player.mediaItemCount - 1).coerceAtLeast(0)),
                                         )
                                     }
                                 }
@@ -763,10 +767,18 @@ fun Queue(
                                                             )
                                                             shouldScrollToCurrent = false
                                                         } else {
-                                                            playerConnection.player.seekToDefaultPosition(
-                                                                window.firstPeriodIndex,
-                                                            )
-                                                            playerConnection.player.playWhenReady = true
+                                                            val player = playerConnection.player
+                                                            val targetIndex = (0 until player.currentTimeline.windowCount).indexOfFirst {
+                                                                player.currentTimeline.getWindow(it, Timeline.Window()).uid == window.uid
+                                                            }.takeIf { it != -1 } ?: (0 until player.mediaItemCount).indexOfFirst {
+                                                                player.getMediaItemAt(it).mediaId == window.mediaItem.mediaId
+                                                            }.takeIf { it != -1 } ?: window.firstPeriodIndex.coerceIn(0, (player.mediaItemCount - 1).coerceAtLeast(0))
+
+                                                            player.seekToDefaultPosition(targetIndex)
+                                                            if (player.playbackState == Player.STATE_IDLE) {
+                                                                player.prepare()
+                                                            }
+                                                            player.play()
                                                             shouldScrollToCurrent = false
                                                         }
                                                     }
