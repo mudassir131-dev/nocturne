@@ -520,3 +520,5 @@ fun LyricsMenu(
         }
     }
 }
+
+// dialog dismissal polish
