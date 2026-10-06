@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 6: // pin queued items directly after current track
+// queue improvement step 7: // append remaining shuffled tracks
