@@ -45,3 +45,20 @@ class SpotifyCsvSerializerTest {
             Levitating,Dua Lipa,Future Nostalgia
             Don't Start Now,Dua Lipa,Future Nostalgia
         """.trimIndent()
+
+        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
+        assertEquals(2, parsed.size)
+        assertEquals("Levitating", parsed[0].title)
+        assertEquals("Dua Lipa", parsed[0].artist)
+    }
+
+    @Test
+    fun testUtf8BomAndDuplicateTrackDisambiguation() {
+        val csv = "\uFEFFTrack,Artist\nSong A,Artist 1\nSong A,Artist 1"
+        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
+        assertEquals(2, parsed.size)
+        assertEquals("Song A", parsed[0].title)
+        assertEquals("Song A", parsed[1].title)
+        assertTrue(parsed[0].spotifyTrackId != parsed[1].spotifyTrackId)
+    }
+}
