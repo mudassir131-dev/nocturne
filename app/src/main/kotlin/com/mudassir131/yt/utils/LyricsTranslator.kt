@@ -241,3 +241,36 @@ object LyricsTranslator {
                     translatedMap[batchIndices[i]] = translatedLines[i]
                 }
             } else {
+                // Fallback: translate line-by-line if batch split mismatch or batch error
+                for (idx in batchIndices) {
+                    val original = textContents[idx]!!
+                    val single = runCatching {
+                        translateSingleText(original, targetCode)
+                    }.getOrDefault(original)
+                    translatedMap[idx] = single
+                }
+            }
+        }
+
+        val output = StringBuilder()
+        for (i in textContents.indices) {
+            val stamp = timestamps[i]
+            val content = textContents[i]
+            if (content == null) {
+                if (stamp != null) output.append(stamp)
+            } else {
+                val translated = translatedMap[i] ?: content
+                if (stamp != null) {
+                    output.append(stamp).append(" ").append(translated)
+                } else {
+                    output.append(translated)
+                }
+            }
+            if (i < textContents.lastIndex) {
+                output.append("\n")
+            }
+        }
+
+        output.toString()
+    }
+}
