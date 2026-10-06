@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 3: // reset queue counters on playQueue
+// queue improvement step 4: // applyShuffleOrderWithQueuedItems signature
