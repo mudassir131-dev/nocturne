@@ -28,22 +28,31 @@ interface Queue {
         val mediaItemIndex: Int,
         val position: Long = 0L,
     ) {
-        fun filterExplicit(enabled: Boolean = true) =
-            if (enabled) {
-                copy(
-                    items = items.filterExplicit(),
-                )
+        fun filterExplicit(enabled: Boolean = true): Status {
+            if (!enabled) return this
+            val currentMediaId = items.getOrNull(mediaItemIndex)?.mediaId
+            val filtered = items.filterExplicit()
+            val newIndex = if (currentMediaId != null) {
+                val idx = filtered.indexOfFirst { it.mediaId == currentMediaId }
+                if (idx != -1) idx else mediaItemIndex.coerceIn(0, (filtered.size - 1).coerceAtLeast(0))
             } else {
-                this
+                mediaItemIndex.coerceIn(0, (filtered.size - 1).coerceAtLeast(0))
             }
-        fun filterVideo(enabled: Boolean = true) =
-            if (enabled) {
-                copy(
-                    items = items.filterVideo(),
-                )
+            return copy(items = filtered, mediaItemIndex = newIndex)
+        }
+
+        fun filterVideo(enabled: Boolean = true): Status {
+            if (!enabled) return this
+            val currentMediaId = items.getOrNull(mediaItemIndex)?.mediaId
+            val filtered = items.filterVideo()
+            val newIndex = if (currentMediaId != null) {
+                val idx = filtered.indexOfFirst { it.mediaId == currentMediaId }
+                if (idx != -1) idx else mediaItemIndex.coerceIn(0, (filtered.size - 1).coerceAtLeast(0))
             } else {
-                this
+                mediaItemIndex.coerceIn(0, (filtered.size - 1).coerceAtLeast(0))
             }
+            return copy(items = filtered, mediaItemIndex = newIndex)
+        }
     }
 }
 
@@ -80,6 +89,14 @@ fun Queue.Status.filterByContentMode(mode: com.mudassir131.yt.constants.ContentF
     if (mode == com.mudassir131.yt.constants.ContentFilterMode.GLOBAL) {
         this
     } else {
-        copy(items = items.filterByContentMode(mode))
+        val currentMediaId = items.getOrNull(mediaItemIndex)?.mediaId
+        val filtered = items.filterByContentMode(mode)
+        val newIndex = if (currentMediaId != null) {
+            val idx = filtered.indexOfFirst { it.mediaId == currentMediaId }
+            if (idx != -1) idx else mediaItemIndex.coerceIn(0, (filtered.size - 1).coerceAtLeast(0))
+        } else {
+            mediaItemIndex.coerceIn(0, (filtered.size - 1).coerceAtLeast(0))
+        }
+        copy(items = filtered, mediaItemIndex = newIndex)
     }
 
