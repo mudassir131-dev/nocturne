@@ -363,7 +363,9 @@ fun LibraryPlaylistsScreen(
                 }.getOrNull()?.takeIf { it.isNotBlank() } ?: "Imported CSV Playlist"
 
                 context.contentResolver.openInputStream(uri)?.use { stream ->
-                    val reader = InputStreamReader(stream, Charsets.UTF_8)
+                    val bytes = stream.readBytes()
+                    val text = com.mudassir131.yt.utils.SpotifyCsvSerializer.decodeCsvBytes(bytes)
+                    val reader = text.reader()
                     val summary = PlaylistImporter.importFromCsv(
                         database = database,
                         csvReader = reader,
