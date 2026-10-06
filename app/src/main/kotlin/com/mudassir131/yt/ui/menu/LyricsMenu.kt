@@ -52,7 +52,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import com.mudassir131.yt.utils.LyricsTranslator
+import me.bush.translator.Translator
+import me.bush.translator.Language
 import com.mudassir131.yt.utils.TranslatorLanguages
 import com.mudassir131.yt.utils.TranslatorLang
 import androidx.compose.runtime.produceState
@@ -368,8 +369,7 @@ fun LyricsMenu(
                         TextButton(onClick = {
                             isTranslating = true
                             val inputText = textFieldValue.text
-                            val languageCode = selectedLanguageCode
-                            val languageName = selectedLanguageName
+                            val targetLang = selectedLanguageCode.ifBlank { selectedLanguageName }
                             coroutineScope.launch {
                                 try {
                                     val lang = try {
