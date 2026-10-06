@@ -381,5 +381,3 @@ object TrackMatcher {
         return MatchResult(candidate, score, status)
     }
 }
-
-// track matcher step 7
