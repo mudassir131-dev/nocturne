@@ -214,3 +214,30 @@ object LyricsTranslator {
         val maxBatchChars = 1600
 
         var cursor = 0
+        while (cursor < translatableIndices.size) {
+            val batchIndices = mutableListOf<Int>()
+            var batchChars = 0
+
+            while (cursor < translatableIndices.size && batchIndices.size < maxBatchSize) {
+                val idx = translatableIndices[cursor]
+                val len = textContents[idx]!!.length
+                if (batchIndices.isEmpty() || batchChars + len <= maxBatchChars) {
+                    batchIndices.add(idx)
+                    batchChars += len
+                    cursor++
+                } else break
+            }
+
+            val batchTexts = batchIndices.map { textContents[it]!! }
+            val joinedText = batchTexts.joinToString("\n")
+
+            val batchTranslated = runCatching {
+                translateSingleText(joinedText, targetCode)
+            }.getOrNull()
+
+            val translatedLines = batchTranslated?.split("\n")
+            if (translatedLines != null && translatedLines.size == batchTexts.size) {
+                for (i in batchIndices.indices) {
+                    translatedMap[batchIndices[i]] = translatedLines[i]
+                }
+            } else {
