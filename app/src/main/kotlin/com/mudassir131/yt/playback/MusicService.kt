@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 7: // append remaining shuffled tracks
+// queue improvement step 8: // delegate to applyShuffleOrderWithQueuedItems
