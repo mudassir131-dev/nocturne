@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 1:     var userQueueCount: Int = 0
+// queue improvement step 2:     private var lastObservedMediaItemIndex: Int = -1
