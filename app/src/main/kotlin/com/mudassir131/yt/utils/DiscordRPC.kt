@@ -16,8 +16,7 @@ import com.mudassir131.yt.utils.dataStore
 import com.my.kizzy.rpc.KizzyRPC
 import com.my.kizzy.rpc.RpcImage
 import timber.log.Timber
-import me.bush.translator.Translator
-import me.bush.translator.Language
+import com.mudassir131.yt.utils.LyricsTranslator
 
 
 class DiscordRPC(
@@ -117,7 +116,6 @@ class DiscordRPC(
             )
 
             try {
-                val translator = Translator()
                 for (ctx in contextList) {
                     val value = rawMap[ctx]
                     if (!value.isNullOrBlank()) {
@@ -128,9 +126,9 @@ class DiscordRPC(
                             translatedMap[ctx] = translated
                         } else {
                             try {
-                                val result = translator.translateBlocking(value, Language.valueOf(targetLang.uppercase()))
-                                translatedMap[ctx] = result.translatedText
-                                translationCache[cacheKey] = result.translatedText
+                                val result = LyricsTranslator.translateSingleText(value, targetLang)
+                                translatedMap[ctx] = result
+                                translationCache[cacheKey] = result
                             } catch (e: Exception) {
                                 Timber.tag(logtag).e(e, "Translation failed for $ctx")
                                 translatedMap[ctx] = value // fallback original
@@ -140,7 +138,7 @@ class DiscordRPC(
                     }
                 }
             } catch (e: Exception) {
-                Timber.tag(logtag).e(e, "Translator init failed")
+                Timber.tag(logtag).e(e, "Translator execution failed")
             }
         }
         // --- End Translator ---
