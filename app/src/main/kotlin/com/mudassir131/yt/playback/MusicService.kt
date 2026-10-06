@@ -5312,4 +5312,4 @@ class MusicService :
     )
 }
 
-// queue improvement step 9: // safe insertion index for playNext
+// queue improvement step 10: // handle empty or idle player in playNext
