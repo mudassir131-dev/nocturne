@@ -52,8 +52,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import me.bush.translator.Translator
-import me.bush.translator.Language
+import com.mudassir131.yt.utils.LyricsTranslator
 import com.mudassir131.yt.utils.TranslatorLanguages
 import com.mudassir131.yt.utils.TranslatorLang
 import androidx.compose.runtime.produceState
@@ -372,107 +371,8 @@ fun LyricsMenu(
                             val targetLang = selectedLanguageCode.ifBlank { selectedLanguageName }
                             coroutineScope.launch {
                                 try {
-                                    val lang = try {
-                                        Language(languageCode)
-                                    } catch (e: Exception) {
-                                        try { Language(languageName) } catch (_: Exception) { null }
-                                    }
-
-                                    if (lang == null) {
-                                        Toast.makeText(
-                                            context,
-                                            "Unsupported language: $languageName",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        return@launch
-                                    }
-
                                     val translatedLyrics = withContext(Dispatchers.IO) {
-                                        val translator = Translator()
-
-                                        val lines = inputText.split("\n")
-                                        val tsRegex =
-                                            Regex("^((?:\\[[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?\\])+)")
-                                        val contents = mutableListOf<String?>()
-                                        val stampsFor = mutableListOf<String?>()
-
-                                        for (line in lines) {
-                                            val trimmed = line.trimEnd()
-                                            val m = tsRegex.find(trimmed)
-                                            if (m != null) {
-                                                val stamps = m.groupValues[1]
-                                                val content =
-                                                    trimmed.substring(m.range.last + 1).trimStart()
-                                                stampsFor.add(stamps)
-                                                contents.add(if (content.isBlank()) null else content)
-                                            } else {
-                                                stampsFor.add(null)
-                                                contents.add(if (trimmed.isBlank()) null else trimmed)
-                                            }
-                                        }
-
-                                        val translatableIndices =
-                                            contents.mapIndexedNotNull { idx, c -> if (c != null) idx else null }
-                                        val translatedMap = mutableMapOf<Int, String>()
-
-                                        if (translatableIndices.isNotEmpty()) {
-                                            var sep = "<<<SEP-${UUID.randomUUID()}>>>"
-                                            while (contents.any { it?.contains(sep) == true }) {
-                                                sep = "<<<SEP-${UUID.randomUUID()}>>>"
-                                            }
-
-                                            val maxCharsPerRequest = 4000
-                                            val maxItemsPerBatch = 50
-
-                                            var cursor = 0
-                                            while (cursor < translatableIndices.size) {
-                                                var currentChars = 0
-                                                val batchIndices = mutableListOf<Int>()
-                                                while (cursor < translatableIndices.size && batchIndices.size < maxItemsPerBatch) {
-                                                    val idx = translatableIndices[cursor]
-                                                    val pieceLen = contents[idx]!!.length
-                                                    if (batchIndices.isEmpty() || currentChars + pieceLen + sep.length <= maxCharsPerRequest) {
-                                                        batchIndices.add(idx)
-                                                        currentChars += pieceLen + sep.length
-                                                        cursor++
-                                                    } else break
-                                                }
-
-                                                val batchTexts = batchIndices.map { contents[it]!! }
-                                                val joined = batchTexts.joinToString(separator = sep)
-                                                val translatedJoined =
-                                                    translator.translateBlocking(joined, lang).translatedText
-
-                                                val parts = translatedJoined.split(sep)
-                                                if (parts.size == batchTexts.size) {
-                                                    for (i in batchIndices.indices) {
-                                                        translatedMap[batchIndices[i]] = parts[i]
-                                                    }
-                                                } else {
-                                                    for (idx in batchIndices) {
-                                                        val original = contents[idx]!!
-                                                        val singleTranslated = runCatching {
-                                                            translator.translateBlocking(original, lang).translatedText
-                                                        }.getOrNull() ?: original
-                                                        translatedMap[idx] = singleTranslated
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        val out = mutableListOf<String>()
-                                        for (i in contents.indices) {
-                                            val stamp = stampsFor[i]
-                                            val c = contents[i]
-                                            if (c == null) {
-                                                if (stamp != null) out.add(stamp) else out.add("")
-                                            } else {
-                                                val translatedText = translatedMap[i] ?: c
-                                                if (stamp != null) out.add("$stamp $translatedText") else out.add(translatedText)
-                                            }
-                                        }
-
-                                        out.joinToString("\n")
+                                        LyricsTranslator.translateLyrics(inputText, targetLang)
                                     }
                                     viewModel.updateLyrics(mediaMetadataProvider(), translatedLyrics)
                                     showTranslateDialog = false
