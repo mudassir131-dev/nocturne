@@ -33,7 +33,21 @@ class NocturneApplePlayerAdapter(
     fun toggleRepeat() = connection.player.toggleRepeatMode()
     fun seekTo(positionMs: Long) = connection.player.seekTo(positionMs)
     fun playQueueIndex(index: Int) {
-        connection.player.seekTo(index, 0L)
+        val window = connection.queueWindows.value.getOrNull(index)
+        val targetIndex = if (window != null) {
+            val timeline = connection.player.currentTimeline
+            (0 until timeline.windowCount).indexOfFirst {
+                timeline.getWindow(it, androidx.media3.common.Timeline.Window()).uid == window.uid
+            }.takeIf { it != -1 } ?: (0 until player.mediaItemCount).indexOfFirst {
+                player.getMediaItemAt(it).mediaId == window.mediaItem.mediaId
+            }.takeIf { it != -1 } ?: index.coerceIn(0, (player.mediaItemCount - 1).coerceAtLeast(0))
+        } else {
+            index.coerceIn(0, (player.mediaItemCount - 1).coerceAtLeast(0))
+        }
+        connection.player.seekToDefaultPosition(targetIndex)
+        if (connection.player.playbackState == androidx.media3.common.Player.STATE_IDLE) {
+            connection.player.prepare()
+        }
         connection.player.play()
     }
     fun stopAndClear() = connection.service.stopAndClearPlayback()
