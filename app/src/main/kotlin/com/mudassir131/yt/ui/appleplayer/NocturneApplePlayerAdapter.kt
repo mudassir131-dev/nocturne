@@ -52,3 +52,5 @@ class NocturneApplePlayerAdapter(
     }
     fun stopAndClear() = connection.service.stopAndClearPlayback()
 }
+
+// polish metadata
