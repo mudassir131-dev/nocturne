@@ -100,7 +100,3 @@ fun Queue.Status.filterByContentMode(mode: com.mudassir131.yt.constants.ContentF
         copy(items = filtered, mediaItemIndex = newIndex)
     }
 
-
-// optimize resolution
-
-// cleanup iteration
