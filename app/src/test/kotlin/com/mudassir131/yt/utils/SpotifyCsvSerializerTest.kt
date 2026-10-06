@@ -21,3 +21,16 @@ class SpotifyCsvSerializerTest {
         assertEquals("The Weeknd", parsed[0].artist)
         assertEquals(230000L, parsed[0].durationMs)
     }
+
+    @Test
+    fun testSemicolonDelimitedCsv() {
+        val csv = """
+            Title;Artist;Album;Duration
+            Shape of You;Ed Sheeran;Divide;03:53
+            Perfect;Ed Sheeran;Divide;04:23
+        """.trimIndent()
+
+        val parsed = SpotifyCsvSerializer.parseFromCsv(csv)
+        assertEquals(2, parsed.size)
+        assertEquals("Shape of You", parsed[0].title)
+        assertEquals("Ed Sheeran", parsed[0].artist)
