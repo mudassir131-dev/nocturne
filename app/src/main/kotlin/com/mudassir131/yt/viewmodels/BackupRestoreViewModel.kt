@@ -530,7 +530,8 @@ class BackupRestoreViewModel @Inject constructor(
 
                 runCatching {
                     context.contentResolver.openInputStream(uri)?.use { stream ->
-                        val reader = PushbackReader(InputStreamReader(stream, Charsets.UTF_8), 1)
+                        val text = com.mudassir131.yt.utils.SpotifyCsvSerializer.decodeCsvBytes(stream.readBytes())
+                        val reader = PushbackReader(java.io.StringReader(text), 1)
                         val iterator = readCsvRecords(reader).iterator()
                         if (!iterator.hasNext()) return@use
 
@@ -538,9 +539,9 @@ class BackupRestoreViewModel @Inject constructor(
                         val normalizedHeader = firstRecord.map(::normalizeCsvHeaderCell)
 
                         val titleIndex =
-                            normalizedHeader.indexOfFirst { it == "title" || it == "tracktitle" || it == "songtitle" || it == "trackname" || it == "name" }
+                            normalizedHeader.indexOfFirst { it in listOf("title", "tracktitle", "songtitle", "trackname", "name", "song", "track", "songname") }
                         val artistIndex =
-                            normalizedHeader.indexOfFirst { it == "artist" || it == "artists" || it == "artistname" || it == "artistnames" || it.startsWith("artist") }
+                            normalizedHeader.indexOfFirst { it in listOf("artist", "artists", "artistname", "artistnames", "performer", "author", "creator") || it.startsWith("artist") }
 
                         val hasHeader = titleIndex >= 0 && artistIndex >= 0
                         val resolvedTitleIndex = if (hasHeader) titleIndex else 0
