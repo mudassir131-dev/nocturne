@@ -321,6 +321,8 @@ class MusicService :
     private var pendingStreamRefreshValidationMediaId: String? = null
     @Volatile
     private var refreshValidatedPlayingMediaId: String? = null
+    var userQueueCount: Int = 0
+    private var lastObservedMediaItemIndex: Int = -1
     private val avoidStreamCodecs: Set<String> by lazy {
         if (deviceSupportsMimeType("audio/opus")) emptySet() else setOf("opus")
     }
@@ -1740,6 +1742,8 @@ class MusicService :
         clearAutomix()
         automixSeedMediaId = null
         autoAddedMediaIds.clear()
+        userQueueCount = 0
+        lastObservedMediaItemIndex = -1
         if (queue.preloadItem != null) {
             val preloadMeta = queue.preloadItem!!
             mediaMetadataCache[preloadMeta.id] = preloadMeta
@@ -1838,18 +1842,34 @@ class MusicService :
         }
     }
 
-    private fun applyCurrentFirstShuffleOrder() {
+    fun applyShuffleOrderWithQueuedItems() {
         val count = player.mediaItemCount
         if (count <= 1) return
         val currentIndex = player.currentMediaItemIndex.coerceIn(0, count - 1)
-        val shuffledIndices = IntArray(count) { it }
-        shuffledIndices.shuffle()
-        val currentPos = shuffledIndices.indexOf(currentIndex)
-        if (currentPos >= 0) {
-            shuffledIndices[currentPos] = shuffledIndices[0]
+        val validQueueCount = userQueueCount.coerceAtLeast(0)
+        val queuedEnd = (currentIndex + 1 + validQueueCount).coerceAtMost(count)
+        val queuedIndices = if (queuedEnd > currentIndex + 1) {
+            ((currentIndex + 1) until queuedEnd).toList()
+        } else {
+            emptyList()
         }
-        shuffledIndices[0] = currentIndex
-        player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
+        val allIndices = (0 until count).toList()
+        val remainingIndices = allIndices.filter { it != currentIndex && it !in queuedIndices }.shuffled()
+
+        val newShuffledOrder = IntArray(count)
+        newShuffledOrder[0] = currentIndex
+        var pos = 1
+        for (idx in queuedIndices) {
+            newShuffledOrder[pos++] = idx
+        }
+        for (idx in remainingIndices) {
+            newShuffledOrder[pos++] = idx
+        }
+        player.setShuffleOrder(DefaultShuffleOrder(newShuffledOrder, System.currentTimeMillis()))
+    }
+
+    private fun applyCurrentFirstShuffleOrder() {
+        applyShuffleOrderWithQueuedItems()
     }
 
     fun startRadioSeamlessly() {
@@ -2271,11 +2291,21 @@ class MusicService :
         }
         suppressAutoPlayback = false
         items.forEach { item -> item.metadata?.let { mediaMetadataCache[it.id] = it } }
+        val wasEmptyOrIdle = player.mediaItemCount == 0 || player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED
+        val insertIndex = if (player.mediaItemCount == 0) 0 else (player.currentMediaItemIndex + 1).coerceIn(0, player.mediaItemCount)
         player.addMediaItems(
-            if (player.mediaItemCount == 0) 0 else player.currentMediaItemIndex + 1,
+            insertIndex,
             items
         )
+        userQueueCount += items.size
         player.prepare()
+        if (wasEmptyOrIdle) {
+            userQueueCount = 0
+            player.seekToDefaultPosition(insertIndex)
+            player.play()
+        } else if (player.shuffleModeEnabled) {
+            applyShuffleOrderWithQueuedItems()
+        }
     }
 
     fun addToQueue(items: List<MediaItem>) {
@@ -2301,8 +2331,25 @@ class MusicService :
         }
         suppressAutoPlayback = false
         items.forEach { item -> item.metadata?.let { mediaMetadataCache[it.id] = it } }
-        player.addMediaItems(items)
+        val wasEmptyOrIdle = player.mediaItemCount == 0 || player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED
+        val insertIndex = if (player.mediaItemCount == 0) {
+            0
+        } else {
+            (player.currentMediaItemIndex + 1 + userQueueCount).coerceIn(0, player.mediaItemCount)
+        }
+        player.addMediaItems(
+            insertIndex,
+            items
+        )
+        userQueueCount += items.size
         player.prepare()
+        if (wasEmptyOrIdle) {
+            userQueueCount = 0
+            player.seekToDefaultPosition(insertIndex)
+            player.play()
+        } else if (player.shuffleModeEnabled) {
+            applyShuffleOrderWithQueuedItems()
+        }
     }
 
     fun startTogetherHost(
@@ -3704,6 +3751,24 @@ class MusicService :
         )
 
     val currentIndex = player.currentMediaItemIndex
+    if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
+        val prevIndex = lastObservedMediaItemIndex
+        if (prevIndex != -1 && currentIndex > prevIndex && currentIndex <= prevIndex + userQueueCount) {
+            userQueueCount = (userQueueCount - (currentIndex - prevIndex)).coerceAtLeast(0)
+        } else if (currentIndex != prevIndex) {
+            userQueueCount = 0
+        }
+    } else {
+        if (userQueueCount > 0) {
+            userQueueCount = (userQueueCount - 1).coerceAtLeast(0)
+        }
+    }
+    lastObservedMediaItemIndex = currentIndex
+
+    if (player.shuffleModeEnabled && userQueueCount > 0) {
+        applyShuffleOrderWithQueuedItems()
+    }
+
     val queue = player.mediaItems.mapNotNull { it.metadata }
     if (queue.isNotEmpty()) {
         lyricsPreloadManager?.onSongChanged(currentIndex, queue)
@@ -5311,5 +5376,3 @@ class MusicService :
         val loudness: Boolean,
     )
 }
-
-// queue improvement step 13: // compute seek transition distance
