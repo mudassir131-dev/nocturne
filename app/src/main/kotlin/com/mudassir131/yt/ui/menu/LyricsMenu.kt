@@ -52,8 +52,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import me.bush.translator.Translator
-import me.bush.translator.Language
+import com.mudassir131.yt.utils.LyricsTranslator
 import com.mudassir131.yt.utils.TranslatorLanguages
 import com.mudassir131.yt.utils.TranslatorLang
 import androidx.compose.runtime.produceState
