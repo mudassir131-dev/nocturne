@@ -160,3 +160,30 @@ object LyricsTranslator {
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", USER_AGENT)
+            .header("Accept", "*/*")
+            .build()
+
+        val response = httpClient.newCall(request).execute()
+        if (!response.isSuccessful) {
+            throw IllegalStateException("Translation request failed with HTTP ${response.code}")
+        }
+        val responseBody = response.body?.string().orEmpty()
+        parseGoogleTranslateResponse(responseBody).ifBlank { text }
+    }
+
+    private fun parseGoogleTranslateResponse(jsonString: String): String {
+        if (jsonString.isBlank()) return ""
+        val root = JSONArray(jsonString)
+        val sentences = root.optJSONArray(0) ?: return ""
+        val sb = StringBuilder()
+        for (i in 0 until sentences.length()) {
+            val sentence = sentences.optJSONArray(i) ?: continue
+            val part = sentence.optString(0, "")
+            sb.append(part)
+        }
+        return sb.toString()
+    }
+
+    suspend fun translateLyrics(lyricsText: String, targetLanguage: String): String = withContext(Dispatchers.IO) {
+        if (lyricsText.isBlank()) return@withContext lyricsText
+        val targetCode = resolveLanguageCode(targetLanguage)
