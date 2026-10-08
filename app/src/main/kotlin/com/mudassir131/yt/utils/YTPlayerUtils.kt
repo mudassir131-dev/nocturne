@@ -245,9 +245,9 @@ object YTPlayerUtils {
 
         val preferredYouTubeClient =
             when (preferredStreamClient) {
-                PlayerStreamClient.ANDROID_VR -> IOS // Aliased to IOS to bypass bot detection currently blocking VR clients
+                PlayerStreamClient.ANDROID_VR -> if (audioQuality == AudioQuality.OPUS) ANDROID_MUSIC else IOS
                 PlayerStreamClient.WEB_REMIX -> WEB_REMIX
-                PlayerStreamClient.IOS -> IOS
+                PlayerStreamClient.IOS -> if (audioQuality == AudioQuality.OPUS) ANDROID_MUSIC else IOS
                 PlayerStreamClient.MOBILE -> ANDROID_MUSIC
                 PlayerStreamClient.TVHTML5 -> TVHTML5_SIMPLY_EMBEDDED_PLAYER
                 PlayerStreamClient.ANDROID_MUSIC -> ANDROID_MUSIC
@@ -279,12 +279,12 @@ object YTPlayerUtils {
         val playbackTracking = metadataPlayerResponse?.playbackTracking
         val expectedDurationMs = videoDetails?.lengthSeconds?.toLongOrNull()?.takeIf { it > 0 }?.times(1000L)
 
-        if (audioQuality == AudioQuality.LOSSLESS && !dataSaver) {
+        if ((audioQuality == AudioQuality.LOSSLESS || audioQuality == AudioQuality.SAAVN) && !dataSaver) {
             val title = videoDetails?.title?.takeIf { it.isNotBlank() } ?: trackTitle.orEmpty()
             val artist = videoDetails?.author?.takeIf { it.isNotBlank() } ?: trackArtist.orEmpty()
             val durationSecs = videoDetails?.lengthSeconds?.toIntOrNull() ?: trackDuration ?: -1
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
-            Timber.tag(logTag).i("[LOSSLESS_PIPELINE] User preference: Hi-Res Lossless (AudioQuality.LOSSLESS)")
+            Timber.tag(logTag).i("[LOSSLESS_PIPELINE] User preference: $audioQuality")
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] Target Track: '$title' by '$artist' (videoId=$videoId, duration=${durationSecs}s)")
             
             val losslessResult = LosslessStreamResolver.resolve(
@@ -296,7 +296,7 @@ object YTPlayerUtils {
                 allowHighResLossy = true,
             )
             if (losslessResult != null) {
-                Timber.tag(logTag).i("[LOSSLESS_PIPELINE] -> SUCCESS: Genuinely lossless stream resolved: ${losslessResult.streamUrl} (source=${losslessResult.source})")
+                Timber.tag(logTag).i("[LOSSLESS_PIPELINE] -> SUCCESS: Stream resolved: ${losslessResult.streamUrl} (source=${losslessResult.source})")
                 Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
                 return PlaybackData(
                     audioConfig = audioConfig,
@@ -307,8 +307,8 @@ object YTPlayerUtils {
                     streamExpiresInSeconds = losslessResult.expiresInSeconds,
                 )
             } else {
-                Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> FALLBACK TRIGGERED: No genuine ALAC/FLAC source available for videoId=$videoId ('$title' by '$artist').")
-                Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> Gracefully routing to standard YouTube stream pipeline (Opus itag 251 @ ~134-160 kbps lossy).")
+                Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> FALLBACK TRIGGERED: No external catalog source available for videoId=$videoId ('$title' by '$artist').")
+                Timber.tag(logTag).w("[LOSSLESS_PIPELINE] -> Gracefully routing to standard YouTube stream pipeline.")
                 Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
             }
         }
@@ -343,8 +343,25 @@ object YTPlayerUtils {
 
         val streamClients =
             buildList {
-                add(preferredYouTubeClient)
-                addAll(orderedFallbackClients)
+                if (audioQuality == AudioQuality.OPUS) {
+                    add(if (preferredYouTubeClient == IOS) ANDROID_MUSIC else preferredYouTubeClient)
+                    add(ANDROID_MUSIC)
+                    add(WEB_REMIX)
+                    add(TVHTML5_SIMPLY_EMBEDDED_PLAYER)
+                    add(TVHTML5)
+                    add(ANDROID_VR_1_61_48)
+                    add(WEB)
+                    addAll(orderedFallbackClients)
+                } else if (audioQuality == AudioQuality.SAAVN) {
+                    add(preferredYouTubeClient)
+                    add(IOS)
+                    add(ANDROID_MUSIC)
+                    add(WEB_REMIX)
+                    addAll(orderedFallbackClients)
+                } else {
+                    add(preferredYouTubeClient)
+                    addAll(orderedFallbackClients)
+                }
                 if (preferredYouTubeClient != MAIN_CLIENT) add(MAIN_CLIENT)
             }.distinct().filterNot { client ->
                 val blocked = isStreamClientTemporarilyBlocked(videoId, client.clientName)
@@ -409,6 +426,19 @@ object YTPlayerUtils {
                 )
 
             if (candidates.isEmpty()) continue
+
+            val hasPreferredCodec = candidates.any {
+                val c = extractCodec(it.mimeType)?.lowercase().orEmpty()
+                when (audioQuality) {
+                    AudioQuality.OPUS -> c.contains("opus") || it.itag in listOf(249, 250, 251)
+                    AudioQuality.SAAVN -> c.contains("mp4a") || c.contains("aac") || it.itag in listOf(139, 140, 141)
+                    AudioQuality.LOSSLESS -> true
+                }
+            }
+            if (!hasPreferredCodec && index < streamClients.size - 1) {
+                Timber.tag(logTag).d("Client ${client.clientName} does not have preferred codec for $audioQuality, trying next client")
+                continue
+            }
 
             var selectedFormat: PlayerResponse.StreamingData.Format? = null
             var selectedUrl: String? = null
@@ -629,15 +659,15 @@ object YTPlayerUtils {
             }
 
         val preferHigher =
-            compareByDescending<PlayerResponse.StreamingData.Format> { it.url != null }
-                .thenByDescending { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
+            compareByDescending<PlayerResponse.StreamingData.Format> { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
                 .thenByDescending { it.bitrate }
+                .thenByDescending { it.url != null }
                 .thenByDescending { it.audioSampleRate ?: 0 }
 
         val preferLowerAboveTarget =
-            compareByDescending<PlayerResponse.StreamingData.Format> { it.url != null }
-                .thenByDescending { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
+            compareByDescending<PlayerResponse.StreamingData.Format> { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
                 .thenBy { it.bitrate }
+                .thenByDescending { it.url != null }
                 .thenByDescending { it.audioSampleRate ?: 0 }
 
         val candidates =
@@ -684,11 +714,13 @@ object YTPlayerUtils {
     private fun modeCodecRank(audioQuality: AudioQuality, codec: String?): Int =
         when (audioQuality) {
             AudioQuality.OPUS -> when {
-                codec?.contains("opus", ignoreCase = true) == true -> 4
+                codec?.contains("opus", ignoreCase = true) == true -> 5
+                codec?.contains("mp4a", ignoreCase = true) == true -> 2
                 else -> codecRank(codec)
             }
             AudioQuality.SAAVN -> when {
-                codec?.contains("mp4a", ignoreCase = true) == true -> 4
+                codec?.contains("mp4a", ignoreCase = true) == true -> 5
+                codec?.contains("opus", ignoreCase = true) == true -> 3
                 else -> codecRank(codec)
             }
             AudioQuality.LOSSLESS -> when {
@@ -816,7 +848,10 @@ object YTPlayerUtils {
                         AudioQuality.LOSSLESS -> if (isOpus) 10 else if (isAac) 5 else 1
                     }
                 }.thenByDescending { stream ->
-                    if (dataSaver) -stream.averageBitrate else stream.averageBitrate
+                    val br = if (stream.averageBitrate > 0) {
+                        if (stream.averageBitrate < 1000) stream.averageBitrate * 1000 else stream.averageBitrate
+                    } else if (stream.itag == 251) 160_000 else 128_000
+                    if (dataSaver) -br else br
                 }
             )
 
@@ -824,7 +859,10 @@ object YTPlayerUtils {
             val streamUrl = selectedStream.url ?: return null
             val isOpus = selectedStream.codec?.contains("opus", ignoreCase = true) == true || selectedStream.itag in listOf(249, 250, 251)
             val mimeType = if (isOpus) "audio/webm; codecs=\"opus\"" else "audio/mp4; codecs=\"mp4a.40.2\""
-            val bitrateBps = if (selectedStream.averageBitrate > 0) selectedStream.averageBitrate * 1000 else if (selectedStream.itag == 251) 160_000 else 128_000
+            val rawBitrate = selectedStream.averageBitrate
+            val bitrateBps = if (rawBitrate > 0) {
+                if (rawBitrate < 1000) rawBitrate * 1000 else rawBitrate
+            } else if (selectedStream.itag == 251) 160_000 else 128_000
 
             val format = PlayerResponse.StreamingData.Format(
                 itag = if (selectedStream.itag > 0) selectedStream.itag else if (isOpus) 251 else 140,

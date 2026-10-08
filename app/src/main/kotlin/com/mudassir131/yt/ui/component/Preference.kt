@@ -674,9 +674,9 @@ fun PreferenceGroup(
 
                     if (index < items.size - 1) {
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 76.dp, end = 16.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                            modifier = Modifier.padding(start = 56.dp, end = 16.dp),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                         )
                     }
                 }

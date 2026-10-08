@@ -4,9 +4,7 @@
  */
 package com.mudassir131.yt.ui.screens.settings
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,41 +21,63 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.mudassir131.yt.BuildConfig
 import com.mudassir131.yt.LocalPlayerAwareWindowInsets
 import com.mudassir131.yt.R
 import com.mudassir131.yt.ui.component.IconButton
+import com.mudassir131.yt.ui.utils.PreferencePosition
 import com.mudassir131.yt.ui.utils.backToMain
-import java.text.DateFormat
-import java.util.Date
+import com.mudassir131.yt.ui.utils.getPreferenceShape
+
+private data class ContributorInfo(
+    val name: String,
+    val avatarUrl: String,
+    val githubUrl: String,
+)
+
+private val NocturneContributors = listOf(
+    ContributorInfo(
+        name = "koiverse (ArchiveTune)",
+        avatarUrl = "https://github.com/koiverse.png",
+        githubUrl = "https://github.com/koiverse",
+    ),
+    ContributorInfo(
+        name = "MO AGAMY (Metrolist)",
+        avatarUrl = "https://github.com/mostafaalagamy.png",
+        githubUrl = "https://github.com/mostafaalagamy",
+    ),
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,17 +87,18 @@ fun AboutScreen(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val installDate = try {
-        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(packageInfo.firstInstallTime))
-    } catch (_: Exception) {
-        "Unknown"
-    }
+    val collapsibleScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
+        modifier = Modifier.nestedScroll(collapsibleScrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.about)) },
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.about),
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = navController::navigateUp,
@@ -89,9 +110,10 @@ fun AboutScreen(
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior,
+                scrollBehavior = collapsibleScrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
                 ),
             )
         },
@@ -106,155 +128,101 @@ fun AboutScreen(
                         WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
                     ),
                 ),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { AboutAppCard() }
+            item {
+                AboutHeader()
+            }
 
             item {
                 DeveloperCard(
                     onGitHub = { uriHandler.openUri("https://github.com/mudassir131-dev") },
                     onWebsite = { uriHandler.openUri("https://portfolioooooss.vercel.app") },
-                    onTelegram = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
+                    onInstagram = { uriHandler.openUri("https://instagram.com/mud4sssir7") },
                     onSupport = { launchUpiPayment(context, "touseefparay7-1@okicici", "Mudassir") },
                 )
             }
 
-            item { AboutSectionTitle("Contributors") }
             item {
-                Column {
-                    ContributorCard(
-                        imageUrl = "https://avatars.githubusercontent.com/u/107134739?v=4",
-                        title = "Archivetune — by koiverse",
-                        subtitle = "Base framework",
-                        onClick = { uriHandler.openUri("https://github.com/koiverse/ArchiveTune") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.FIRST,
-                    )
-                    ContributorCard(
-                        imageUrl = "https://avatars.githubusercontent.com/u/80542861?v=4",
-                        title = "MO AGAMY",
-                        subtitle = "Metrolist developer",
-                        onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.LAST,
-                    )
-                }
+                AboutSectionTitle("CONTRIBUTORS")
+            }
+            item {
+                ContributorsRow(
+                    contributors = NocturneContributors,
+                    onContributorClick = { url -> uriHandler.openUri(url) },
+                )
             }
 
-            item { AboutSectionTitle("Community & Info") }
+            item {
+                AboutSectionTitle("SOURCE CODE & WEBSITE")
+            }
             item {
                 Column {
                     AboutLinkCard(
-                        iconRes = R.drawable.update,
-                        title = "Check for Updates",
-                        subtitle = "Check GitHub releases for latest versions",
-                        onClick = { navController.navigate("settings/update") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.FIRST,
-                    )
-                    AboutLinkCard(
                         iconRes = R.drawable.github,
-                        title = "GitHub Repository",
-                        subtitle = "View source code",
+                        title = "Source Code",
+                        subtitle = "mudassir131-dev/nocturne",
                         onClick = { uriHandler.openUri("https://github.com/mudassir131-dev/nocturne") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE,
-                    )
-                    AboutLinkCard(
-                        iconRes = R.drawable.telegram,
-                        title = "Telegram Server",
-                        subtitle = "Chat with the community and report bugs",
-                        onClick = { uriHandler.openUri("https://t.me/NocturneOfficial7") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.MIDDLE,
+                        position = PreferencePosition.FIRST,
                     )
                     AboutLinkCard(
                         iconRes = R.drawable.website,
-                        title = "Nocturne Website",
-                        subtitle = "Visit the official website",
+                        title = "Website",
+                        subtitle = "nocturne-music.vercel.app",
                         onClick = { uriHandler.openUri("https://nocturne-music.vercel.app") },
-                        position = com.mudassir131.yt.ui.utils.PreferencePosition.LAST,
+                        position = PreferencePosition.LAST,
                     )
                 }
             }
 
-            item { AboutSectionTitle("App Info") }
-            item {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column {
-                        AppInfoRow("Installed", installDate)
-                        AppInfoRow("Version code", BuildConfig.VERSION_CODE.toString())
-                        AppInfoRow(
-                            title = "License",
-                            value = "GNU GPL v3.0",
-                            onClick = { uriHandler.openUri("https://www.gnu.org/licenses/gpl-3.0.html") },
-                        )
-                    }
-                }
-            }
-
-            item { SolidarityFooter() }
-            item { Spacer(Modifier.height(20.dp)) }
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
 
 @Composable
-private fun AboutAppCard() {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    Surface(
-        shape = RoundedCornerShape(30.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth(),
+private fun AboutHeader() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 28.dp, bottom = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        Text(
+            text = "NOCTURNE",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Black,
+            fontFamily = FontFamily.SansSerif,
+            letterSpacing = 2.sp,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
         Row(
-            modifier = Modifier.padding(24.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.size(76.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Image(
-                        painter = painterResource(
-                            if (isDark) R.drawable.ic_nocturne_logo_dark_trans
-                            else R.drawable.ic_nocturne_logo_light_trans,
-                        ),
-                        contentDescription = "Nocturne",
-                        modifier = Modifier.size(54.dp),
-                    )
-                }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Nocturne",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AboutBadge(BuildConfig.VERSION_NAME)
-                    AboutBadge(if (BuildConfig.DEBUG) "DEBUG" else "UNIVERSAL")
-                }
-            }
+            AboutCapsuleBadge(text = "RELEASE")
+            AboutCapsuleBadge(
+                text = BuildConfig.VERSION_NAME.ifBlank { "2.22.36" },
+            )
         }
     }
 }
 
 @Composable
-private fun AboutBadge(text: String) {
+private fun AboutCapsuleBadge(text: String) {
     Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.primary,
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.8.sp,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
         )
     }
 }
@@ -263,67 +231,87 @@ private fun AboutBadge(text: String) {
 private fun DeveloperCard(
     onGitHub: () -> Unit,
     onWebsite: () -> Unit,
-    onTelegram: () -> Unit,
+    onInstagram: () -> Unit,
     onSupport: () -> Unit,
 ) {
     Surface(
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.padding(22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+            AsyncImage(
+                model = "https://github.com/mudassir131-dev.png",
+                placeholder = painterResource(R.drawable.developer_mudassir),
+                error = painterResource(R.drawable.developer_mudassir),
+                fallback = painterResource(R.drawable.developer_mudassir),
+                contentDescription = "Mudassir",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(92.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.developer_mudassir),
-                    contentDescription = "Mudassir",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(92.dp)
-                        .clip(RoundedCornerShape(28.dp)),
+                Text(
+                    text = "Mudassir",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = "Mudassir",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = "App developer",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
+                Text(
+                    text = "App developer",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium,
+                )
             }
 
+            // Compact circular CTA buttons for GitHub, Portfolio Website, and Instagram
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                AboutIconAction(R.drawable.website, "Website", onWebsite, Modifier.weight(1f))
-                AboutIconAction(R.drawable.github, "GitHub", onGitHub, Modifier.weight(1f))
-                AboutIconAction(R.drawable.telegram, "Telegram", onTelegram, Modifier.weight(1f))
+                CircleCtaButton(
+                    iconRes = R.drawable.github,
+                    contentDescription = "GitHub",
+                    onClick = onGitHub,
+                )
+                CircleCtaButton(
+                    iconRes = R.drawable.website,
+                    contentDescription = "Website",
+                    onClick = onWebsite,
+                )
+                CircleCtaButton(
+                    iconRes = R.drawable.instagram,
+                    contentDescription = "@mud4sssir7 Instagram",
+                    onClick = onInstagram,
+                )
             }
+
+            Spacer(Modifier.height(2.dp))
 
             Button(
                 onClick = onSupport,
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(48.dp),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.favorite),
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                 )
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(8.dp))
                 Text("Support the developer", fontWeight = FontWeight.Bold)
             }
         }
@@ -331,28 +319,58 @@ private fun DeveloperCard(
 }
 
 @Composable
-private fun AboutIconAction(
+private fun CircleCtaButton(
     iconRes: Int,
-    label: String,
+    contentDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = CircleShape,
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.size(46.dp),
     ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Box(contentAlignment = Alignment.Center) {
             Icon(
                 painter = painterResource(iconRes),
-                contentDescription = label,
-                modifier = Modifier.size(21.dp),
+                contentDescription = contentDescription,
+                modifier = Modifier.size(20.dp),
             )
+        }
+    }
+}
+
+@Composable
+private fun ContributorsRow(
+    contributors: List<ContributorInfo>,
+    onContributorClick: (String) -> Unit,
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(contributors) { contributor ->
+            Surface(
+                onClick = { onContributorClick(contributor.githubUrl) },
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.size(54.dp),
+            ) {
+                AsyncImage(
+                    model = contributor.avatarUrl,
+                    placeholder = painterResource(R.drawable.github),
+                    error = painterResource(R.drawable.github),
+                    fallback = painterResource(R.drawable.github),
+                    contentDescription = contributor.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                )
+            }
         }
     }
 }
@@ -361,66 +379,12 @@ private fun AboutIconAction(
 private fun AboutSectionTitle(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 10.dp, start = 4.dp),
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(top = 8.dp, start = 4.dp),
     )
-}
-
-@Composable
-private fun ContributorCard(
-    imageUrl: String,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
-) {
-    val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
-    val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
-
-    Surface(
-        onClick = onClick,
-        shape = com.mudassir131.yt.ui.utils.getPreferenceShape(position, 24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth().padding(top = topPadding, bottom = bottomPadding),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Icon(
-                painter = painterResource(R.drawable.github),
-                contentDescription = "GitHub",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-        }
-    }
 }
 
 @Composable
@@ -429,16 +393,18 @@ private fun AboutLinkCard(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    position: com.mudassir131.yt.ui.utils.PreferencePosition = com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE,
+    position: PreferencePosition = PreferencePosition.SINGLE,
 ) {
-    val topPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.FIRST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
-    val bottomPadding = if (position == com.mudassir131.yt.ui.utils.PreferencePosition.LAST || position == com.mudassir131.yt.ui.utils.PreferencePosition.SINGLE) 4.dp else 0.5.dp
+    val topPadding = if (position == PreferencePosition.FIRST || position == PreferencePosition.SINGLE) 4.dp else 0.5.dp
+    val bottomPadding = if (position == PreferencePosition.LAST || position == PreferencePosition.SINGLE) 4.dp else 0.5.dp
 
     Surface(
         onClick = onClick,
-        shape = com.mudassir131.yt.ui.utils.getPreferenceShape(position, 24.dp),
+        shape = getPreferenceShape(position, 24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth().padding(top = topPadding, bottom = bottomPadding),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topPadding, bottom = bottomPadding),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -475,81 +441,6 @@ private fun AboutLinkCard(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-private fun AppInfoRow(
-    title: String,
-    value: String,
-    onClick: (() -> Unit)? = null,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = onClick != null, onClick = onClick ?: {})
-            .padding(horizontal = 18.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-        )
-    }
-}
-
-@Composable
-private fun SolidarityFooter() {
-    Surface(
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = "This Project stands with",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                FlagLabel(R.drawable.ic_flag_palestine, "Palestine")
-                Text(
-                    text = "and",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 10.dp),
-                )
-                FlagLabel(R.drawable.ic_flag_kashmir, "Kashmir")
-            }
-        }
-    }
-}
-
-@Composable
-private fun FlagLabel(flagRes: Int, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Image(
-            painter = painterResource(flagRes),
-            contentDescription = "$label flag",
-            modifier = Modifier
-                .size(width = 36.dp, height = 24.dp)
-                .clip(RoundedCornerShape(4.dp)),
-        )
-        Spacer(Modifier.width(7.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
     }
 }
 

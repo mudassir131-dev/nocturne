@@ -662,7 +662,7 @@ class MainActivity : ComponentActivity() {
 
 
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = false)
-            val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "silver")
+            val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "aurora")
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val useSystemFont by rememberPreference(UseSystemFontKey, defaultValue = false)
             val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -673,8 +673,13 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(useDarkTheme) {
                 setSystemBarAppearance(useDarkTheme)
             }
-            val pureBlackEnabled by rememberPreference(PureBlackKey, defaultValue = true)
-            val pureBlack = pureBlackEnabled && useDarkTheme
+            val (pureBlackPref, onPureBlackPrefChange) = rememberPreference(PureBlackKey, defaultValue = false)
+            LaunchedEffect(pureBlackPref) {
+                if (pureBlackPref) {
+                    onPureBlackPrefChange(false)
+                }
+            }
+            val pureBlack = false
 
             val customThemeSeedPalette = remember(customThemeColorValue) {
                 if (customThemeColorValue.startsWith("#")) {
@@ -1664,7 +1669,7 @@ class MainActivity : ComponentActivity() {
                                                         )
                                                     },
                                                 ) {
-                                                    if (!active || query.text.isBlank()) {
+                                                    if (!active) {
                                                         SearchDiscoveryHub(
                                                             navController = navController,
                                                             homeViewModel = homeViewModel,

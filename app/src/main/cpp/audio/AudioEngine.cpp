@@ -187,10 +187,10 @@ bool AudioEngine::openStream(std::int32_t sampleRate) {
 
     dspProcessor_->setSampleRate(actualRate);
 
-    // Set buffer size to 4 bursts or at least 2048 frames to prevent buffer underruns and crackling
+    // Set buffer size to 2 bursts (optimal low-latency) with sensible minimum
     const std::int32_t burst = stream_->getFramesPerBurst();
     if (burst > 0) {
-        std::int32_t targetBuffer = std::max(burst * 4, 2048);
+        std::int32_t targetBuffer = std::max(burst * 2, 384);
         const std::int32_t cap = stream_->getBufferCapacityInFrames();
         if (cap > 0) {
             targetBuffer = std::min(targetBuffer, cap);

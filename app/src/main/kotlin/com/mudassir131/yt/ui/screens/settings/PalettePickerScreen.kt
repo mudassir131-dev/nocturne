@@ -900,7 +900,7 @@ fun PalettePickerScreen(
     val scope = rememberCoroutineScope()
     val (customThemeColor, onCustomThemeColorChange) = rememberPreference(
         CustomThemeColorKey,
-        defaultValue = "silver"
+        defaultValue = "aurora"
     )
     
     val selectedPalette = remember(customThemeColor) {

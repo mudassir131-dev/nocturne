@@ -27,6 +27,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -229,6 +232,7 @@ fun SearchDiscoveryHub(
             )
 
             SearchPrimaryTab.SUGGESTIONS -> SuggestionsDiscoveryTab(
+                navController = navController,
                 songs = suggestions.orEmpty(),
                 bottomPadding = bottomPadding,
                 onSongClick = { song ->
@@ -321,68 +325,274 @@ private fun DiscoveryCardRow(
 
 @Composable
 private fun SuggestionsDiscoveryTab(
+    navController: NavController,
     songs: List<SongItem>,
     bottomPadding: Dp,
     onSongClick: (SongItem) -> Unit,
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(12.dp, 14.dp, 12.dp, bottomPadding),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        item {
-            Column(Modifier.padding(bottom = 6.dp)) {
-                Text("Suggested for you", style = MaterialTheme.typography.headlineSmall)
+    val spotifyMoods = remember {
+        listOf(
+            StreamingMoodItem("Today's Top Hits", "Spotify · Global Viral & Moods", "Spotify", "Today's Top Hits Spotify", R.drawable.play),
+            StreamingMoodItem("Mood Booster", "Spotify · High Energy & Uplifting", "Spotify", "Mood Booster Spotify", R.drawable.auto_awesome),
+            StreamingMoodItem("Deep Focus", "Spotify · Flow State & Study", "Spotify", "Deep Focus Spotify", R.drawable.album),
+            StreamingMoodItem("Chill Vibes", "Spotify · Acoustic & Mellow Beats", "Spotify", "Chill Hits Spotify", R.drawable.bedtime),
+        )
+    }
+
+    val appleMusicMoods = remember {
+        listOf(
+            StreamingMoodItem("Spatial Audio Hits", "Apple Music · Immersive Dolby Atmos", "Apple Music", "Spatial Audio Apple Music", R.drawable.apple_queue),
+            StreamingMoodItem("Pure Motivation", "Apple Music · Peak Energy & Workout", "Apple Music", "Pure Motivation Apple Music", R.drawable.speed),
+            StreamingMoodItem("Today's Chill", "Apple Music · Downtempo & Lo-Fi Lounge", "Apple Music", "Today's Chill Apple Music", R.drawable.mood),
+            StreamingMoodItem("A-List Pop", "Apple Music · Global Chart Toppers", "Apple Music", "A-List Pop Apple Music", R.drawable.favorite),
+        )
+    }
+
+    if (songs.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = bottomPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 3.5.dp,
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    strokeCap = StrokeCap.Round,
+                )
                 Text(
-                    "Based on your listening",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "Syncing moods & suggestions…",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        itemsIndexed(songs.take(20), key = { _, song -> song.id }) { _, song ->
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f),
-                ),
-                modifier = Modifier.fillMaxWidth().clickable { onSongClick(song) },
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(10.dp),
-                ) {
-                    AsyncImage(
-                        model = song.thumbnail.highResolutionArtworkUrl(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)),
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(12.dp, 14.dp, 12.dp, bottomPadding),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            // Spotify Moods Section
+            item {
+                Column(Modifier.padding(vertical = 4.dp)) {
+                    Text(
+                        text = "Spotify Moods & Playlists",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
                     )
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(
-                            song.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            song.artists.joinToString { it.name },
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                    Text(
+                        text = "Real-time synced Spotify moods",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            itemsIndexed(spotifyMoods, key = { _, item -> "spotify_${item.title}" }) { index, mood ->
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navController.navigate("youtube_browse/search?params=${android.net.Uri.encode(mood.query)}")
+                        },
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF1DB954).copy(alpha = 0.2f),
+                            modifier = Modifier.size(46.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(mood.iconRes),
+                                    contentDescription = null,
+                                    tint = Color(0xFF1DB954),
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
+                        }
+                        Column(Modifier.weight(1f).padding(start = 14.dp)) {
+                            Text(
+                                text = mood.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text = mood.subtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Icon(
+                            painter = painterResource(R.drawable.play),
+                            contentDescription = "Play",
+                            tint = Color(0xFF1DB954),
+                            modifier = Modifier.size(24.dp),
                         )
                     }
-                    Icon(
-                        painter = painterResource(R.drawable.play),
-                        contentDescription = "Play ${song.title}",
-                        modifier = Modifier.padding(12.dp),
+                }
+            }
+
+            // Apple Music Moods Section
+            item {
+                Column(Modifier.padding(top = 10.dp, bottom = 4.dp)) {
+                    Text(
+                        text = "Apple Music Moods & Playlists",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = "Real-time synced Apple Music moods",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            itemsIndexed(appleMusicMoods, key = { _, item -> "apple_${item.title}" }) { index, mood ->
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navController.navigate("youtube_browse/search?params=${android.net.Uri.encode(mood.query)}")
+                        },
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFFC3C44).copy(alpha = 0.2f),
+                            modifier = Modifier.size(46.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(mood.iconRes),
+                                    contentDescription = null,
+                                    tint = Color(0xFFFC3C44),
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
+                        }
+                        Column(Modifier.weight(1f).padding(start = 14.dp)) {
+                            Text(
+                                text = mood.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text = mood.subtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Icon(
+                            painter = painterResource(R.drawable.play),
+                            contentDescription = "Play",
+                            tint = Color(0xFFFC3C44),
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+
+            // Suggested songs section
+            item {
+                Column(Modifier.padding(top = 10.dp, bottom = 4.dp)) {
+                    Text(
+                        text = "Suggested for you",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Based on your listening history",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            itemsIndexed(songs.take(20), key = { _, song -> song.id }) { index, song ->
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f),
+                    ),
+                    modifier = Modifier.fillMaxWidth().clickable { onSongClick(song) },
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(10.dp),
+                    ) {
+                        AsyncImage(
+                            model = song.thumbnail.highResolutionArtworkUrl(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)),
+                        )
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(
+                                song.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                song.artists.joinToString { it.name },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Icon(
+                            painter = painterResource(R.drawable.play),
+                            contentDescription = "Play ${song.title}",
+                            modifier = Modifier.padding(12.dp),
+                        )
+                    }
+                }
+                if (index < songs.take(20).size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                     )
                 }
             }
         }
     }
 }
+
+private data class StreamingMoodItem(
+    val title: String,
+    val subtitle: String,
+    val service: String,
+    val query: String,
+    val iconRes: Int,
+)
 
 @Composable
 private fun AlbumDiscoveryTab(

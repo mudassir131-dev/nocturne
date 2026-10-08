@@ -92,13 +92,16 @@ object LosslessStreamResolver {
         // 1. Check in-memory cache
         val baseKey = videoId.ifBlank { "$title:$artist" }
         val cacheKey = if (allowHighResLossy) "$baseKey:lossy_ok" else "$baseKey:strict"
-        streamCache[cacheKey]?.let { cached ->
-            if (cached.expiresAtMs > System.currentTimeMillis()) {
-                Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Cache HIT for key '$cacheKey' -> using cached ${cached.stream.codec} stream (${cached.stream.url})")
-                return@withContext cached.stream.toResult(videoId)
+        val cached = streamCache[cacheKey] ?: streamCache[baseKey] ?: (if (videoId.isNotBlank()) streamCache[videoId] else null)
+        cached?.let {
+            if (it.expiresAtMs > System.currentTimeMillis()) {
+                Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Cache HIT for key '$cacheKey' -> using cached ${it.stream.codec} stream (${it.stream.url})")
+                return@withContext it.stream.toResult(videoId)
             } else {
                 Timber.tag(TAG).d("[LOSSLESS_PIPELINE] Cache EXPIRED for key '$cacheKey', removing.")
                 streamCache.remove(cacheKey)
+                streamCache.remove(baseKey)
+                if (videoId.isNotBlank()) streamCache.remove(videoId)
             }
         }
 
@@ -198,7 +201,10 @@ object LosslessStreamResolver {
      */
     fun cacheExplicitStream(videoId: String, stream: ResolvedLosslessStream) {
         val expiresAtMs = System.currentTimeMillis() + (stream.expiresInSeconds * 1000L)
-        streamCache[videoId] = CachedStream(stream, expiresAtMs)
+        val cached = CachedStream(stream, expiresAtMs)
+        streamCache[videoId] = cached
+        streamCache["$videoId:strict"] = cached
+        streamCache["$videoId:lossy_ok"] = cached
     }
 
     fun clearCache() {

@@ -16,14 +16,15 @@ struct BiquadCoeffs {
     float a2{0.0f};
 };
 
+// 64-bit double precision state to completely eliminate digital quantization noise and truncation hiss
 struct BiquadState {
-    float z1_L{0.0f};
-    float z2_L{0.0f};
-    float z1_R{0.0f};
-    float z2_R{0.0f};
+    double z1_L{0.0};
+    double z2_L{0.0};
+    double z1_R{0.0};
+    double z2_R{0.0};
 
     void reset() noexcept {
-        z1_L = z2_L = z1_R = z2_R = 0.0f;
+        z1_L = z2_L = z1_R = z2_R = 0.0;
     }
 };
 
@@ -50,7 +51,7 @@ public:
     void setEqGains(const float* gainsDb, std::size_t count);
     void setPreGain(float gainDb) noexcept;
 
-    // Spotify-style speaker optimization & anti-distortion bass tuning
+    // Spotify-style acoustic sound profile
     void setSpotifyProfileEnabled(bool enabled) noexcept;
     [[nodiscard]] bool isSpotifyProfileEnabled() const noexcept {
         return spotifyProfileEnabled_.load(std::memory_order_relaxed);
@@ -67,7 +68,7 @@ public:
     }
 
     /**
-     * Processes interleaved stereo Float32 audio frames in-place.
+     * Processes interleaved stereo Float32 audio frames in-place with zero latency.
      */
     void process(float* frames, std::size_t frameCount) noexcept;
 
@@ -79,7 +80,7 @@ private:
     void recomputeSpatialFilters();
 
     std::atomic<bool> enabled_{false};
-    std::atomic<bool> spotifyProfileEnabled_{true};
+    std::atomic<bool> spotifyProfileEnabled_{false}; // Default OFF for pure bit-perfect transparency
     std::atomic<bool> spatialAudioEnabled_{false};
     std::atomic<SpatialMode> spatialMode_{SpatialMode::Surround3D};
 
@@ -95,26 +96,25 @@ private:
     std::array<BiquadCoeffs, K_EQ_BANDS> coeffs_{};
     std::array<BiquadState, K_EQ_BANDS> states_{};
 
-    // Spotify acoustic mastering & speaker protection filters:
-    // 0: Sub-bass highpass (38 Hz) - cuts driver-destroying DC excursion
-    // 1: Warm bass punch shelf (100 Hz, +2.2 dB)
-    // 2: Anti-mud dip (300 Hz, -0.8 dB)
-    // 3: Vocal presence peak (3.4 kHz, +1.0 dB)
-    // 4: Treble air shelf (12.0 kHz, +1.0 dB)
-    static constexpr std::size_t K_SPOTIFY_BANDS = 5;
+    // Spotify acoustic sound profile filters:
+    // 0: Warm bass shelf (100 Hz, +1.5 dB)
+    // 1: Anti-mud dip (300 Hz, -0.6 dB)
+    // 2: Vocal presence peak (3.4 kHz, +0.8 dB)
+    // 3: Treble air shelf (12.0 kHz, +0.8 dB)
+    static constexpr std::size_t K_SPOTIFY_BANDS = 4;
     std::array<BiquadCoeffs, K_SPOTIFY_BANDS> spotifyCoeffs_{};
     std::array<BiquadState, K_SPOTIFY_BANDS> spotifyStates_{};
 
     // Spatial Audio filters
     BiquadCoeffs sideHpCoeffs_{};
-    float sideHp_z1_{0.0f};
-    float sideHp_z2_{0.0f};
+    double sideHp_z1_{0.0};
+    double sideHp_z2_{0.0};
 
     BiquadCoeffs crossfeedCoeffs_{};
-    float crossfeed_z1_L_{0.0f};
-    float crossfeed_z2_L_{0.0f};
-    float crossfeed_z1_R_{0.0f};
-    float crossfeed_z2_R_{0.0f};
+    double crossfeed_z1_L_{0.0};
+    double crossfeed_z2_L_{0.0};
+    double crossfeed_z1_R_{0.0};
+    double crossfeed_z2_R_{0.0};
 
     // Haas effect delay line for spatial side channel
     static constexpr std::size_t K_SPATIAL_DELAY_CAPACITY = 256;

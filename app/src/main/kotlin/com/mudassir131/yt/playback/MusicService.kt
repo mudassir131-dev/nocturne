@@ -324,7 +324,7 @@ class MusicService :
     var userQueueCount: Int = 0
     private var lastObservedMediaItemIndex: Int = -1
     private val avoidStreamCodecs: Set<String> by lazy {
-        if (deviceSupportsMimeType("audio/opus")) emptySet() else setOf("opus")
+        emptySet()
     }
     private val mediaOkHttpClient: OkHttpClient by lazy {
         OkHttpClient
@@ -924,7 +924,7 @@ class MusicService :
                 Triple(
                     prefs[SpatialAudioEnabledKey] ?: false,
                     SpatialAudioMode.fromString(prefs[SpatialAudioModeKey]),
-                    prefs[SpotifySoundProfileEnabledKey] ?: true,
+                    prefs[SpotifySoundProfileEnabledKey] ?: false,
                 )
             }
             .distinctUntilChanged()

@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -173,17 +174,22 @@ fun StorageSettings(
         }
     }
 
+    val collapsibleScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
+        modifier = Modifier.nestedScroll(collapsibleScrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.storage)) },
+            LargeTopAppBar(
+                title = { Text(stringResource(R.string.storage), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = navController::navigateUp) {
                         Icon(painterResource(R.drawable.arrow_back), contentDescription = null)
                     }
                 },
+                scrollBehavior = collapsibleScrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
                 )
             )
         },

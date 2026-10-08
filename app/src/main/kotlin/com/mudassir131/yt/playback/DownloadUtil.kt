@@ -69,7 +69,7 @@ constructor(
     private val consecutiveThrottleSignals = AtomicInteger(0)
 
     private val avoidStreamCodecs: Set<String> by lazy {
-        if (deviceSupportsMimeType("audio/opus")) emptySet() else setOf("opus")
+        emptySet()
     }
 
     private val mediaOkHttpClient: OkHttpClient by lazy {

@@ -131,7 +131,7 @@ fun ThemeCreatorScreen(
 
     val (customThemeValue, setCustomThemeValue) = rememberPreference(
         key = CustomThemeColorKey,
-        defaultValue = "silver",
+        defaultValue = "aurora",
     )
     val (_, setDynamicThemeEnabled) = rememberPreference(
         key = DynamicThemeKey,

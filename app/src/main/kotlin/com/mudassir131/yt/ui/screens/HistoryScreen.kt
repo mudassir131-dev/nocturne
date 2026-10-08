@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -28,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -308,6 +311,13 @@ fun HistoryScreen(
                                     )
                                     .animateItem()
                             )
+                            if (index < section.songs.size - 1) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                                    thickness = 1.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                                )
+                            }
                         }
                     }
                 }
@@ -391,6 +401,13 @@ fun HistoryScreen(
                                 )
                                 .animateItem()
                         )
+                        if (index < currentDateWrappedItems.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 76.dp, end = 16.dp),
+                                thickness = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                            )
+                        }
                     }
                 }
             }

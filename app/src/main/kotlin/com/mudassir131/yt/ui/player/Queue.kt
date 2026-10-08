@@ -797,14 +797,23 @@ fun Queue(
                             }
                         }
 
-                        if (effectiveLocked) {
-                            content()
-                        } else {
-                            SwipeToDismissBox(
-                                state = dismissBoxState,
-                                backgroundContent = {},
-                            ) {
+                        androidx.compose.foundation.layout.Column {
+                            if (effectiveLocked) {
                                 content()
+                            } else {
+                                SwipeToDismissBox(
+                                    state = dismissBoxState,
+                                    backgroundContent = {},
+                                ) {
+                                    content()
+                                }
+                            }
+                            if (index < mutableQueueWindows.size - 1) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 76.dp, end = 20.dp),
+                                    thickness = 1.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                                )
                             }
                         }
                     }

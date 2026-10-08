@@ -30,8 +30,14 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -237,6 +243,10 @@ fun PlayerSettings(
 
     val (spatialAudioEnabled, onSpatialAudioEnabledChange) = rememberPreference(
         SpatialAudioEnabledKey,
+        defaultValue = false
+    )
+    val (spotifySoundProfileEnabled, onSpotifySoundProfileEnabledChange) = rememberPreference(
+        SpotifySoundProfileEnabledKey,
         defaultValue = false
     )
     val (spatialAudioMode, onSpatialAudioModeChange) = rememberEnumPreference(
@@ -560,18 +570,40 @@ fun PlayerSettings(
         }
     }
 
-    Column(
-        Modifier
-            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
-            .verticalScroll(rememberScrollState())
-    ) {
-        Spacer(
-            Modifier.windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current.only(
-                    WindowInsetsSides.Top
+    val collapsibleScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(collapsibleScrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(stringResource(R.string.player_and_audio), fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(
+                        onClick = navController::navigateUp,
+                        onLongClick = navController::backToMain
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.arrow_back),
+                            contentDescription = null
+                        )
+                    }
+                },
+                scrollBehavior = collapsibleScrollBehavior,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
                 )
             )
-        )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { innerPadding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+                .verticalScroll(rememberScrollState())
+        ) {
 
         PreferenceGroup(
             title = stringResource(R.string.player),
@@ -711,6 +743,21 @@ fun PlayerSettings(
                         icon = { Icon(painterResource(R.drawable.bluetooth), null) },
                         checked = autoStartOnBluetooth,
                         onCheckedChange = onAutoStartOnBluetoothChange
+                    )
+                }
+            )
+        )
+
+        PreferenceGroup(
+            title = "Acoustic Profiles",
+            items = listOf<@Composable () -> Unit>(
+                {
+                    SwitchPreference(
+                        title = { Text("Spotify Acoustic Profile") },
+                        description = "Calibrated warmth with low-end contouring and vocal presence.",
+                        icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
+                        checked = spotifySoundProfileEnabled,
+                        onCheckedChange = onSpotifySoundProfileEnabledChange
                     )
                 }
             )
@@ -969,22 +1016,8 @@ fun PlayerSettings(
                 }
             )
         )
-    }
-
-    TopAppBar(
-        title = { Text(stringResource(R.string.player_and_audio)) },
-        navigationIcon = {
-            IconButton(
-                onClick = navController::navigateUp,
-                onLongClick = navController::backToMain
-            ) {
-                Icon(
-                    painterResource(R.drawable.arrow_back),
-                    contentDescription = null
-                )
-            }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

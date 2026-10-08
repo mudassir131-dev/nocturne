@@ -73,13 +73,15 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.36
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.37
 
-* **YouTube Video & Canvas in Apple Music Player** — Full video canvas integration seamlessly embedded into the Apple Music inspired player interface with dynamic video playback controls.
-* **Preserved Apple Music Canvas Experience** — Native Apple Music artwork canvas and fluid ambient visuals are fully preserved alongside the new video canvas toggle.
-* **Playback & Search Bug Fixes** — Resolved critical playback stall/pause issue when initiating songs from Search results or the Home screen, with thread-safe stream resolving and improved queue handling.
-* **Navbar Crash Prevention & Audit** — Hardened bottom navigation bar and navigation rail against NaN dimension rendering and layout range coercion exceptions for ultra-stable navigation.
-* **Enhanced App Quality & Stability** — Optimized audio pipeline streaming resilience, improved UI smoothness, and comprehensive stability enhancements across all screens."""
+* **Fluid Collapsing Top Bars Across Settings** — Seamless Material 3 LargeTopAppBar with exitUntilCollapsed scroll behavior across all settings screens (Appearance, Player, Listen Together, Content, Privacy, Discord, Storage, Integration, and About).
+* **Settings Grouped Cards & Visible Separator Lines** — Redesigned main Settings into clean card blocks with crisp separator lines, removed redundant options, and refreshed inner settings divider clarity.
+* **Instant Recent Searches** — Tapping the search bar immediately reveals your recent search history and past queries without waiting to type.
+* **Slide-Up Playlist Options Bottom Sheet** — Converted the Library plus (+) button dialog into a smooth, interactive slide-up ModalBottomSheet.
+* **Spotify & Apple Music Mood Playlists + Material Loader** — Real-time synced mood discovery streams with Google's dedicated Material 3 loading indicators.
+* **Aurora Color Palette Default** — Refreshed default color palette to Aurora and optimized dark mode contrast with Pure Black forced off.
+* **Stability & Audio Engine Refinements** — Audio DSP processor stability updates, lossless ALAC resolver resilience, and overall performance optimizations."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
