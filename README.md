@@ -241,7 +241,7 @@ graph TD
   </a>
   &nbsp;&nbsp;
   <a href="https://nocturne-music.vercel.app">
-    <img src="https://img.shields.io/badge/Official%20Web-Direct%20Download-6366f1?style=for-the-badge&logo=vercel&logoColor=white" height="48" alt="Official Website" />
+    <img src=".github/assets/badge_website.svg" height="48" alt="Official Website - Nocturne Music" />
   </a>
 </div>
 
