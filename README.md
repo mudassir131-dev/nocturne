@@ -236,8 +236,8 @@ graph TD
     <img src=".github/assets/badge_github.svg" height="48" alt="Download on GitHub" />
   </a>
   &nbsp;&nbsp;
-  <a href="https://nocturne.en.uptodown.com/android">
-    <img src=".github/assets/badge_uptodown.svg" height="48" alt="Download on Uptodown" />
+  <a href="https://nocturne.en.uptodown.com/android" title="Download Nocturne">
+    <img src="https://stc.utdstc.com/img/mediakit/download-aao-small.png" height="48" alt="Download Nocturne" />
   </a>
   &nbsp;&nbsp;
   <a href="https://nocturne-music.vercel.app">
