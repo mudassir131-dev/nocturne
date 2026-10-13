@@ -1,0 +1,13 @@
+# Technical Specification 02: Custom Media Source Factory and Chunk DataSource Protocol Specification
+
+## 1. Scope & Objective
+Specification for ExoPlayer DataSource delegation, stream URL decryption, adaptive bitrate selection, and chunk streaming buffer limits.
+
+## 2. Invariants & Requirements
+- All operations must be deterministic, thread-safe, and resilient to sudden process termination.
+- Data structures must adhere strictly to defined schema contracts and validate invariants on entry.
+- Memory allocations must remain bounded to prevent OOM errors on low-RAM Android devices.
+
+## 3. Conformance & Validation
+- Validated via automated Kotlin unit tests and AndroidX test suites.
+- Strict linting and static analysis conformance under Android Gradle Plugin checks.
