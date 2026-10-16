@@ -1,5 +1,23 @@
 # Nocturne Changelog & Release Notes
 
+## [v2.22.38] - 2026-10-16
+
+### 📖 Architecture & Systems Documentation Hub
+- **Comprehensive Modular Architecture**: Documented all 20 core subsystems including C++ JNI audio engine & DSP pipeline, Media3 ExoPlayer foreground lifecycle, InnerTube reverse-engineering protocol, and Jetpack Compose MVI state hoisting.
+- **Architectural Decision Records (ADR 001 - 020)**: Formally captured architectural standards including native 32-bit float PCM audio pipeline, Android Keystore encryption for cookie sessions, two-pass fuzzy match heuristics, and SQLite WAL database persistence.
+- **Production Troubleshooting Guides**: Detailed root-cause analysis and mitigation strategies for audio underruns, OEM background battery killers, Bluetooth A2DP latency, InnerTube HTTP 403 / rate limits, and audio noisy pauses.
+- **Technical Specifications & Benchmarks**: Added formal specifications and benchmark analyses for DSP CPU utilization, database WAL query performance across 100k tracks, and audio streaming latency distribution.
+- **Community & Contributor Guides**: Published guides for building Nocturne locally, compiling native C++ code with NDK, adding synced lyrics providers, and tuning track-matching thresholds.
+- **Security Standards & RFC Roadmap**: Established strict zero-telemetry and key management policies, along with RFC proposals for Android Auto, Google Cast v3, and ReplayGain 2.0 loudness normalization.
+
+### 📢 Broadcast & In-App Announcements
+- **Updated Broadcast Channel**: Deployed latest broadcast announcement notifications and status synchronization for all Nocturne app users.
+
+### ⚙️ Engine, Build & Stability
+- **Version Bump**: Bumped `versionCode` to `49` and `versionName` to `2.22.38`.
+
+---
+
 ## [v2.22.37] - 2026-10-08
 
 ### 🌟 Collapsing Top Bars Across Settings

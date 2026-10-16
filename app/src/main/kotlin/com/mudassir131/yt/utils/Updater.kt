@@ -73,15 +73,15 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.37
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.38
 
-* **Fluid Collapsing Top Bars Across Settings** — Seamless Material 3 LargeTopAppBar with exitUntilCollapsed scroll behavior across all settings screens (Appearance, Player, Listen Together, Content, Privacy, Discord, Storage, Integration, and About).
-* **Settings Grouped Cards & Visible Separator Lines** — Redesigned main Settings into clean card blocks with crisp separator lines, removed redundant options, and refreshed inner settings divider clarity.
-* **Instant Recent Searches** — Tapping the search bar immediately reveals your recent search history and past queries without waiting to type.
-* **Slide-Up Playlist Options Bottom Sheet** — Converted the Library plus (+) button dialog into a smooth, interactive slide-up ModalBottomSheet.
-* **Spotify & Apple Music Mood Playlists + Material Loader** — Real-time synced mood discovery streams with Google's dedicated Material 3 loading indicators.
-* **Aurora Color Palette Default** — Refreshed default color palette to Aurora and optimized dark mode contrast with Pure Black forced off.
-* **Stability & Audio Engine Refinements** — Audio DSP processor stability updates, lossless ALAC resolver resilience, and overall performance optimizations."""
+* **Architecture & Systems Documentation Hub** — Comprehensive documentation across 20 modular subsystems, 20 Architectural Decision Records (ADRs), and formal technical specifications.
+* **Production Troubleshooting & Diagnostics** — In-depth mitigation guides for audio buffer underruns, OEM battery killer bypasses, Bluetooth A2DP latency, and InnerTube rate-limit resilience.
+* **Engine & Audio Benchmarks** — Performance benchmarks for native C++ DSP CPU utilization, Room SQLite WAL query throughput, and low-latency audio streaming pipelines.
+* **Developer & Contributor Guides** — Step-by-step documentation for building locally with Gradle, compiling C++ NDK audio modules, and authoring synced lyrics providers.
+* **Next-Gen RFCs & Security Standards** — RFC roadmaps for Android Auto, Google Cast v3, and ReplayGain 2.0, backed by strict zero-telemetry and encrypted Keystore security standards.
+* **In-App Broadcast Notifications** — Real-time cloud announcement channel refreshed with latest release news and system advisories.
+* **Stability & Maintenance** — Build optimization and version bump to v2.22.38 (49)."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
