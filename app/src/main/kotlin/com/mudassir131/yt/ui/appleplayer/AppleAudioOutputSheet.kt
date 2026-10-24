@@ -346,17 +346,17 @@ private fun AppleQualitySelector(
             .background(surfaceColor),
     ) {
         QualityOption(
-            text = "Hi-Res Lossless",
-            selected = selected == AudioQuality.LOSSLESS,
-            onClick = { onSelected(AudioQuality.LOSSLESS) },
+            text = "Opus",
+            selected = selected == AudioQuality.OPUS,
+            onClick = { onSelected(AudioQuality.OPUS) },
             modifier = Modifier.weight(1.3f),
             accentColor = accentColor,
             onAccentColor = onAccentColor,
         )
         QualityOption(
-            text = "Opus",
-            selected = selected == AudioQuality.OPUS,
-            onClick = { onSelected(AudioQuality.OPUS) },
+            text = "Hi-Res Lossless",
+            selected = selected == AudioQuality.LOSSLESS,
+            onClick = { onSelected(AudioQuality.LOSSLESS) },
             modifier = Modifier.weight(1f),
             accentColor = accentColor,
             onAccentColor = onAccentColor,
