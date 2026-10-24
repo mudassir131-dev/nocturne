@@ -36,7 +36,7 @@ import kotlin.properties.ReadOnlyProperty
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "settings",
     produceMigrations = {
-        listOf(OnboardingMigration, PlayerArchitectureMigration, AudioQualityMigration)
+        listOf(OnboardingMigration, PlayerArchitectureMigration, AudioQualityMigration, AudioQualityOpusDefaultMigration)
     },
 )
 object PreferenceStore {
