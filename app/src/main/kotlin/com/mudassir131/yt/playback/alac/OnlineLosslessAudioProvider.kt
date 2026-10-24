@@ -5,10 +5,12 @@
 
 package com.mudassir131.yt.playback.alac
 
+import com.mudassir131.yt.utils.matching.TrackMatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import java.net.URLEncoder
@@ -25,6 +27,37 @@ object OnlineLosslessAudioProvider : LosslessAudioProvider {
     override val name: String = "OnlineLosslessAudioProvider"
     private const val TAG = "OnlineLosslessProvider"
     private const val DES_KEY = "38346591"
+
+    /**
+     * A Saavn search result that is a resolution candidate. The encrypted URL is only
+     * honored once the candidate clears the title / artist / duration gates below, so an
+     * unrelated track with a similar-sounding name can never win.
+     */
+    internal data class SaavnCandidate(
+        val title: String,
+        val artists: List<String>,
+        val durationSeconds: Int,
+        val encryptedUrl: String,
+    )
+
+    /** Confidence below this, a Saavn candidate is treated as no-match (mirrors TrackMatcher). */
+    private const val CONFIDENCE_THRESHOLD = 0.55
+
+    /**
+     * The result title must agree with the searched track title at least this well, or it is
+     * disqualified whatever its duration says. This is the gate that keeps a different song
+     * with a similar name (e.g. another artist's "12 Saal") from being returned as the stream
+     * for the searched track.
+     */
+    private const val MIN_TITLE_SCORE = 0.35
+
+    /**
+     * Saavn serves the same studio master YouTube does, so matching durations sit within a
+     * couple of seconds. A candidate further off than this is a different recording (a 30
+     * second preview, another cut of the song) and is rejected outright when the reaching
+     * duration is known on both sides.
+     */
+    private const val DURATION_HARD_REJECT_SEC = 15
 
     private val httpClient by lazy {
         OkHttpClient.Builder()
