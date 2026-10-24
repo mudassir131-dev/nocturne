@@ -141,7 +141,7 @@ fun AppleAudioOutputSheet(
     val onAccentColor by animateColorAsState(palette.onAccent, tween(280), label = "audioSheetOnAccent")
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var outputs by remember { mutableStateOf(audioManager.currentOutputs()) }
-    var audioQuality by rememberEnumPreference(AudioQualityKey, AudioQuality.LOSSLESS)
+    var audioQuality by rememberEnumPreference(AudioQualityKey, AudioQuality.OPUS)
     val activeOutput = remember(outputs) {
         outputs.firstOrNull { it.isExternal }
             ?: outputs.firstOrNull()
