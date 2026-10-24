@@ -32,7 +32,7 @@ import kotlin.math.tanh
  *
  * Implements an 11-Stage High-Fidelity Audio Enhancement Pipeline:
  * 1. Headroom & Preamp Management (prevents digital clipping before EQ boosts)
- * 2. 4-Band Parametric Filter Section (Low-Shelf 80Hz, Low-Mid 320Hz, Presence 3.2kHz, Air 11kHz)
+ * 2. 4-Band Parametric Filter Section (Low-Shelf 65Hz, Low-Mid 320Hz, Presence 2.6kHz, Air 11kHz)
  * 3. Dynamic Bass Management (envelope-following sidechain detector to prevent boomy clipping/pumping)
  * 4. Harmonic Enhancement (analog warmth saturator with even/odd subtle harmonics)
  * 5. Gentle Multiband Dynamics / Compressor
@@ -247,12 +247,13 @@ class AudioDspProcessor : AudioProcessor {
     private fun updateFilterCoefficients() {
         val sampleRate = if (inputFormat.sampleRate > 0) inputFormat.sampleRate.toDouble() else 44100.0
 
-        // 1. Low Shelf @ 80 Hz (Deep punch / sub-bass)
+        // 1. Low Shelf @ 65 Hz (Deep, dry sub punch with no 100-200 Hz boom;
+        //    slightly steeper Q keeps the boost tight instead of rangy)
         val bassCoeffs = BiquadFilter.calculateLowShelf(
             sampleRate = sampleRate,
-            cutoffHz = 80.0,
+            cutoffHz = 65.0,
             gainDb = currentBassGainDb.toDouble(),
-            q = 0.707,
+            q = 0.85,
         )
 
         // 2. Low-Mid Peaking @ 320 Hz (Mud control)
@@ -263,12 +264,13 @@ class AudioDspProcessor : AudioProcessor {
             q = 1.2,
         )
 
-        // 3. Presence Peaking @ 3200 Hz (Vocal & instrument clarity)
+        // 3. Presence Peaking @ 2600 Hz (Vocal body & intimacy; below the 3.3 kHz+
+        //    sibilance zone so boosted vocals stay smooth on bright earphones)
         val clarityCoeffs = BiquadFilter.calculatePeaking(
             sampleRate = sampleRate,
-            centerHz = 3200.0,
+            centerHz = 2600.0,
             gainDb = currentClarityDb.toDouble(),
-            q = 1.0,
+            q = 0.9,
         )
 
         // 4. Air High-Shelf @ 11000 Hz (Air & high-frequency detail)
