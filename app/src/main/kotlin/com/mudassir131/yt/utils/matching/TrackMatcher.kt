@@ -303,6 +303,41 @@ object TrackMatcher {
         return false
     }
 
+    /**
+     * Similarity an artist name must clear before fuzzy matching alone can authenticate it as
+     * the searched performer. Deliberately far above the title floor: "Bilal Saeed" vs
+     * "Sarmad Qadeer" still measures 0.39 on edit distance despite being different people,
+     * so anything below this must be supported by word-level containment instead.
+     */
+    private const val ARTIST_VERIFY_SCORE = 0.70
+
+    /**
+     * Whether [candidateArtist] demonstrably names the performer the user searched for,
+     * instead of merely resembling them ("Honey Singh" is a billing of "Yo Yo Honey Singh";
+     * "Sarmad Qadeer" is not Bilal Saeed no matter how edit distance feels about it).
+     *
+     * Fuzzy similarity alone must never authenticate an artist: two completely different
+     * names can land at a similar edit-distance ratio ("bilal saeed" vs "sarmad qadeer"
+     * scores 0.39), so verification additionally requires word-level overlap — one name's
+     * words all inside the other's ("Honey Singh" inside "Yo Yo Honey Singh") — or a near
+     * letter-for-letter match (>= [ARTIST_VERIFY_SCORE]) for spelling variants such as
+     * "Arman" / "Armaan Malik" or "A.R. Rahman" / "A R Rahman".
+     */
+    fun artistVerified(queryArtist: String, candidateArtist: String): Boolean {
+        val normalizedQuery = normalize(queryArtist)
+        val normalizedCandidate = normalize(candidateArtist)
+        if (normalizedQuery.isBlank() || normalizedCandidate.isBlank()) return false
+
+        val queryTokens = normalizedQuery.split(' ').filterTo(mutableSetOf<String>()) { it.isNotBlank() }
+        val candidateTokens = normalizedCandidate.split(' ').filterTo(mutableSetOf<String>()) { it.isNotBlank() }
+        if (queryTokens.containsAll(candidateTokens) || candidateTokens.containsAll(queryTokens)) return true
+
+        return maxOf(
+            levenshteinRatio(normalizedQuery, normalizedCandidate),
+            tokenSortRatio(normalizedQuery, normalizedCandidate),
+        ) >= ARTIST_VERIFY_SCORE
+    }
+
     /** Scores one candidate. A disqualified candidate carries confidence 0.0 and can never win. */
     fun score(
         trackName: String,
