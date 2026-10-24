@@ -143,9 +143,14 @@ class AudioDspProcessor : AudioProcessor {
     ) {
         val (effectiveBass, effectiveClarity, effectiveTreble, effectiveLoudness) = when (preset) {
             AudioDspPreset.PURE -> Quad(0.0f, 0.0f, 0.0f, false)
-            AudioDspPreset.BALANCED -> Quad(2.0f, 1.0f, 0.5f, false)
-            AudioDspPreset.BASS_BOOST -> Quad(4.0f, 0.5f, 0.0f, false)
-            AudioDspPreset.VOCAL -> Quad(0.0f, 2.5f, 1.0f, false)
+            // Balanced signature: punchy sub-bass foundation (+3 dB on the 65 Hz shelf), forward
+            // yet smooth vocal presence (+1.5 dB @ 2.6 kHz), modest air. Apple-Music-lossless feel.
+            AudioDspPreset.BALANCED -> Quad(3.0f, 1.5f, 0.7f, false)
+            // Bass Boost: deeper shelf and a slightly warmer tick of clarity so heavy low-end
+            // never buries the vocal line; treble kept above flat to avoid muffling.
+            AudioDspPreset.BASS_BOOST -> Quad(5.0f, 0.8f, 0.3f, false)
+            // Vocal: small bass foundation keeps vocals anchored rather than thin.
+            AudioDspPreset.VOCAL -> Quad(0.5f, 2.5f, 1.0f, false)
             AudioDspPreset.LOUD_CLEAN -> Quad(2.5f, 1.0f, 0.5f, true)
             AudioDspPreset.CUSTOM -> Quad(bassGainDb, clarityGainDb, trebleGainDb, loudnessEnabled)
         }
@@ -154,10 +159,16 @@ class AudioDspProcessor : AudioProcessor {
             enabled = enabled,
             preset = preset,
             bassGainDb = effectiveBass.coerceIn(-6.0f, 6.0f),
-            lowMidDb = if (preset == AudioDspPreset.VOCAL || preset == AudioDspPreset.LOUD_CLEAN) -0.8f else -0.4f,
+            lowMidDb = if (preset == AudioDspPreset.VOCAL || preset == AudioDspPreset.LOUD_CLEAN) -0.8f else -0.6f,
             clarityGainDb = effectiveClarity.coerceIn(-3.0f, 5.0f),
             trebleGainDb = effectiveTreble.coerceIn(-4.0f, 5.0f),
-            bassDynamicAmount = if (preset == AudioDspPreset.BASS_BOOST) 0.35f else 0.20f,
+            // Stronger dynamic bass control on bass-heavy presets: the envelope-driven
+            // attenuation keeps the punch from turning into boom or pumping on the limiter.
+            bassDynamicAmount = when (preset) {
+                AudioDspPreset.BASS_BOOST -> 0.35f
+                AudioDspPreset.BALANCED -> 0.25f
+                else -> 0.20f
+            },
             compressionAmount = if (effectiveLoudness) 0.25f else 0.10f,
             harmonicAmount = 0.05f,
             stereoAmount = 0.04f,
