@@ -81,15 +81,16 @@ object OnlineLosslessAudioProvider : LosslessAudioProvider {
 
         Timber.tag(TAG).d("Searching online lossless stream for: '$query' (duration: $durationSeconds s)")
 
-        val streamFromCatalog = searchAndResolveCatalog(query, cleanTitle, durationSeconds)
+        val streamFromCatalog = searchAndResolveCatalog(query, cleanTitle, cleanArtist, durationSeconds)
         if (streamFromCatalog != null) {
             Timber.tag(TAG).i("Resolved online lossless/high-res stream: ${streamFromCatalog.url}")
             return@withContext streamFromCatalog
         }
 
-        // Try title-only if artist search was too restrictive
+        // Try title-only if artist search was too restrictive. The same verification gates
+        // still apply here, so this only widens the search pool, never the acceptance rules.
         if (cleanArtist.isNotBlank()) {
-            val streamFromTitle = searchAndResolveCatalog(cleanTitle, cleanTitle, durationSeconds)
+            val streamFromTitle = searchAndResolveCatalog(cleanTitle, cleanTitle, null, durationSeconds)
             if (streamFromTitle != null) {
                 Timber.tag(TAG).i("Resolved online lossless/high-res stream by title: ${streamFromTitle.url}")
                 return@withContext streamFromTitle
@@ -102,11 +103,12 @@ object OnlineLosslessAudioProvider : LosslessAudioProvider {
     private fun searchAndResolveCatalog(
         query: String,
         matchTitle: String,
+        matchArtist: String?,
         expectedDuration: Int,
     ): ResolvedLosslessStream? {
         return try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            val searchUrl = "https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=android&n=5&p=1&q=$encodedQuery"
+            val searchUrl = "https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=android&n=10&p=1&q=$encodedQuery"
 
             val request = Request.Builder()
                 .url(searchUrl)
