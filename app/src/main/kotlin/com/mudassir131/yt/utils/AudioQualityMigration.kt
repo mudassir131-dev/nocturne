@@ -33,3 +33,32 @@ object AudioQualityMigration : DataMigration<Preferences> {
 
     override suspend fun cleanUp() = Unit
 }
+
+/**
+ * One-shot retune of the default listening path: the old default, LOSSLESS, resolved each
+ * song per-track from the Saavn AAC catalog with a YouTube Opus fallback — so playback
+ * heard a different codec (and a different catalog match) from song to song. The retuned
+ * default is YouTube Opus end to end at the highest bitrate YouTube meets (<= 320 kbps):
+ * one codec, consistent sound, and the stream is always fetched for the exact track
+ * metadata being played.
+ *
+ * LOSSLESS and SAAVN remain explicit opt-ins in the settings UI; an explicitly stored
+ * SAAVN value is never touched here, only the stamped legacy LOSSLESS default flips.
+ */
+object AudioQualityOpusDefaultMigration : DataMigration<Preferences> {
+    private val AudioQualityOpusDefaultAppliedKey = booleanPreferencesKey("audioQualityDefaultOpusV2")
+
+    override suspend fun shouldMigrate(currentData: Preferences): Boolean =
+        currentData[AudioQualityOpusDefaultAppliedKey] != true
+
+    override suspend fun migrate(currentData: Preferences): Preferences =
+        mutablePreferencesOf().apply {
+            this += currentData
+            if (currentData[AudioQualityKey] == AudioQuality.LOSSLESS.name) {
+                this[AudioQualityKey] = AudioQuality.OPUS.name
+            }
+            this[AudioQualityOpusDefaultAppliedKey] = true
+        }
+
+    override suspend fun cleanUp() = Unit
+}
