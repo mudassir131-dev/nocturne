@@ -234,11 +234,11 @@ class AudioDspProcessorTest {
     fun `09 - Quality-first Presets configure exact specified parameters`() {
         processor.configure(format16BitStereo)
 
-        // Balanced: +2 dB bass, +1 dB clarity, +0.5 dB treble
+        // Balanced: +3 dB punchy sub-bass, +1.5 dB vocal presence, +0.7 dB air
         processor.updateConfig(enabled = true, preset = AudioDspPreset.BALANCED)
-        assertEquals(2.0f, processor.config.bassGainDb, 0.01f)
-        assertEquals(1.0f, processor.config.clarityGainDb, 0.01f)
-        assertEquals(0.5f, processor.config.trebleGainDb, 0.01f)
+        assertEquals(3.0f, processor.config.bassGainDb, 0.01f)
+        assertEquals(1.5f, processor.config.clarityGainDb, 0.01f)
+        assertEquals(0.7f, processor.config.trebleGainDb, 0.01f)
         assertFalse(processor.config.loudnessEnabled)
 
         // Loud & Clean: +2.5 dB bass, +1.0 dB clarity, +0.5 dB treble, loudness norm active
