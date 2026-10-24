@@ -126,7 +126,7 @@ fun PlayerSettings(
     )
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
-        defaultValue = AudioQuality.LOSSLESS
+        defaultValue = AudioQuality.OPUS
     )
     val (playerStreamClient, onPlayerStreamClientChange) = rememberEnumPreference(
         PlayerStreamClientKey,
