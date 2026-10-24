@@ -613,7 +613,7 @@ fun PlayerSettings(
                         title = { Text(stringResource(R.string.audio_quality)) },
                         icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
                         selectedValue = audioQuality,
-                        values = listOf(AudioQuality.LOSSLESS, AudioQuality.OPUS, AudioQuality.SAAVN),
+                        values = listOf(AudioQuality.OPUS, AudioQuality.LOSSLESS, AudioQuality.SAAVN),
                         onValueSelected = onAudioQualityChange,
                         valueText = {
                             when (it) {
