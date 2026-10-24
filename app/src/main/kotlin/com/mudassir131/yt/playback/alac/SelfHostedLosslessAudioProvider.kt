@@ -11,6 +11,7 @@ import com.mudassir131.yt.constants.SelfHostedServerNameKey
 import com.mudassir131.yt.constants.SelfHostedServerUrlKey
 import com.mudassir131.yt.constants.SelfHostedUsernameKey
 import com.mudassir131.yt.utils.PreferenceStore
+import com.mudassir131.yt.utils.matching.TrackMatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -223,6 +224,38 @@ object SelfHostedLosslessAudioProvider : LosslessAudioProvider {
                     candidateArtist = songArtist,
                     candidateDuration = duration,
                 )
+
+                // A title carrying a variant the searched track doesn't have (remix, live, cover,
+                // slowed, sped up …) describes a different recording; playing it would be the
+                // exact wrong-song bug seen on online catalogs, so reject it outright.
+                if (TrackMatcher.hasUnwantedVariant(targetTitle, songTitle)) {
+                    Timber.tag(TAG).d("Candidate '${songTitle}' rejected: differs from searched track by an unwanted variant (remix/live/cover/…).")
+                    continue
+                }
+
+                // Artist verification: when the searched artist is known, only a candidate whose
+                // performer field demonstrably names that artist may be served — a same-titled
+                // cut by a different artist is exactly the wrong-song class the Saavn path
+                // rejects. When the artist cannot be verified on either side, the duration must
+                // fingerprint the exact studio master instead.
+                when {
+                    targetArtist.isNotBlank() &&
+                        songArtist.isNotBlank() &&
+                        !TrackMatcher.artistVerified(targetArtist, songArtist) -> {
+                        Timber.tag(TAG).d("Candidate '$songTitle' by '$songArtist' rejected: searched artist '$targetArtist' not verified on the server row.")
+                        continue
+                    }
+                    (targetArtist.isBlank() || songArtist.isBlank()) &&
+                        targetDuration > 0 &&
+                        duration > 0 &&
+                        kotlin.math.abs(targetDuration - duration) > 5 -> {
+                        Timber.tag(TAG).d(
+                            "Candidate '$songTitle' rejected: artist unverifiable and duration off by ${kotlin.math.abs(targetDuration - duration)}s > 5s.",
+                        )
+                        continue
+                    }
+                    else -> Unit
+                }
 
                 Timber.tag(TAG).d("Evaluated candidate '$songTitle' by '$songArtist' ($suffix, ${duration}s) -> score: $matchScore")
 
