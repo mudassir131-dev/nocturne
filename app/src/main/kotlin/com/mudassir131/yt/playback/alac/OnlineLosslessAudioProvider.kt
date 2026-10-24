@@ -123,43 +123,208 @@ object OnlineLosslessAudioProvider : LosslessAudioProvider {
 
             val json = JSONObject(body)
             val results = json.optJSONArray("results") ?: return null
+            if (results.length() == 0) return null
 
-            for (i in 0 until results.length()) {
-                val item = results.optJSONObject(i) ?: continue
-                val itemTitle = item.optString("song").ifBlank { item.optString("title") }
-                val moreInfo = item.optJSONObject("more_info") ?: continue
-                val encryptedUrl = moreInfo.optString("encrypted_media_url")
-                if (encryptedUrl.isBlank()) continue
+            val best = pickVerifiedSaavnCandidate(results, matchTitle, matchArtist, expectedDuration)
+                ?: return null
 
-                val itemDuration = moreInfo.optString("duration").toIntOrNull()
-                    ?: item.optString("duration").toIntOrNull() ?: -1
+            val decryptedUrl = decryptMediaUrl(best.encryptedUrl)
+            if (decryptedUrl.isNullOrBlank()) return null
 
-                // Duration check (tolerance: 8 seconds if duration is provided)
-                if (expectedDuration > 0 && itemDuration > 0) {
-                    val diff = kotlin.math.abs(expectedDuration - itemDuration)
-                    if (diff > 12) continue
-                }
-
-                val decryptedUrl = decryptMediaUrl(encryptedUrl) ?: continue
-                if (decryptedUrl.isBlank()) continue
-
-                return ResolvedLosslessStream(
-                    url = decryptedUrl,
-                    mimeType = "audio/mp4",
-                    codec = "mp4a.40.2", // Saavn streams are 320kbps AAC (mp4a), not ALAC
-                    bitDepth = 16,
-                    sampleRate = 44100,
-                    channels = 2,
-                    bitrate = 320000,
-                    durationSeconds = if (itemDuration > 0) itemDuration else expectedDuration,
-                    sourceName = "saavn_aac",
-                    expiresInSeconds = 86400,
-                )
-            }
-            null
+            ResolvedLosslessStream(
+                url = decryptedUrl,
+                mimeType = "audio/mp4",
+                codec = "mp4a.40.2", // Saavn streams are 320kbps AAC (mp4a), not ALAC
+                bitDepth = 16,
+                sampleRate = 44100,
+                channels = 2,
+                bitrate = 320000,
+                durationSeconds = if (best.durationSeconds > 0) best.durationSeconds else expectedDuration,
+                sourceName = "saavn_aac",
+                expiresInSeconds = 86400,
+            )
         } catch (e: Exception) {
             Timber.tag(TAG).w(e, "Error querying lossless catalog for: $query")
             null
+        }
+    }
+
+    /**
+     * Pure, network-free selection core: parses Saavn search results into candidates and
+     * returns the best one that clears every verification gate, or null when nothing
+     * matches the searched track. Kept network-free so wrong-song regressions are
+     * unit-testable with recorded responses (see SaavnWrongSongRegressionTest).
+     */
+    internal fun pickVerifiedSaavnCandidate(
+        results: JSONArray,
+        matchTitle: String,
+        matchArtist: String?,
+        expectedDuration: Int,
+    ): SaavnCandidate? {
+        // First pass: collect every result into a verifiable candidate.
+        val candidates = mutableListOf<SaavnCandidate>()
+        for (i in 0 until results.length()) {
+            val item = results.optJSONObject(i) ?: continue
+            val moreInfo = item.optJSONObject("more_info") ?: continue
+            val encryptedUrl = moreInfo.optString("encrypted_media_url")
+            if (encryptedUrl.isBlank()) continue
+
+            val itemTitle = item.optString("song").ifBlank { item.optString("title") }
+            if (itemTitle.isBlank()) continue
+
+            candidates += SaavnCandidate(
+                title = itemTitle,
+                artists = extractArtists(item, moreInfo),
+                durationSeconds = moreInfo.optString("duration").toIntOrNull()
+                    ?: item.optString("duration").toIntOrNull()
+                    ?: -1,
+                encryptedUrl = encryptedUrl,
+            )
+        }
+        if (candidates.isEmpty()) return null
+
+        // Second pass: rank every candidate and let only a verified one through.
+        // Picking the best (rather than the first incoming result) is what keeps
+        // "12 Saal" by a different artist from winning on a lucky duration.
+        var bestCandidate: SaavnCandidate? = null
+        var bestConfidence = -1.0
+
+        for (candidate in candidates) {
+            val verdict = scoreCandidate(candidate, matchTitle, matchArtist, expectedDuration)
+            Timber.tag(TAG).d("Candidate '${candidate.title}' by [${candidate.artists.joinToString(", ")}] (${candidate.durationSeconds}s) -> title=${"%.2f".format(verdict.titleScore)}, artist=${"%.2f".format(verdict.artistScore)}, duration=${"%.2f".format(verdict.durationScore)}, confidence=${"%.2f".format(verdict.confidence)}${if (verdict.rejectionReason != null) ", REJECTED: ${verdict.rejectionReason}" else ""}")
+
+            if (verdict.rejectionReason != null) continue
+            if (verdict.confidence > bestConfidence) {
+                bestConfidence = verdict.confidence
+                bestCandidate = candidate
+            }
+        }
+
+        return bestCandidate
+    }
+
+    private data class CandidateVerdict(
+        val titleScore: Double,
+        val artistScore: Double,
+        val durationScore: Double,
+        val confidence: Double,
+        val rejectionReason: String?,
+    )
+
+    private fun scoreCandidate(
+        candidate: SaavnCandidate,
+        matchTitle: String,
+        matchArtist: String?,
+        expectedDuration: Int,
+    ): CandidateVerdict {
+        val targetDurationMs = expectedDuration.takeIf { it > 0 }?.times(1000L) ?: -1L
+        val durationDelta = TrackMatcher.durationDeltaSec(
+            targetDurationMs,
+            candidate.durationSeconds.takeIf { it > 0 },
+        )
+
+        // Title gate: the searched track name must actually be present in the result.
+        val rawTitleScore = if (matchTitle.isBlank()) {
+            1.0 // nothing to verify against; the rest of the gates must carry
+        } else {
+            var titleScore = TrackMatcher.titleScore(matchTitle, candidate.title)
+            if (TrackMatcher.hasUnwantedVariant(matchTitle, candidate.title)) {
+                titleScore *= 0.3
+            }
+            titleScore
+        }
+        if (rawTitleScore < MIN_TITLE_SCORE) {
+            return CandidateVerdict(rawTitleScore, 0.0, 0.0, 0.0, "$MIN_TITLE_SCORE title floor not met")
+        }
+
+        // Duration gate: a known duration further off than the hard limit is a different recording.
+        if (durationDelta != null && durationDelta > DURATION_HARD_REJECT_SEC) {
+            return CandidateVerdict(rawTitleScore, 0.0, 0.0, 0.0, "duration off by ${durationDelta}s > $DURATION_HARD_REJECT_SEC")
+        }
+        val durationScore = TrackMatcher.durationScore(targetDurationMs, candidate.durationSeconds.takeIf { it > 0 })
+
+        // Artist gate: verify the performing artist when both sides are known, so the searched
+        // artist's release wins over another performer's same-titled track.
+        val artistQuery = matchArtist?.trim().orEmpty()
+        val verifiedArtist = if (artistQuery.isNotBlank()) {
+            candidate.artists.firstOrNull { TrackMatcher.artistVerified(artistQuery, it) }
+        } else {
+            null
+        }
+        val artistScore = when {
+            artistQuery.isBlank() -> 0.5 // unknown on this side: neutral, not rewarded
+            candidate.artists.isEmpty() -> 0.35 // unverifiable: discounted instead of credited
+            verifiedArtist != null -> 1.0 // a performer field demonstrably matches the searched artist
+            else -> candidate.artists.maxOf { TrackMatcher.titleScore(artistQuery, it) }
+        }
+        if (artistQuery.isNotBlank() &&
+            candidate.artists.isNotEmpty() &&
+            verifiedArtist == null
+        ) {
+            val bestArtistScore = candidate.artists.maxOf { TrackMatcher.titleScore(artistQuery, it) }
+            return CandidateVerdict(
+                rawTitleScore,
+                artistScore,
+                durationScore,
+                0.0,
+                "artist '$artistQuery' not verified (best=${"%.2f".format(bestArtistScore)}, artists=[${candidate.artists.joinToString(", ")}])",
+            )
+        }
+
+        // Nothing verifies the artist on this comparison at all (title-only retry path, or a
+        // result row that carries no performer fields): then the duration must identify the
+        // exact master, or the candidate is a different recording wearing the same name.
+        if ((artistQuery.isBlank() || candidate.artists.isEmpty()) &&
+            durationDelta != null &&
+            durationDelta > 5
+        ) {
+            return CandidateVerdict(
+                rawTitleScore,
+                artistScore,
+                durationScore,
+                0.0,
+                "artist unverifiable and duration off by ${durationDelta}s > 5s",
+            )
+        }
+
+        val confidence = (0.45 * rawTitleScore +
+            0.25 * artistScore +
+            0.30 * durationScore).coerceIn(0.0, 1.0)
+
+        if (confidence < CONFIDENCE_THRESHOLD) {
+            return CandidateVerdict(rawTitleScore, artistScore, durationScore, confidence, "confidence $confidence < $CONFIDENCE_THRESHOLD")
+        }
+
+        return CandidateVerdict(rawTitleScore, artistScore, durationScore, confidence, null)
+    }
+
+    /** Pulls every performer name Saavn offers (primary, featured, singers). */
+    private fun extractArtists(item: JSONObject, moreInfo: JSONObject): List<String> {
+        val names = mutableListOf<String>()
+
+        val artistMap = moreInfo.optJSONObject("artistMap")
+        listOf("primary_artists", "featured_artists").forEach { key ->
+            artistMap?.optJSONArray(key)?.forEach { name ->
+                if (name.isNotBlank()) names += name
+            }
+        }
+
+        listOf("primary_artists", "singers", "featured_artists").forEach { key ->
+            val raw = moreInfo.optString(key).ifBlank { item.optString(key) }
+            raw.split(",").forEach { name ->
+                if (name.isNotBlank()) names += name
+            }
+        }
+
+        return names.filter { it.isNotBlank() }
+            .distinctBy { it.lowercase().trim() }
+            .ifEmpty { emptyList() }
+    }
+
+    private fun JSONArray.forEach(action: (String) -> Unit) {
+        for (i in 0 until length()) {
+            val name = optJSONObject(i)?.optString("name").orEmpty()
+            if (name.isNotBlank()) action(name)
         }
     }
 
