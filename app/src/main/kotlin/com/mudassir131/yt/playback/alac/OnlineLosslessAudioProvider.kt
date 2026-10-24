@@ -361,9 +361,9 @@ object OnlineLosslessAudioProvider : LosslessAudioProvider {
         return title
             .replace(Regex("""\(Official.*?\)|\[Official.*?\]""", RegexOption.IGNORE_CASE), "")
             .replace(Regex("""\(Lyric.*?\)|\[Lyric.*?\]""", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("""\(Audio\)|\[Audio\]""", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("""\(Video\)|\[Video\]""", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("""\(Music Video\)|\[Music Video\]""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""\(Audio\)|\[Audio\]|\(Full Audio\)|\[Full Audio\]""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""\(Video\)|\[Video\]|\(Full Video\)|\[Full Video\]""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""\(Music Video\)|\[Music Video\]|\(Full Song\)|\[Full Song\]""", RegexOption.IGNORE_CASE), "")
             .replace(Regex("""\(HD\)|\[HD\]|\(4K\)|\[4K\]""", RegexOption.IGNORE_CASE), "")
             .replace(Regex("""\s+"""), " ")
             .trim()
