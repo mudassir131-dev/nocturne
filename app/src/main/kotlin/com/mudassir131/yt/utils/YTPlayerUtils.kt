@@ -279,6 +279,13 @@ object YTPlayerUtils {
         val playbackTracking = metadataPlayerResponse?.playbackTracking
         val expectedDurationMs = videoDetails?.lengthSeconds?.toLongOrNull()?.takeIf { it > 0 }?.times(1000L)
 
+        // RAW-MAX policy (docs/maintenance/25): every quality mode first attempts the
+        // per-song verified catalog (self-hosted lossless, local FLAC/ALAC, Saavn 320 kbps
+        // AAC). A verified match is the rawest source available for that exact track, so
+        // songs are no longer pinned to YouTube's ~160 kbps Opus ceiling only because the
+        // mode is labelled Opus. When nothing matches, playback continues on the SAME
+        // videoId via the YouTube pipeline below and simply takes the highest-bitrate
+        // rendition YouTube offers. Data Saver intentionally skips the catalog.
         if (!dataSaver) {
             val title = videoDetails?.title?.takeIf { it.isNotBlank() } ?: trackTitle.orEmpty()
             val artist = videoDetails?.author?.takeIf { it.isNotBlank() } ?: trackArtist.orEmpty()
