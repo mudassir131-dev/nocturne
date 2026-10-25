@@ -3,6 +3,14 @@
 Documents the retuned default listening path and why per-song source mixing
 was retired.
 
+> **Partly superseded by `25-raw-max-bitrate-per-song-playback-policy.md`.**
+> The "no per-song catalog mixing" clause was reversed after verification
+> against the live sources showed YouTube's Opus ceiling sits at ~160 kbps for
+> typical songs while verified catalog matches stream at 320 kbps / lossless.
+> Every mode now runs the per-song verified catalog first and the YouTube
+> fallback picks the highest available bitrate. The opus-first *default stamp*
+> mechanics below still apply to fresh installs and the preference migration.
+
 ## Policy
 
 - **Default Audio Quality = OPUS**, end to end. Every song is served from
