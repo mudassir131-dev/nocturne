@@ -903,12 +903,9 @@ object YTPlayerUtils {
 
             val selectedStream = sortedStreams.firstOrNull() ?: streams.firstOrNull() ?: return null
             val streamUrl = selectedStream.url ?: return null
-            val isOpus = selectedStream.codec?.contains("opus", ignoreCase = true) == true || selectedStream.itag in listOf(249, 250, 251)
+            val isOpus = isOpusStream(selectedStream)
             val mimeType = if (isOpus) "audio/webm; codecs=\"opus\"" else "audio/mp4; codecs=\"mp4a.40.2\""
-            val rawBitrate = selectedStream.averageBitrate
-            val bitrateBps = if (rawBitrate > 0) {
-                if (rawBitrate < 1000) rawBitrate * 1000 else rawBitrate
-            } else if (selectedStream.itag == 251) 160_000 else 128_000
+            val bitrateBps = audioBitrate(selectedStream)
 
             val format = PlayerResponse.StreamingData.Format(
                 itag = if (selectedStream.itag > 0) selectedStream.itag else if (isOpus) 251 else 140,
