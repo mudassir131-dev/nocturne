@@ -858,6 +858,13 @@ object YTPlayerUtils {
             val streams = extractor.audioStreams.orEmpty().filter { !it.url.isNullOrBlank() }
             if (streams.isEmpty()) return null
 
+            // Raw-bitrate policy (docs/maintenance/25): for OPUS and LOSSLESS the stream
+            // with the HIGHEST available bitrate wins and the mode's codec preference only
+            // breaks ties — so a rawer rendition (e.g. itag 141 AAC 256 kbps, or a
+            // high-res opus format above 160 kbps) is never passed over for a smaller
+            // fixed-160k opus. YouTube's general audio ceiling is itag 251 (~160 kbps);
+            // anything higher only exists when a specific rendition actually offers it.
+            // SAAVN keeps its AAC-first identity (compat mode) with bitrate as runner-up.
             fun audioBitrate(stream: AudioStream): Int {
                 return if (stream.averageBitrate > 0) {
                     if (stream.averageBitrate < 1000) stream.averageBitrate * 1000 else stream.averageBitrate
@@ -869,14 +876,6 @@ object YTPlayerUtils {
             fun isAacStream(stream: AudioStream): Boolean {
                 return stream.codec?.contains("mp4a", ignoreCase = true) == true || stream.itag in listOf(139, 140, 141)
             }
-
-            // Raw-bitrate policy (docs/maintenance/25): for OPUS and LOSSLESS the stream
-            // with the HIGHEST available bitrate wins and the mode's codec preference only
-            // breaks ties — so a rawer rendition (e.g. itag 141 AAC 256 kbps, or a
-            // high-res opus format above 160 kbps) is never passed over for a smaller
-            // fixed-160k opus. YouTube's general audio ceiling is itag 251 (~160 kbps);
-            // anything higher only exists when a specific rendition actually offers it.
-            // SAAVN keeps its AAC-first identity (compat mode) with bitrate as runner-up.
             val sortedStreams = streams.filter { stream ->
                 val codec = stream.codec?.lowercase().orEmpty()
                 avoidCodecs.none { codec.contains(it.lowercase()) }
