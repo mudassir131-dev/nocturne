@@ -279,7 +279,7 @@ object YTPlayerUtils {
         val playbackTracking = metadataPlayerResponse?.playbackTracking
         val expectedDurationMs = videoDetails?.lengthSeconds?.toLongOrNull()?.takeIf { it > 0 }?.times(1000L)
 
-        if ((audioQuality == AudioQuality.LOSSLESS || audioQuality == AudioQuality.SAAVN) && !dataSaver) {
+        if (!dataSaver) {
             val title = videoDetails?.title?.takeIf { it.isNotBlank() } ?: trackTitle.orEmpty()
             val artist = videoDetails?.author?.takeIf { it.isNotBlank() } ?: trackArtist.orEmpty()
             val durationSecs = videoDetails?.lengthSeconds?.toIntOrNull() ?: trackDuration ?: -1
