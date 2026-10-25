@@ -858,6 +858,18 @@ object YTPlayerUtils {
             val streams = extractor.audioStreams.orEmpty().filter { !it.url.isNullOrBlank() }
             if (streams.isEmpty()) return null
 
+            fun audioBitrate(stream: AudioStream): Int {
+                return if (stream.averageBitrate > 0) {
+                    if (stream.averageBitrate < 1000) stream.averageBitrate * 1000 else stream.averageBitrate
+                } else if (stream.itag == 251) 160_000 else 128_000
+            }
+            fun isOpusStream(stream: AudioStream): Boolean {
+                return stream.codec?.contains("opus", ignoreCase = true) == true || stream.itag in listOf(249, 250, 251)
+            }
+            fun isAacStream(stream: AudioStream): Boolean {
+                return stream.codec?.contains("mp4a", ignoreCase = true) == true || stream.itag in listOf(139, 140, 141)
+            }
+
             // Prioritize streams based on user's audio quality preference
             // AudioQuality.OPUS -> Opus (itag 251 @ 160kbps, 250, 249) > AAC (itag 140, 139)
             // AudioQuality.SAAVN -> AAC (itag 140, 139) > Opus (itag 251, etc.)
