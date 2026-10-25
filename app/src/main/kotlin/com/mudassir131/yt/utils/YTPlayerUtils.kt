@@ -893,10 +893,7 @@ object YTPlayerUtils {
                         val br = audioBitrate(stream)
                         if (dataSaver) -br else br
                     }.thenByDescending { stream ->
-                        when (audioQuality) {
-                            AudioQuality.OPUS -> if (isOpusStream(stream)) 10 else if (isAacStream(stream)) 5 else 1
-                            else -> if (isOpusStream(stream)) 10 else if (isAacStream(stream)) 5 else 1
-                        }
+                        if (isOpusStream(stream)) 10 else if (isAacStream(stream)) 5 else 1
                     }
                 }
             )
