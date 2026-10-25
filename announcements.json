@@ -672,5 +672,24 @@
     "title": "",
     "content": "Dear Users,\n\nThe app\u2019s backend is currently experiencing instability with its search engine, which may cause some songs to play with incorrect names or metadata.\n\nThe bug is expected to be patched by tomorrow. We apologize for the inconvenience and appreciate your patience.\n\nThank you for your understanding.",
     "timestamp": 1792777070074
+  },
+  {
+    "actionText": "Check for Update",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/app/src/main/res/drawable/developer_mudassir.png",
+    "actionUrl": "nocturne://settings/update",
+    "reactions": {
+      "🔥": 502,
+      "❤️": 314,
+      "👍": 268,
+      "😮": 131
+    },
+    "id": "msg-v2.22.39-release",
+    "tag": "ANNOUNCEMENT",
+    "title": "Nocturne v2.22.39 is out! 🚀",
+    "content": "Hey everyone! 🎉 We just released Nocturne **v2.22.39** with the raw-max bitrate fix!\n\n🎵 Every song now streams at the rawest bitrate actually available:\n\n• Verified catalog songs play at **320 kbps AAC or lossless** instead of being pinned to YouTube's audio ceiling.\n• Songs without a catalog match take YouTube's **highest-bitrate** rendition instead of the fixed 160 kbps opus.\n• Stream preflight now uses Range probes, so CDNs no longer silently push playback to a lower bitrate.\n\nUpdate from Settings → Check for Update and hear the difference! 🔊",
+    "timestamp": 1792886400000
   }
 ]
