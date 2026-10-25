@@ -44,6 +44,12 @@ object AudioQualityMigration : DataMigration<Preferences> {
  *
  * LOSSLESS and SAAVN remain explicit opt-ins in the settings UI; an explicitly stored
  * SAAVN value is never touched here, only the stamped legacy LOSSLESS default flips.
+ *
+ * NOTE (raw-max retune, docs/maintenance/25): OPUS mode is no longer a YouTube-only
+ * codec lock. Every mode now runs the same per-song verified catalog before the YouTube
+ * pipeline, and the YouTube fallback picks the highest-bitrate rendition with the mode's
+ * codec as a tie-breaker. The stored OPUS stamp still means "default listening mode";
+ * the rawest verified source available for each exact track wins under it.
  */
 object AudioQualityOpusDefaultMigration : DataMigration<Preferences> {
     private val AudioQualityOpusDefaultAppliedKey = booleanPreferencesKey("audioQualityDefaultOpusV2")
