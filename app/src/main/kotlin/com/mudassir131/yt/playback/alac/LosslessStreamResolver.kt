@@ -213,9 +213,13 @@ object LosslessStreamResolver {
 
     private fun validateRemoteUrl(url: String): Boolean {
         return try {
+            // Range-GET (bytes=0-0) instead of HEAD: some CDNs mishandle or reject HEAD
+            // requests, which silently failed the preflight for perfectly valid high-bitrate
+            // candidates and pushed playback back onto the lower-bitrate YouTube fallback.
             val request = Request.Builder()
                 .url(url)
-                .head()
+                .get()
+                .header("Range", "bytes=0-0")
                 .header("User-Agent", "Nocturne/1.0 (Android; ALAC)")
                 .build()
             httpClient.newCall(request).execute().use { response ->
