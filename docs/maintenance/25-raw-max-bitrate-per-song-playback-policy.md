@@ -46,3 +46,14 @@ Verification against the live sources showed two facts:
 - **Exactness is never traded for bitrate**: a catalog candidate that cannot
   be verified against the track's title/artist/duration is rejected and never
   becomes "a rawer but different song".
+
+## What each mode plays now
+
+| Situation | Stream | Badge |
+|---|---|---|
+| Verified catalog match (any mode) | Saavn 320 kbps AAC, self-hosted lossless or local FLAC/ALAC | `SAAVN 320 KBPS` / `Lossless` |
+| No catalog match, YouTube carries only standard renditions | itag 251 Opus ~160-168 kbps (`YouTube` ceiling) | `OPUS 160-168 KBPS` |
+| No catalog match, video carries a higher rendition | that rendition (e.g. AAC 256 kbps) | `AAC 256 KBPS` |
+
+`OPUS ~160 kbps` for a catalog-missed song is therefore the maximum that
+exists upstream, not a regression.
