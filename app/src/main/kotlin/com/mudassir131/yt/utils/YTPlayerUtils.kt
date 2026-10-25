@@ -681,10 +681,17 @@ object YTPlayerUtils {
             }
 
         val preferLowerAboveTarget =
-            compareByDescending<PlayerResponse.StreamingData.Format> { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
-                .thenBy { it.bitrate }
-                .thenByDescending { it.url != null }
-                .thenByDescending { it.audioSampleRate ?: 0 }
+            if (codecFirst) {
+                compareByDescending<PlayerResponse.StreamingData.Format> { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
+                    .thenBy { it.bitrate }
+                    .thenByDescending { it.url != null }
+                    .thenByDescending { it.audioSampleRate ?: 0 }
+            } else {
+                compareBy<PlayerResponse.StreamingData.Format> { it.bitrate }
+                    .thenByDescending { modeCodecRank(audioQuality, extractCodec(it.mimeType)) }
+                    .thenByDescending { it.url != null }
+                    .thenByDescending { it.audioSampleRate ?: 0 }
+            }
 
         val candidates =
             if (targetBitrateBps == null) {
