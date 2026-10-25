@@ -73,15 +73,13 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.38
+    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.39
 
-* **Architecture & Systems Documentation Hub** — Comprehensive documentation across 20 modular subsystems, 20 Architectural Decision Records (ADRs), and formal technical specifications.
-* **Production Troubleshooting & Diagnostics** — In-depth mitigation guides for audio buffer underruns, OEM battery killer bypasses, Bluetooth A2DP latency, and InnerTube rate-limit resilience.
-* **Engine & Audio Benchmarks** — Performance benchmarks for native C++ DSP CPU utilization, Room SQLite WAL query throughput, and low-latency audio streaming pipelines.
-* **Developer & Contributor Guides** — Step-by-step documentation for building locally with Gradle, compiling C++ NDK audio modules, and authoring synced lyrics providers.
-* **Next-Gen RFCs & Security Standards** — RFC roadmaps for Android Auto, Google Cast v3, and ReplayGain 2.0, backed by strict zero-telemetry and encrypted Keystore security standards.
-* **In-App Broadcast Notifications** — Real-time cloud announcement channel refreshed with latest release news and system advisories.
-* **Stability & Maintenance** — Build optimization and version bump to v2.22.38 (49)."""
+* **Raw-Max Audio Quality** — Every quality mode now streams the rawest source per song: verified catalog matches (Saavn 320 kbps AAC, self-hosted lossless, local FLAC/ALAC) play as-is instead of being pinned to YouTube's ~160 kbps Opus ceiling.
+* **Highest-Bitrate Fallback** — Songs without a verified catalog match pick the highest-bitrate YouTube rendition with the codec preference as a tie-break, so rawer renditions like AAC 256 kbps are never skipped for a fixed-160 kbps opus.
+* **Stream Preflight Hardening** — Catalog probes use a 1-byte Range GET instead of HEAD, fixing CDN deployments that rejected HEAD and silently degraded playback to the fallback stream.
+* **Exactness First** — The per-song verification gates are unchanged: an unverifiable candidate is rejected rather than played as "a rawer but different song".
+* **Stability & Maintenance** — Version bump to v2.22.39 (50)."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L
