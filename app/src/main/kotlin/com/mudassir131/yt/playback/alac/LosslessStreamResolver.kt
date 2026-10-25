@@ -152,7 +152,7 @@ object LosslessStreamResolver {
                     val isReachable = validateRemoteUrl(candidate.url)
                     Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Preflight reachability check for '${candidate.url}' -> $isReachable")
                     if (!isReachable) {
-                        Timber.tag(TAG).w("[LOSSLESS_PIPELINE] REJECTED candidate: Preflight HTTP HEAD failed for ${candidate.url}")
+                        Timber.tag(TAG).w("[LOSSLESS_PIPELINE] REJECTED candidate: Preflight HTTP probe failed for ${candidate.url}")
                         continue
                     }
                 }
