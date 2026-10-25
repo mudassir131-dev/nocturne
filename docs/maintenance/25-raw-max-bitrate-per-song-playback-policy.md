@@ -57,3 +57,18 @@ Verification against the live sources showed two facts:
 
 `OPUS ~160 kbps` for a catalog-missed song is therefore the maximum that
 exists upstream, not a regression.
+
+## Preflight hardening
+
+`LosslessStreamResolver.validateRemoteUrl` now issues
+`GET` with `Range: bytes=0-0` instead of `HEAD`. HEAD mishandling on some
+CDN deployments previously failed the reachability check for valid candidates
+and silently degraded whole sessions to the fallback stream.
+
+## Covered by
+
+- Live-source verification: Saavn catalog `_320.mp4` probes, yt-dlp format
+  listing for reference tracks.
+- `SaavnWrongSongRegressionTest` / `OnlineLosslessAudioProviderTest` — the
+  exact-track gates still hold.
+- `AudioQualityOpusDefaultMigrationTest` — default-stamp mechanics unchanged.
