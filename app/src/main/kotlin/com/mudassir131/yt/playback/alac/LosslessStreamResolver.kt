@@ -162,6 +162,7 @@ object LosslessStreamResolver {
                 streamCache[cacheKey] = CachedStream(candidate, expiresAtMs)
 
                 Timber.tag(TAG).i("[CODEC_GATE] -> ACCEPTED: Genuinely lossless ${candidate.codec.uppercase()} stream validated from '${provider.name}'")
+                Timber.tag(TAG).i("[LOSSLESS_PIPELINE] Raw-max source locked: '${provider.name}' codec=${candidate.codec} bitrate=${candidate.bitrate ?: -1}bps")
                 Timber.tag(TAG).i("----------------------------------------------------------------")
                 return@withContext candidate.toResult(videoId)
             } catch (e: Exception) {
