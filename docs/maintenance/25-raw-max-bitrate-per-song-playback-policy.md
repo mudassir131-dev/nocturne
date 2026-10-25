@@ -22,3 +22,27 @@ Verification against the live sources showed two facts:
    The verification gates (title floor, artist verification, duration
    fingerprint, confidence threshold) from
    `21-wrong-song-catalog-verification-gates.md` are unchanged.
+
+## Policy
+
+- **Catalog first, for every mode.** `playerResponseForPlaybackOnce` runs the
+  `LosslessStreamResolver` chain (self-hosted Navidrome/Subsonic → local
+  FLAC/ALAC → Saavn 320 kbps catalog) for **all** quality modes whenever
+  Data Saver is off. A verified match is served as-is — lossless stays
+  lossless, a catalog 320 kbps AAC is served raw (never transcoded, never
+  resampled); the suffix upgrade `_96/_160 → _320` remains the maximum the
+  catalog publishes.
+- **No mode is a YouTube-only lock anymore.** The `Opus` label keeps meaning
+  "default listening mode", not "only ever YouTube". Under any mode a catalog
+  match plays at the catalog's bitrate; unmatched songs still play the exact
+  same `videoId` through YouTube.
+- **Highest-bitrate wins on the YouTube fallback.** Both stream paths rank
+  candidates by available bitrate first with the mode's codec preference as a
+  tie-breaker (SAAVN keeps its AAC-first identity). A raw higher-bitrate
+  rendition (e.g. `itag 141` AAC 256 kbps, or a high-res opus format) is never
+  passed over for a smaller fixed-160 kbps opus on the modes that allow it.
+- **Data Saver is untouched** (64 kbps target, catalog skipped, low-bitrate
+  preference).
+- **Exactness is never traded for bitrate**: a catalog candidate that cannot
+  be verified against the track's title/artist/duration is rejected and never
+  becomes "a rawer but different song".
