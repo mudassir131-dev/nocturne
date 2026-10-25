@@ -72,3 +72,5 @@ and silently degraded whole sessions to the fallback stream.
 - `SaavnWrongSongRegressionTest` / `OnlineLosslessAudioProviderTest` — the
   exact-track gates still hold.
 - `AudioQualityOpusDefaultMigrationTest` — default-stamp mechanics unchanged.
+- ADR-021 (`adr-021-raw-max-bitrate-per-song-source-selection.md`) records
+  the decision as an architectural standard.
