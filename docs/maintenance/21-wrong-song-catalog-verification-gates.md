@@ -46,3 +46,10 @@ The streaming pipeline re-resolves exclusively by the playing track's
 `videoId`; queue, preload and recovery paths are `mediaId`-keyed. The catalog
 providers were the only per-song substitution points, and both (Saavn and
 self-hosted) now enforce the same gates.
+
+## Raw-max policy note
+
+`25-raw-max-bitrate-per-song-playback-policy.md` exposes the catalog to every
+quality mode and ranks the YouTube fallback candidates by available bitrate.
+It does not touch the gates above: an unverifiable candidate stays rejected,
+and a catalog 320 kbps AAC is served only for the exact verified master.
