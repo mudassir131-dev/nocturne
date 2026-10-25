@@ -870,27 +870,34 @@ object YTPlayerUtils {
                 return stream.codec?.contains("mp4a", ignoreCase = true) == true || stream.itag in listOf(139, 140, 141)
             }
 
-            // Prioritize streams based on user's audio quality preference
-            // AudioQuality.OPUS -> Opus (itag 251 @ 160kbps, 250, 249) > AAC (itag 140, 139)
-            // AudioQuality.SAAVN -> AAC (itag 140, 139) > Opus (itag 251, etc.)
-            // AudioQuality.LOSSLESS -> Opus 251 (highest quality available on YouTube) > AAC 140
+            // Raw-bitrate policy (docs/maintenance/25): for OPUS and LOSSLESS the stream
+            // with the HIGHEST available bitrate wins and the mode's codec preference only
+            // breaks ties — so a rawer rendition (e.g. itag 141 AAC 256 kbps, or a
+            // high-res opus format above 160 kbps) is never passed over for a smaller
+            // fixed-160k opus. YouTube's general audio ceiling is itag 251 (~160 kbps);
+            // anything higher only exists when a specific rendition actually offers it.
+            // SAAVN keeps its AAC-first identity (compat mode) with bitrate as runner-up.
             val sortedStreams = streams.filter { stream ->
                 val codec = stream.codec?.lowercase().orEmpty()
                 avoidCodecs.none { codec.contains(it.lowercase()) }
             }.sortedWith(
-                compareByDescending<AudioStream> { stream ->
-                    val isOpus = stream.codec?.contains("opus", ignoreCase = true) == true || stream.itag in listOf(249, 250, 251)
-                    val isAac = stream.codec?.contains("mp4a", ignoreCase = true) == true || stream.itag in listOf(139, 140)
-                    when (audioQuality) {
-                        AudioQuality.OPUS -> if (isOpus) 10 else if (isAac) 5 else 1
-                        AudioQuality.SAAVN -> if (isAac) 10 else if (isOpus) 5 else 1
-                        AudioQuality.LOSSLESS -> if (isOpus) 10 else if (isAac) 5 else 1
+                if (audioQuality == AudioQuality.SAAVN) {
+                    compareByDescending<AudioStream> { stream ->
+                        if (isAacStream(stream)) 10 else if (isOpusStream(stream)) 5 else 1
+                    }.thenByDescending { stream ->
+                        if (dataSaver) -audioBitrate(stream) else audioBitrate(stream)
                     }
-                }.thenByDescending { stream ->
-                    val br = if (stream.averageBitrate > 0) {
-                        if (stream.averageBitrate < 1000) stream.averageBitrate * 1000 else stream.averageBitrate
-                    } else if (stream.itag == 251) 160_000 else 128_000
-                    if (dataSaver) -br else br
+                } else {
+                    // OPUS / LOSSLESS: raw max bitrate first, codec as tie-break
+                    compareByDescending<AudioStream> { stream ->
+                        val br = audioBitrate(stream)
+                        if (dataSaver) -br else br
+                    }.thenByDescending { stream ->
+                        when (audioQuality) {
+                            AudioQuality.OPUS -> if (isOpusStream(stream)) 10 else if (isAacStream(stream)) 5 else 1
+                            else -> if (isOpusStream(stream)) 10 else if (isAacStream(stream)) 5 else 1
+                        }
+                    }
                 }
             )
 
