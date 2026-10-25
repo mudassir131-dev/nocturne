@@ -1,5 +1,18 @@
 # Nocturne Changelog & Release Notes
 
+## [v2.22.39] - 2026-10-25
+
+### 🎚️ Raw-Max Bitrate Playback
+- **Every Mode Tries The Verified Catalog First**: OPUS included — per-song verified catalog matches (Saavn 320 kbps AAC, self-hosted/CD lossless, local FLAC/ALAC) now play instead of being locked to YouTube's ~160 kbps Opus ceiling.
+- **Highest-Bitrate Fallback**: Songs without a catalog match still play the exact same `videoId` through YouTube, but the fallback now ranks candidates by the highest available bitrate (e.g. itag 141 AAC 256 kbps) with the mode's codec as a tie-break, instead of always pinning the smaller Opus.
+- **Preflight Hardening**: Remote catalog probes use `Range: bytes=0-0` GET instead of HEAD, after live probes showed some CDNs reject HEAD and silently push playback to the 160 kbps fallback.
+- **Exactness Uncompromised**: The per-song verification gates (title floor, artist verification, duration fingerprint, confidence threshold) are unchanged.
+
+### ⚙️ Engine, Build & Stability
+- **Version Bump**: Bumped `versionCode` to `50` and `versionName` to `2.22.39`.
+
+---
+
 ## [v2.22.38] - 2026-10-16
 
 ### 📖 Architecture & Systems Documentation Hub
