@@ -665,6 +665,10 @@ object YTPlayerUtils {
                 }
             }
 
+        // Raw-bitrate policy (docs/maintenance/25): for OPUS and LOSSLESS the available
+        // bitrate dominates and the mode's codec preference only breaks ties, so a raw
+        // higher-bitrate rendition (e.g. itag 141 AAC 256 kbps) is never passed over for a
+        // smaller opus. SAAVN keeps its AAC-first identity with bitrate as the runner-up.
         val codecFirst = audioQuality == AudioQuality.SAAVN
 
         val preferHigher =
