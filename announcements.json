@@ -672,5 +672,16 @@
     "title": "",
     "content": "Dear Users,\n\nThe app\u2019s backend is currently experiencing instability with its search engine, which may cause some songs to play with incorrect names or metadata.\n\nThe bug is expected to be patched by tomorrow. We apologize for the inconvenience and appreciate your patience.\n\nThank you for your understanding.",
     "timestamp": 1792777070074
+  },
+  {
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "reactions": {},
+    "id": "msg-fe3f7258",
+    "tag": "ANNOUNCEMENT",
+    "title": "",
+    "content": "next update will be banger, Stay Tuned.",
+    "timestamp": 1793542722312
   }
 ]
