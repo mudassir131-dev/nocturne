@@ -73,13 +73,13 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🚀 What's New in Nocturne v2.22.40
+    const val GenericReleaseNotes = """### 🚀 What's New in Nocturne v2.22.41
 
-* **New Navigation Bar** — Brand-new expressive floating toolbar enabled by default. Features fluid selection morphing, auto-expanding tab labels (Home, Search, Library), and responsive spring physics.
-* **3-Dots Quick Action Menu** — Sleek floating action button with 90° animated rotation between options and close icon, offering instant access to **Music Recognition**, **History**, and **Stats**.
-* **Online Music Recognition** — Integrated Shazam engine with pure Kotlin DejaVu audio fingerprinting. Identify nearby music in seconds with rich cover art, track metadata, lyrics preview, and direct search/playback in Nocturne.
-* **Pure Black AMOLED Restored** — Fixed the Pure Black mode toggle in Appearance Settings to guarantee rich, true-black surfaces and power savings across AMOLED devices.
-* **Stability & Performance** — Upgraded to v2.22.40 (51) with general stability improvements."""
+* **Navigation Bar Crash Fix** - Resolved layout constraint measurement crash (`maxWidth >= minWidth, maxHeight >= minHeight`) on realme and Android 12 devices with a bulletproof floating navbar architecture.
+* **New Navigation Bar (Default)** - Modern floating toolbar with smooth selection morphing, auto-expanding tab labels (Home, Search, Library), and 3-dots quick actions.
+* **Online Music Recognition** - Integrated Shazam engine with pure Kotlin audio fingerprinting to identify nearby songs with lyrics preview and instant search.
+* **Pure Black AMOLED** - Full true-black coverage across all surface containers and dialogs.
+* **Stability & Performance** - Upgraded to v2.22.41 (52) with enhanced layout resilience."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L

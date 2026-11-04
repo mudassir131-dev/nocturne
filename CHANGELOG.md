@@ -1,5 +1,17 @@
 # Nocturne Changelog & Release Notes
 
+## [v2.22.41] - 2026-11-04
+
+### 🧭 Navigation Bar Stability & Layout Constraints
+- **Resolved Layout Measurement Crash**: Fixed a critical `IllegalArgumentException: maxWidth must be >= minWidth, maxHeight must be >= minHeight` crash that occurred on devices (such as realme X7 5G / Android 12) due to experimental toolbar constraint conflicts.
+- **Robust Layout Architecture**: Replaced experimental toolbar internals with rock-solid, production-grade Jetpack Compose layout primitives (`Surface` + `Row`) that guarantee bulletproof constraint handling across all screen resolutions and display densities.
+- **Enhanced AMOLED Theming**: Strengthened Pure Black theme mapping to cover all Material 3 surface containers (`surfaceContainer`, `surfaceContainerLow`, `surfaceContainerLowest`, and `surfaceDim`) ensuring true pitch-black AMOLED mode across all cards, dialogs, and navigation elements.
+
+### ⚙️ Engine, Build & Stability
+- **Version Bump**: Bumped `versionCode` to `52` and `versionName` to `2.22.41`.
+
+---
+
 ## [v2.22.40] - 2026-11-04
 
 ### 🧭 New Navigation Bar (Default On)

@@ -379,7 +379,11 @@ fun Bitmap.extractGradientColors(): List<Color> {
 fun ColorScheme.pureBlack(apply: Boolean) =
     if (apply) copy(
         surface = Color.Black,
-        background = Color.Black
+        background = Color.Black,
+        surfaceContainer = Color.Black,
+        surfaceContainerLow = Color.Black,
+        surfaceContainerLowest = Color.Black,
+        surfaceDim = Color.Black,
     ) else this
 
 val ColorSaver = object : Saver<Color, Int> {

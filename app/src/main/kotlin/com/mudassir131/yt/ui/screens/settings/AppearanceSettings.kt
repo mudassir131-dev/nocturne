@@ -474,16 +474,15 @@ fun AppearanceSettings(
                         },
                     )
                 },
-                if (useDarkTheme) {
-                    {
-                        SwitchPreference(
-                            title = { Text(stringResource(R.string.pure_black)) },
-                            icon = { Icon(painterResource(R.drawable.contrast), null) },
-                            checked = pureBlack,
-                            onCheckedChange = onPureBlackChange,
-                        )
-                    }
-                } else null,
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.pure_black)) },
+                        icon = { Icon(painterResource(R.drawable.contrast), null) },
+                        checked = pureBlack,
+                        onCheckedChange = onPureBlackChange,
+                        isEnabled = useDarkTheme,
+                    )
+                },
                 {
                     SwitchPreference(
                         title = { Text(stringResource(R.string.disable_blur)) },

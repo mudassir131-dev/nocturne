@@ -1440,8 +1440,7 @@ class MainActivity : ComponentActivity() {
                                                         start = 16.dp,
                                                         end = 16.dp,
                                                         bottom = bottomInset + floatingBarsBottomPadding,
-                                                    )
-                                                    .height(navVisibleHeight),
+                                                    ),
                                                 items = navigationItems,
                                                 slim = slimNav,
                                                 pureBlack = pureBlack,
