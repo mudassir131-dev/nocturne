@@ -31,7 +31,7 @@
     "id": "msg-v2.22.28-release",
     "tag": "ANNOUNCEMENT",
     "title": "Nocturne v2.22.28 is out! 🚀",
-    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.28** with Zero-Cache Real-Time Live Cloud Announcements!\n\n\u2022 **Instant Live Announcements**: Real-time broadcasts delivered with zero delay.\n\u2022 **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n\u2022 **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n\u2022 **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
+    "content": "Hey everyone! 👋 We just released Nocturne **v2.22.28** with Zero-Cache Real-Time Live Cloud Announcements!\n\n• **Instant Live Announcements**: Real-time broadcasts delivered with zero delay.\n• **Grouped-List Design**: Unified sleek containers with rounded top/bottom corners.\n• **Connected Auto-Playlists**: Liked, Downloaded, Top 50, and Cached in Library.\n• **Battery Optimization Controls**: Prevent playback terminations in background.\n\nUpdate now from Settings -> Check for update!",
     "timestamp": 1771940000000
   },
   {
@@ -58,7 +58,7 @@
     "id": "msg-8e88f84f",
     "tag": "GENERAL",
     "title": "Message from the Developer",
-    "content": "Dear App Users, ❤️🎧\n\nFirst of all, I genuinely want to say I\u2019m sorry for pushing so many updates all at once. 🙏😅 I know getting multiple updates within a short period can feel annoying or confusing, especially when you just want to open the app and enjoy your music without having to worry about another update.\n\nBut there was a reason behind all of it. ❤️\u200d🩹\n\nOver the past few days, some of you experienced playback errors, random glitches, crashes, unexpected behavior, or issues while using different parts of the app. 🐛⚠️ And honestly, I didn\u2019t want to simply leave those problems there and move on.\n\nEvery update was made with one goal in mind: to make the app better, more stable, smoother, and more reliable for everyone. 🚀✨\n\nI\u2019ve been working on fixing the underlying issues, improving playback stability, polishing different parts of the experience, and making sure the app feels much more consistent than before. 🔧🎶\n\nAnd now, after all these improvements, I\u2019m 100% confident that the major issues that were affecting users have been addressed. 💯🔥\n\nOf course, no software is ever truly perfect, and if you somehow come across a problem, please don\u2019t hesitate to report it. Your feedback is extremely valuable because it helps me understand what needs to be improved next. 🫶\n\nSo once again, thank you for your patience, your feedback, your bug reports, and most importantly, your support. ❤️\n\nI know the updates came one after another, but every single one of them was made because I genuinely want this app to become something better with every release. 🌙✨\n\nNow the hard part is done. 😭😂\nAll I need from here is YOUR support. ❤️\u200d🔥\n\nKeep using the app, keep sharing your feedback, and keep supporting the journey. There\u2019s still a lot more to come. 🚀🎧\n\nThank you for being here. ❤️\nThank you for trusting the app. 🤝\nAnd thank you for supporting the journey. 🌟\n\nMore improvements. More features. More stability.\nAnd a much better experience ahead. 🚀🔥\n\n\u2014 The Developer ❤️",
+    "content": "Dear App Users, ❤️🎧\n\nFirst of all, I genuinely want to say I’m sorry for pushing so many updates all at once. 🙏😅 I know getting multiple updates within a short period can feel annoying or confusing, especially when you just want to open the app and enjoy your music without having to worry about another update.\n\nBut there was a reason behind all of it. ❤️‍🩹\n\nOver the past few days, some of you experienced playback errors, random glitches, crashes, unexpected behavior, or issues while using different parts of the app. 🐛⚠️ And honestly, I didn’t want to simply leave those problems there and move on.\n\nEvery update was made with one goal in mind: to make the app better, more stable, smoother, and more reliable for everyone. 🚀✨\n\nI’ve been working on fixing the underlying issues, improving playback stability, polishing different parts of the experience, and making sure the app feels much more consistent than before. 🔧🎶\n\nAnd now, after all these improvements, I’m 100% confident that the major issues that were affecting users have been addressed. 💯🔥\n\nOf course, no software is ever truly perfect, and if you somehow come across a problem, please don’t hesitate to report it. Your feedback is extremely valuable because it helps me understand what needs to be improved next. 🫶\n\nSo once again, thank you for your patience, your feedback, your bug reports, and most importantly, your support. ❤️\n\nI know the updates came one after another, but every single one of them was made because I genuinely want this app to become something better with every release. 🌙✨\n\nNow the hard part is done. 😭😂\nAll I need from here is YOUR support. ❤️‍🔥\n\nKeep using the app, keep sharing your feedback, and keep supporting the journey. There’s still a lot more to come. 🚀🎧\n\nThank you for being here. ❤️\nThank you for trusting the app. 🤝\nAnd thank you for supporting the journey. 🌟\n\nMore improvements. More features. More stability.\nAnd a much better experience ahead. 🚀🔥\n\n— The Developer ❤️",
     "timestamp": 1787653211405
   },
   {
@@ -100,7 +100,7 @@
     "id": "msg-c9957376",
     "tag": "ANNOUNCEMENT",
     "title": "Important Notice for Vivo & iQOO Users",
-    "content": "🚨 Important Notice for Vivo & iQOO Users\n\nIf Nocturne is crashing on your Vivo or iQOO device, please try the following workaround:\n\nGo to Nocturne → Settings → Appearance → Force 90/120Hz\n\n👉 Turn OFF \u201cForce 90/120Hz\u201d and then restart the app.\n\nThis setting may be causing crashes on some Vivo and iQOO devices. We\u2019re investigating the issue and working towards a proper fix. 🛠️\n\nIf you\u2019re experiencing crashes, please try this workaround first and let us know if it resolves the problem.\n\nThank you for your patience and continued support! ❤️🎵",
+    "content": "🚨 Important Notice for Vivo & iQOO Users\n\nIf Nocturne is crashing on your Vivo or iQOO device, please try the following workaround:\n\nGo to Nocturne → Settings → Appearance → Force 90/120Hz\n\n👉 Turn OFF “Force 90/120Hz” and then restart the app.\n\nThis setting may be causing crashes on some Vivo and iQOO devices. We’re investigating the issue and working towards a proper fix. 🛠️\n\nIf you’re experiencing crashes, please try this workaround first and let us know if it resolves the problem.\n\nThank you for your patience and continued support! ❤️🎵",
     "timestamp": 1787671395410
   },
   {
@@ -108,7 +108,9 @@
     "isVerified": true,
     "authorName": "Mudassir",
     "imageUrl": "https://raw.githubusercontent.com/mudassir131-dev/nocturne/main/broadcast_assets/broadcast_media_1787676462430.gif",
-    "reactions": {"👍": 1},
+    "reactions": {
+      "👍": 1
+    },
     "id": "msg-3cd0380d",
     "tag": "ANNOUNCEMENT",
     "title": "",
@@ -138,7 +140,7 @@
     "id": "msg-96b24393",
     "tag": "ANNOUNCEMENT",
     "title": "📢 NOCTURNE USER ANNOUNCEMENT",
-    "content": "Hey Nocturne users! 🎧💜\n\nI need your honest feedback! Your reviews are extremely important for us because they help us understand how Nocturne is actually performing for you and where we can improve the overall experience.\n\nPlease take a few minutes to share your honest review about Nocturne on Up to Down and on the Nocturne website: https://nocturne-music.vercel.app ⭐\n\nTell us what you think about:\n🎵 Music & playback experience\n⚡ App performance & speed\n🎨 UI/UX and overall design\n🔍 Features and functionality\n📱 Overall user experience\n🐛 Any bugs or issues you faced\n💡 What you would like to see improved or added\n\nWhether your experience has been amazing, average, or you faced some problems, please be honest. We genuinely want to hear from you.\n\nYour feedback directly helps us make Nocturne better with every update. ❤️\u200d🔥\n\nSo please don't skip this, leave your review on both Up to Down and the Nocturne website.\n\nThank you for supporting Nocturne and being part of this journey! 🫶🎧\n\nYour feedback. Our improvement. One better Nocturne. 🚀",
+    "content": "Hey Nocturne users! 🎧💜\n\nI need your honest feedback! Your reviews are extremely important for us because they help us understand how Nocturne is actually performing for you and where we can improve the overall experience.\n\nPlease take a few minutes to share your honest review about Nocturne on Up to Down and on the Nocturne website: https://nocturne-music.vercel.app ⭐\n\nTell us what you think about:\n🎵 Music & playback experience\n⚡ App performance & speed\n🎨 UI/UX and overall design\n🔍 Features and functionality\n📱 Overall user experience\n🐛 Any bugs or issues you faced\n💡 What you would like to see improved or added\n\nWhether your experience has been amazing, average, or you faced some problems, please be honest. We genuinely want to hear from you.\n\nYour feedback directly helps us make Nocturne better with every update. ❤️‍🔥\n\nSo please don't skip this, leave your review on both Up to Down and the Nocturne website.\n\nThank you for supporting Nocturne and being part of this journey! 🫶🎧\n\nYour feedback. Our improvement. One better Nocturne. 🚀",
     "timestamp": 1787746660600
   },
   {
@@ -162,7 +164,7 @@
     "id": "msg-ccff60f6",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "Dear users! 🎧✨\n\nWe\u2019re working on bringing Hi Res Lossless audio to the app, but running this at scale requires proper server funding and infrastructure. Without that, we unfortunately can\u2019t provide Apple Music level Hi Res Lossless quality. 💿🔥\n\nThat said, we\u2019ve also added support for self hosted servers, so you can set up and configure your own server according to your needs. 🖥️⚙️\n\nIn the meantime, we\u2019re continuously working on improving the YouTube client and optimizing audio quality so you can still get the cleanest and best sounding experience possible. 🎶🚀\n\nThank you for your support and understanding! ❤️",
+    "content": "Dear users! 🎧✨\n\nWe’re working on bringing Hi Res Lossless audio to the app, but running this at scale requires proper server funding and infrastructure. Without that, we unfortunately can’t provide Apple Music level Hi Res Lossless quality. 💿🔥\n\nThat said, we’ve also added support for self hosted servers, so you can set up and configure your own server according to your needs. 🖥️⚙️\n\nIn the meantime, we’re continuously working on improving the YouTube client and optimizing audio quality so you can still get the cleanest and best sounding experience possible. 🎶🚀\n\nThank you for your support and understanding! ❤️",
     "timestamp": 1787834227918
   },
   {
@@ -173,7 +175,7 @@
     "id": "msg-2cc34c77",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "We\u2019re also working on increasing the playlist import limit to up to 10,000 songs. We\u2019ll roll this out once we\u2019re sure it stays stable and scalable under testing.\n\nWe\u2019ve also added Audio Enhancement, which you can configure according to your own taste and listening preference. 🎧🔥",
+    "content": "We’re also working on increasing the playlist import limit to up to 10,000 songs. We’ll roll this out once we’re sure it stays stable and scalable under testing.\n\nWe’ve also added Audio Enhancement, which you can configure according to your own taste and listening preference. 🎧🔥",
     "timestamp": 1787837998108
   },
   {
@@ -186,7 +188,7 @@
     "id": "msg-4552eba6",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "Hey everyone! ❤️\n\nWe\u2019ve reached 409 downloads on GitHub! 🚀\n\nIf you\u2019re enjoying the app and find it useful, I\u2019d really appreciate it if you could take a moment to ⭐ star the GitHub repository: https://github.com/mudassir131-dev/nocturne. It helps the project grow and means a lot to me as a developer.\n\nThank you for supporting the project! 🙌",
+    "content": "Hey everyone! ❤️\n\nWe’ve reached 409 downloads on GitHub! 🚀\n\nIf you’re enjoying the app and find it useful, I’d really appreciate it if you could take a moment to ⭐ star the GitHub repository: https://github.com/mudassir131-dev/nocturne. It helps the project grow and means a lot to me as a developer.\n\nThank you for supporting the project! 🙌",
     "timestamp": 1787914931354
   },
   {
@@ -208,7 +210,7 @@
     "id": "msg-2ce7438e",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "🎉 GOOD NEWS FOR SPOTIFY USERS! 🎉\n\nWe\u2019ve successfully improved the Spotify playlist importer, and it can now handle up to 600 songs in a single playlist. 🚀🎵\n\nThe update hasn\u2019t been released in the app yet, but it\u2019s coming soon.\n\nOnce the update is live, you\u2019ll be able to import much larger Spotify playlists without having to split them into multiple playlists.\n\n600 songs. One playlist. Coming soon. 🔥\n\nStay tuned for the update!",
+    "content": "🎉 GOOD NEWS FOR SPOTIFY USERS! 🎉\n\nWe’ve successfully improved the Spotify playlist importer, and it can now handle up to 600 songs in a single playlist. 🚀🎵\n\nThe update hasn’t been released in the app yet, but it’s coming soon.\n\nOnce the update is live, you’ll be able to import much larger Spotify playlists without having to split them into multiple playlists.\n\n600 songs. One playlist. Coming soon. 🔥\n\nStay tuned for the update!",
     "timestamp": 1787995690231
   },
   {
@@ -455,7 +457,9 @@
     "isVerified": true,
     "authorName": "Mudassir",
     "imageUrl": "file:/data/user/0/com.mudassir131.nocturne/files/broadcast_media_1788586633980.gif",
-    "reactions": {"❤️": 1},
+    "reactions": {
+      "❤️": 1
+    },
     "id": "msg-417d8df9",
     "tag": "ANNOUNCEMENT",
     "title": "",
@@ -471,7 +475,7 @@
     "id": "msg-3eaf0872",
     "tag": "GENERAL",
     "title": "",
-    "content": "Hey Nocturne users, I hope you guys are doing absolutely well. 🖤\n\nI wanted to personally share a small update with everyone who has been using and supporting Nocturne.\n\nWe know that some of you are facing UI-related issues, inconsistencies, and a few things that don\u2019t feel as polished as they should. We\u2019ve heard you. Every bit of your feedback matters, and we\u2019re working on these issues with the next updates in mind.\n\nWe also know that the audio enhancement isn\u2019t quite where we want it to be yet. There\u2019s still a lot of room for improvement, and Insha\u2019Allah, we\u2019ll continue refining it in future updates to make your listening experience cleaner, richer, and more immersive. 🎧✨\n\nNocturne is still growing. It\u2019s not perfect yet and honestly, we don\u2019t want to stop at \u201cgood enough.\u201d We want to keep pushing it until it becomes something you genuinely love having on your device.\n\nAll I ask from you is your support, your honest feedback, and your patience. Stay connected with Nocturne, keep sharing your suggestions, and most importantly, keep using the app.\n\nAnd if you know someone who lives on music, introduce them to Nocturne. 🌙🎶\n\nEvery user, every piece of feedback, every share it all helps us take the next step.\n\nThank you for being here. This is only the beginning. 🖤",
+    "content": "Hey Nocturne users, I hope you guys are doing absolutely well. 🖤\n\nI wanted to personally share a small update with everyone who has been using and supporting Nocturne.\n\nWe know that some of you are facing UI-related issues, inconsistencies, and a few things that don’t feel as polished as they should. We’ve heard you. Every bit of your feedback matters, and we’re working on these issues with the next updates in mind.\n\nWe also know that the audio enhancement isn’t quite where we want it to be yet. There’s still a lot of room for improvement, and Insha’Allah, we’ll continue refining it in future updates to make your listening experience cleaner, richer, and more immersive. 🎧✨\n\nNocturne is still growing. It’s not perfect yet and honestly, we don’t want to stop at “good enough.” We want to keep pushing it until it becomes something you genuinely love having on your device.\n\nAll I ask from you is your support, your honest feedback, and your patience. Stay connected with Nocturne, keep sharing your suggestions, and most importantly, keep using the app.\n\nAnd if you know someone who lives on music, introduce them to Nocturne. 🌙🎶\n\nEvery user, every piece of feedback, every share it all helps us take the next step.\n\nThank you for being here. This is only the beginning. 🖤",
     "timestamp": 1788705124965
   },
   {
@@ -519,7 +523,7 @@
     "id": "msg-0f8f4b69",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "🚨 v2.22.34 Recommended Update\n\nThis update is a must-install for all users. If you\u2019re experiencing stuttering, lag, or playback issues, update to v2.22.34 for improved smoothness, stability, and performance.\n\nUpdate now. Experience the difference. ⚡",
+    "content": "🚨 v2.22.34 Recommended Update\n\nThis update is a must-install for all users. If you’re experiencing stuttering, lag, or playback issues, update to v2.22.34 for improved smoothness, stability, and performance.\n\nUpdate now. Experience the difference. ⚡",
     "timestamp": 1789830658591
   },
   {
@@ -648,7 +652,7 @@
     "id": "msg-9bf9a7f3",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "Thanks for reporting this! One of the users reported an issue with the \u201cAdd to Queue\u201d feature, where songs aren\u2019t being added to the queue as expected.\n\nI\u2019ve identified the issue and will be working on a fix shortly. Since I\u2019m currently handling the entire project independently, a few edge cases can occasionally slip through testing and audits.\n\nUser reports like this help me catch and resolve those issues much faster. Appreciate you bringing it to my attention. 🙌",
+    "content": "Thanks for reporting this! One of the users reported an issue with the “Add to Queue” feature, where songs aren’t being added to the queue as expected.\n\nI’ve identified the issue and will be working on a fix shortly. Since I’m currently handling the entire project independently, a few edge cases can occasionally slip through testing and audits.\n\nUser reports like this help me catch and resolve those issues much faster. Appreciate you bringing it to my attention. 🙌",
     "timestamp": 1791218556815
   },
   {
@@ -670,7 +674,7 @@
     "id": "msg-a92a3a95",
     "tag": "ANNOUNCEMENT",
     "title": "",
-    "content": "Dear Users,\n\nThe app\u2019s backend is currently experiencing instability with its search engine, which may cause some songs to play with incorrect names or metadata.\n\nThe bug is expected to be patched by tomorrow. We apologize for the inconvenience and appreciate your patience.\n\nThank you for your understanding.",
+    "content": "Dear Users,\n\nThe app’s backend is currently experiencing instability with its search engine, which may cause some songs to play with incorrect names or metadata.\n\nThe bug is expected to be patched by tomorrow. We apologize for the inconvenience and appreciate your patience.\n\nThank you for your understanding.",
     "timestamp": 1792777070074
   },
   {
@@ -683,5 +687,22 @@
     "title": "",
     "content": "next update will be banger, Stay Tuned.",
     "timestamp": 1793542722312
+  },
+  {
+    "actionText": "Check for Update",
+    "authorRole": "App developer",
+    "isVerified": true,
+    "authorName": "Mudassir",
+    "actionUrl": "nocturne://settings/update",
+    "reactions": {
+      "🔥": 450,
+      "🚀": 380,
+      "❤️": 290
+    },
+    "id": "msg-v2.22.40-release",
+    "tag": "UPDATE",
+    "title": "Nocturne v2.22.40 is out! 🚀",
+    "content": "Hey everyone! 👋 Nocturne v2.22.40 is here with our biggest UX update yet!\n\n• **New Navigation Bar**: Expressive floating pill navbar with fluid tab morphing, enabled by default.\n• **3-Dots Quick Actions**: Animated 90° rotation button giving instant access to Music Recognition, History, and Stats.\n• **Online Music Recognition**: Powered by Shazam! Identify any song playing nearby with album art, metadata, and lyrics preview.\n• **Pure Black AMOLED**: Restored true pitch-black toggle for gorgeous AMOLED contrast.\n\nUpdate now from Settings -> Check for update!",
+    "timestamp": 1793750000000
   }
 ]

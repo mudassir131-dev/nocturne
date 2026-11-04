@@ -118,6 +118,9 @@ fun NavGraphBuilder.navigationBuilder(
     composable("stats") {
         StatsScreen(navController)
     }
+    composable("music_recognition") {
+        MusicRecognitionScreen(navController)
+    }
     composable(Screens.Search.route) {
         searchContent()
     }

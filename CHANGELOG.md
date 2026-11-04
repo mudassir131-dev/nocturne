@@ -1,5 +1,36 @@
 # Nocturne Changelog & Release Notes
 
+## [v2.22.40] - 2026-11-04
+
+### 🧭 New Navigation Bar (Default On)
+- **Modern Floating Architecture**: Re-engineered the bottom navigation bar with an expressive floating pill container, enabled by default in Appearance Settings (`newNavbar = true`).
+- **Fluid Morphing & Selection Physics**: Active tabs expand smoothly into an icon + text pill with spring dynamics and haptic touch, while inactive tabs remain compact and clean.
+- **Interactive Three-Dots Floating Action Button**: Features a dedicated `VibrantFloatingActionButton` with an animated 90° rotation and icon morphing between `MoreVert` and `Close`.
+- **Three Core Quick Actions Menu**:
+  1. **Music Recognition** - Immediate navigation to the new dedicated audio recognition screen.
+  2. **History** - Quick jump to playback history.
+  3. **Stats** - Instant access to user listening statistics.
+
+### 🎙️ Dedicated Online Music Recognition Engine
+- **Powered by Shazam (Pure Kotlin)**: Integrated real-time audio recognition using pure Kotlin DejaVu fingerprinting algorithm (`ShazamSignatureGenerator`) and official Shazam endpoint resolution.
+- **Zero API Keys Required**: Seamlessly captures 16kHz microphone audio on-device and resolves online track signatures with rate-limiting and exponential backoff retry.
+- **Comprehensive Song Metadata**: Displays album artwork, verified title, artist, album name, primary genre, release date, and ISRC identifier.
+- **Interactive Preview & Direct Actions**:
+  - Live 6-line preview of recognized lyrics.
+  - Record label and distributor attribution.
+  - One-tap search in Nocturne's catalog to stream or add directly to library/playlists.
+  - External launch buttons for Shazam and YouTube.
+- **Expressive Visuals**: Animated pulsing listening orb with dual sound-wave ripple rings, status pills, and permission onboarding.
+
+### 🖤 Appearance & Pure Black AMOLED Mode
+- **Persistent Pure Black**: Fixed the regression where pure black mode was forced off by an extraneous launched effect in settings.
+- **AMOLED-Optimized Surfaces**: Full support for true pitch-black (`#000000`) surfaces across the floating toolbar, quick action menus, and recognition screen.
+
+### ⚙️ Engine, Build & Stability
+- **Version Bump**: Bumped `versionCode` to `51` and `versionName` to `2.22.40`.
+
+---
+
 ## [v2.22.39] - 2026-10-25
 
 ### 🎚️ Raw-Max Bitrate Playback

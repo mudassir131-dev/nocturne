@@ -73,13 +73,13 @@ private data class ReleasesNetworkResult(
 )
 
 object Updater {
-    const val GenericReleaseNotes = """### 🎵 What's New in Nocturne v2.22.39
+    const val GenericReleaseNotes = """### 🚀 What's New in Nocturne v2.22.40
 
-* **Raw-Max Audio Quality** — Every quality mode now streams the rawest source per song: verified catalog matches (Saavn 320 kbps AAC, self-hosted lossless, local FLAC/ALAC) play as-is instead of being pinned to YouTube's ~160 kbps Opus ceiling.
-* **Highest-Bitrate Fallback** — Songs without a verified catalog match pick the highest-bitrate YouTube rendition with the codec preference as a tie-break, so rawer renditions like AAC 256 kbps are never skipped for a fixed-160 kbps opus.
-* **Stream Preflight Hardening** — Catalog probes use a 1-byte Range GET instead of HEAD, fixing CDN deployments that rejected HEAD and silently degraded playback to the fallback stream.
-* **Exactness First** — The per-song verification gates are unchanged: an unverifiable candidate is rejected rather than played as "a rawer but different song".
-* **Stability & Maintenance** — Version bump to v2.22.39 (50)."""
+* **New Navigation Bar** — Brand-new expressive floating toolbar enabled by default. Features fluid selection morphing, auto-expanding tab labels (Home, Search, Library), and responsive spring physics.
+* **3-Dots Quick Action Menu** — Sleek floating action button with 90° animated rotation between options and close icon, offering instant access to **Music Recognition**, **History**, and **Stats**.
+* **Online Music Recognition** — Integrated Shazam engine with pure Kotlin DejaVu audio fingerprinting. Identify nearby music in seconds with rich cover art, track metadata, lyrics preview, and direct search/playback in Nocturne.
+* **Pure Black AMOLED Restored** — Fixed the Pure Black mode toggle in Appearance Settings to guarantee rich, true-black surfaces and power savings across AMOLED devices.
+* **Stability & Performance** — Upgraded to v2.22.40 (51) with general stability improvements."""
 
     private val client = HttpClient()
     private const val ReleaseCacheCheckIntervalMs: Long = 6 * 60 * 60 * 1000L

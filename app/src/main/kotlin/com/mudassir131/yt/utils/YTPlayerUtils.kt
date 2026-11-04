@@ -380,6 +380,12 @@ object YTPlayerUtils {
 
         val botDetectedClients = mutableSetOf<String>()
 
+        // Best stream remembered from a client that did not carry the preferred codec
+        // (e.g. an Opus-first song resolved through a client that only returned AAC).
+        // Songs are expected to come through either codec route, so if no client serves
+        // the preferred codec this stream is played instead of failing.
+        var nonPreferredCodecPlayback: PlaybackData? = null
+
         for ((index, client) in streamClients.withIndex()) {
             format = null
             streamUrl = null
@@ -434,19 +440,6 @@ object YTPlayerUtils {
 
             if (candidates.isEmpty()) continue
 
-            val hasPreferredCodec = candidates.any {
-                val c = extractCodec(it.mimeType)?.lowercase().orEmpty()
-                when (audioQuality) {
-                    AudioQuality.OPUS -> c.contains("opus") || it.itag in listOf(249, 250, 251)
-                    AudioQuality.SAAVN -> c.contains("mp4a") || c.contains("aac") || it.itag in listOf(139, 140, 141)
-                    AudioQuality.LOSSLESS -> true
-                }
-            }
-            if (!hasPreferredCodec && index < streamClients.size - 1) {
-                Timber.tag(logTag).d("Client ${client.clientName} does not have preferred codec for $audioQuality, trying next client")
-                continue
-            }
-
             var selectedFormat: PlayerResponse.StreamingData.Format? = null
             var selectedUrl: String? = null
             val isFallbackClient = client != preferredYouTubeClient && client != metadataClient
@@ -497,6 +490,40 @@ object YTPlayerUtils {
                 continue
             }
 
+            // Codec routes must both stay usable: if this client cannot supply the
+            // preferred codec (e.g. Opus-first mode but the client only returned AAC),
+            // stash its already URL-resolved stream and keep looking for a preferred
+            // codec client. The stashed stream is served only if no client ends up
+            // carrying the preferred codec.
+            val hasPreferredCodec = candidates.any {
+                val c = extractCodec(it.mimeType)?.lowercase().orEmpty()
+                when (audioQuality) {
+                    AudioQuality.OPUS -> c.contains("opus") || it.itag in listOf(249, 250, 251)
+                    AudioQuality.SAAVN -> c.contains("mp4a") || c.contains("aac") || it.itag in listOf(139, 140, 141)
+                    AudioQuality.LOSSLESS -> true
+                }
+            }
+            if (!hasPreferredCodec && index < streamClients.size - 1) {
+                if (nonPreferredCodecPlayback == null) {
+                    nonPreferredCodecPlayback = PlaybackData(
+                        audioConfig,
+                        videoDetails,
+                        playbackTracking,
+                        selectedFormat,
+                        selectedUrl,
+                        streamExpiresInSeconds,
+                    )
+                    Timber.tag(logTag).i(
+                        "Client ${client.clientName} has no preferred codec for $audioQuality; stored its resolved stream (itag=${selectedFormat.itag}, mime=${selectedFormat.mimeType}) as the alternate-codec route fallback"
+                    )
+                }
+                Timber.tag(logTag).d("Skipping ${client.clientName} for $audioQuality, trying next client for the preferred codec")
+                format = null
+                streamUrl = null
+                streamExpiresInSeconds = null
+                continue
+            }
+
             Timber.tag(logTag).i("Format found: ${format.mimeType}, bitrate: ${format.bitrate}")
             Timber.tag(logTag).v("Stream expires in: $streamExpiresInSeconds seconds")
             break
@@ -544,6 +571,19 @@ object YTPlayerUtils {
                         streamExpiresInSeconds = fallbackResult.expiresInSeconds,
                     )
                 }
+            }
+
+            val crossCodecFallback = nonPreferredCodecPlayback
+            if (crossCodecFallback != null) {
+                Timber.tag(logTag).i(
+                    "No client served the preferred codec for $audioQuality on $videoId; serving the stored alternate-codec stream (${crossCodecFallback.format.mimeType}, bitrate=${crossCodecFallback.format.bitrate}) so the other codec route still plays"
+                )
+                streamUrlCache[buildCacheKey(videoId, crossCodecFallback.format.itag)] =
+                    CachedStreamUrl(
+                        url = crossCodecFallback.streamUrl,
+                        expiresAtMs = System.currentTimeMillis() + (crossCodecFallback.streamExpiresInSeconds * 1000L),
+                    )
+                return crossCodecFallback
             }
 
             if (botDetectedClients.isNotEmpty()) {

@@ -211,6 +211,7 @@ fun ApplePlayerHost(
     }
     var draggedPosition by remember { mutableStateOf<Long?>(null) }
     var showAudioOutput by rememberSaveable { mutableStateOf(false) }
+    var showAudioPipeline by rememberSaveable { mutableStateOf(false) }
     var showSleepTimer by rememberSaveable { mutableStateOf(false) }
     var sleepTimerActive by remember { mutableStateOf(connection.service.sleepTimer.isActive) }
     var sleepTimerTimeLeft by remember { mutableLongStateOf(0L) }
@@ -462,6 +463,7 @@ fun ApplePlayerHost(
             onEnterFullscreenVideo = { isFullscreenVideo = true },
             onEnterPip = onEnterPip,
             onSelectVideoQuality = onSelectVideoQuality,
+            onOpenAudioPipeline = { showAudioPipeline = true },
         )
 
         val queueTextColor = if (pureBlack) Color.White else MaterialTheme.colorScheme.onSurface
@@ -487,6 +489,14 @@ fun ApplePlayerHost(
             artworkId = metadata?.id,
             artworkUrl = metadata?.thumbnailUrl,
             onDismiss = { showAudioOutput = false },
+        )
+    }
+
+    if (showAudioPipeline) {
+        AppleAudioPipelinePanel(
+            format = currentFormat,
+            formatInfo = currentFormatInfo,
+            onDismiss = { showAudioPipeline = false },
         )
     }
 
@@ -567,6 +577,7 @@ private fun AppleExpandedPlayer(
     onEnterFullscreenVideo: () -> Unit = {},
     onEnterPip: () -> Unit = {},
     onSelectVideoQuality: ((Int) -> Unit)? = null,
+    onOpenAudioPipeline: () -> Unit = {},
 ) {
     val playPauseRoundness by animateDpAsState(
         targetValue = if (isPlaying) 24.dp else 36.dp,
@@ -802,6 +813,7 @@ private fun AppleExpandedPlayer(
                     isLoading = formatLoading,
                     sleepTimerActive = sleepTimerActive,
                     sleepTimerTimeLeft = sleepTimerTimeLeft,
+                    onClick = onOpenAudioPipeline,
                 )
 
                 Text(
@@ -1080,6 +1092,7 @@ private fun AppleQualityBadge(
     isLoading: Boolean,
     sleepTimerActive: Boolean,
     sleepTimerTimeLeft: Long,
+    onClick: (() -> Unit)? = null,
 ) {
     val resolved = remember(format, formatInfo) {
         formatInfo ?: format?.toAudioFormatInfo()
@@ -1094,11 +1107,19 @@ private fun AppleQualityBadge(
     }
     if (!sleepTimerActive && formatText.isBlank() && !isLoading) return
 
+    val badgeInteraction =
+        if (!sleepTimerActive && onClick != null) {
+            Modifier.clickable(onClick = onClick)
+        } else {
+            Modifier
+        }
+
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(4.dp))
+            .then(badgeInteraction)
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         if (sleepTimerActive) {

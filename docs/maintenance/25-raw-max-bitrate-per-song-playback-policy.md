@@ -58,6 +58,25 @@ Verification against the live sources showed two facts:
 `OPUS ~160 kbps` for a catalog-missed song is therefore the maximum that
 exists upstream, not a regression.
 
+## Cross-codec route fallback
+
+YouTube clients do not always publish both codec families. An `Opus`-first song
+resolved through a client that only returned AAC (or the reverse for `Saavn`)
+previously caused that client to be skipped, and if every client ended up
+single-codec the pipeline threw `Bad stream player response`.
+
+`playerResponseForPlaybackOnce` now keeps the raw-max ranking intact but treats
+the codec gate as a preference, not a rejection:
+
+- A client whose candidate list lacks the mode's preferred codec still resolves
+  its best stream; the first such URL-verified stream is stashed as the
+  alternate-codec route and later clients are still probed for the preferred
+  codec.
+- If no client ends up serving the preferred codec, the stashed stream is
+  served (and URL-cached) instead of failing, so songs keep fetching through
+  both the AAC and Opus routes. The verified catalog (Saavn 320 kbps AAC) still
+  outranks it, unchanged.
+
 ## Preflight hardening
 
 `LosslessStreamResolver.validateRemoteUrl` now issues

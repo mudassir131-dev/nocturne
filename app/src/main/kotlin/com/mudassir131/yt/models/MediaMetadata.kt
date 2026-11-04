@@ -68,6 +68,24 @@ data class MediaMetadata(
         )
 }
 
+fun SongEntity.toMediaMetadata(artists: List<MediaMetadata.Artist> = emptyList()) =
+    MediaMetadata(
+        id = id,
+        title = title,
+        artists = artists.ifEmpty {
+            albumName?.takeIf { it.isNotBlank() }?.let {
+                listOf(MediaMetadata.Artist(id = null, name = it))
+            } ?: emptyList()
+        },
+        duration = duration,
+        thumbnailUrl = thumbnailUrl,
+        album = albumId?.let { MediaMetadata.Album(id = it, title = albumName.orEmpty()) },
+        explicit = explicit,
+        liked = liked,
+        likedDate = likedDate,
+        inLibrary = inLibrary,
+    )
+
 fun Song.toMediaMetadata() =
     MediaMetadata(
         id = song.id,

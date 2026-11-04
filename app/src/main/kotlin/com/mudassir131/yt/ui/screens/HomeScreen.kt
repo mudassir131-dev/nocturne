@@ -125,6 +125,7 @@ fun HomeScreen(
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val (disableBlur) = rememberPreference(DisableBlurKey, true)
     val (showHomeCategoryChips) = rememberPreference(ShowHomeCategoryChipsKey, true)
+    val (newNavbar) = rememberPreference(com.mudassir131.yt.constants.NewNavbarKey, defaultValue = true)
     val (profileName) = rememberPreference(ProfileNameKey, "")
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)
@@ -429,7 +430,7 @@ fun HomeScreen(
             }
 
             HideOnScrollFAB(
-                visible = allLocalItems.isNotEmpty() || allYtItems.isNotEmpty(),
+                visible = !newNavbar && (allLocalItems.isNotEmpty() || allYtItems.isNotEmpty()),
                 lazyListState = lazylistState,
                 icon = R.drawable.shuffle,
                 onClick = {

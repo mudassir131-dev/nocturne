@@ -9,6 +9,8 @@
 package com.mudassir131.yt
 
 import com.mudassir131.yt.ui.component.NocturneBottomBar
+import com.mudassir131.yt.ui.component.ExpressiveBottomBar
+import com.mudassir131.yt.ui.component.FloatingNavigationToolbar
 import com.mudassir131.yt.ui.component.LocalBottomBarScrollProgress
 import com.mudassir131.yt.ui.component.LocalBottomBarScrollState
 import com.mudassir131.yt.ui.component.RootScreenHeader
@@ -195,6 +197,7 @@ import com.mudassir131.yt.constants.SearchSource
 import com.mudassir131.yt.constants.SearchSourceKey
 import com.mudassir131.yt.constants.SlimNavBarHeight
 import com.mudassir131.yt.constants.SlimNavBarKey
+import com.mudassir131.yt.constants.NewNavbarKey
 
 
 import com.mudassir131.yt.constants.StopMusicOnTaskClearKey
@@ -673,13 +676,8 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(useDarkTheme) {
                 setSystemBarAppearance(useDarkTheme)
             }
-            val (pureBlackPref, onPureBlackPrefChange) = rememberPreference(PureBlackKey, defaultValue = false)
-            LaunchedEffect(pureBlackPref) {
-                if (pureBlackPref) {
-                    onPureBlackPrefChange(false)
-                }
-            }
-            val pureBlack = false
+            val (pureBlackPref) = rememberPreference(PureBlackKey, defaultValue = false)
+            val pureBlack = pureBlackPref && useDarkTheme
 
             val customThemeSeedPalette = remember(customThemeColorValue) {
                 if (customThemeColorValue.startsWith("#")) {
@@ -830,7 +828,10 @@ class MainActivity : ComponentActivity() {
                     val currentRoute = navBackStackEntry?.destination?.route
                     val isYearInMusicScreen = currentRoute == "year_in_music"
 
-                    val navigationItems = remember { Screens.MainScreens }
+                    val (newNavbar) = rememberPreference(NewNavbarKey, defaultValue = true)
+                    val navigationItems = remember(newNavbar) {
+                        if (newNavbar) Screens.ExpressiveScreens else Screens.MainScreens
+                    }
                     val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                     val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                     val (appleMusicInspired) = rememberPreference(
@@ -857,6 +858,19 @@ class MainActivity : ComponentActivity() {
                             Screens.Library.route,
                             Screens.Search.route,
                         )
+
+                    /**
+                     * Index used to pick the slide direction between top-level destinations.
+                     * Stats/History live inside the More tab for the expressive bar, so they
+                     * resolve to More's index to keep the Home → Search → Library → More flow.
+                     */
+                    val transitionIndexOf: (String?) -> Int = { route ->
+                        if (navigationItems.any { it.route == route }) {
+                            navigationItems.indexOfFirst { it.route == route }
+                        } else {
+                            -1
+                        }
+                    }
 
                     val (query, onQueryChange) =
                         rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -942,14 +956,14 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val shouldShowSearchBar =
-                        remember(active, navBackStackEntry) {
+                        remember(active, navBackStackEntry, newNavbar) {
                             active ||
                                     navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } ||
                                     navBackStackEntry?.destination?.route?.startsWith("search/") == true
                         }
 
                     val shouldShowNavigationBar =
-                        remember(navBackStackEntry) {
+                        remember(navBackStackEntry, newNavbar) {
                             navBackStackEntry?.destination?.route == null ||
                                 navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } ||
                                 navBackStackEntry?.destination?.route?.startsWith("search/") == true
@@ -1391,46 +1405,99 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 },
                                     ) {
-                                        NocturneBottomBar(
-                                            modifier = Modifier
-                                                .align(Alignment.BottomCenter)
-                                                .padding(
-                                                    start = 14.dp,
-                                                    end = 14.dp,
-                                                    bottom = bottomInset + floatingBarsBottomPadding,
-                                                )
-                                                .fillMaxWidth()
-                                                .height(navVisibleHeight),
-                                            items = navigationItems,
-                                            currentRoute = navBackStackEntry?.destination?.route ?: "",
-                                            pureBlack = pureBlack,
-                                            onTabSelected = { screen ->
-                                                val isSelected =
+                                        val onNavTabSelected: (Screens) -> Unit = { screen ->
+                                            val isSelected =
+                                                navBackStackEntry?.destination?.hierarchy?.any {
+                                                    it.route == screen.route
+                                                } == true
+
+                                            if (isSelected) {
+                                                navController.currentBackStackEntry?.savedStateHandle
+                                                    ?.set("scrollToTop", true)
+                                                coroutineScope.launch {
+                                                    searchBarScrollBehavior.state.resetHeightOffset()
+                                                }
+                                            } else {
+                                                runCatching {
+                                                    navController.navigate(screen.route) {
+                                                        popUpTo(navController.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                        }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+                                                }.onFailure { e ->
+                                                    timber.log.Timber.tag("Navigation").e(e, "Failed to navigate to ${screen.route}")
+                                                }
+                                            }
+                                        }
+
+                                        if (newNavbar) {
+                                            FloatingNavigationToolbar(
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomCenter)
+                                                    .padding(
+                                                        start = 16.dp,
+                                                        end = 16.dp,
+                                                        bottom = bottomInset + floatingBarsBottomPadding,
+                                                    )
+                                                    .height(navVisibleHeight),
+                                                items = navigationItems,
+                                                slim = slimNav,
+                                                pureBlack = pureBlack,
+                                                isSelected = { screen ->
                                                     navBackStackEntry?.destination?.hierarchy?.any {
                                                         it.route == screen.route
                                                     } == true
-
-                                                if (isSelected) {
-                                                    navController.currentBackStackEntry?.savedStateHandle
-                                                        ?.set("scrollToTop", true)
-                                                    coroutineScope.launch {
-                                                        searchBarScrollBehavior.state.resetHeightOffset()
-                                                    }
-                                                } else {
-                                                    runCatching {
-                                                        navController.navigate(screen.route) {
-                                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                                saveState = true
-                                                            }
-                                                            launchSingleTop = true
-                                                            restoreState = true
+                                                },
+                                                onItemClick = { screen, isSelected ->
+                                                    if (isSelected) {
+                                                        navController.currentBackStackEntry?.savedStateHandle
+                                                            ?.set("scrollToTop", true)
+                                                        coroutineScope.launch {
+                                                            searchBarScrollBehavior.state.resetHeightOffset()
                                                         }
-                                                    }.onFailure { e ->
-                                                        timber.log.Timber.tag("Navigation").e(e, "Failed to navigate to ${screen.route}")
+                                                    } else {
+                                                        runCatching {
+                                                            navController.navigate(screen.route) {
+                                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                                    saveState = true
+                                                                }
+                                                                launchSingleTop = true
+                                                                restoreState = true
+                                                            }
+                                                        }.onFailure { e ->
+                                                            timber.log.Timber.tag("Navigation").e(e, "Failed to navigate to ${screen.route}")
+                                                        }
                                                     }
-                                                }
-                                            },
-                                        )
+                                                },
+                                                onIdentifyClick = {
+                                                    runCatching { navController.navigate("music_recognition") }
+                                                },
+                                                onHistoryClick = {
+                                                    runCatching { navController.navigate("history") }
+                                                },
+                                                onStatsClick = {
+                                                    runCatching { navController.navigate("stats") }
+                                                },
+                                            )
+                                        } else {
+                                            NocturneBottomBar(
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomCenter)
+                                                    .padding(
+                                                        start = 14.dp,
+                                                        end = 14.dp,
+                                                        bottom = bottomInset + floatingBarsBottomPadding,
+                                                    )
+                                                    .fillMaxWidth()
+                                                    .height(navVisibleHeight),
+                                                items = navigationItems,
+                                                currentRoute = navBackStackEntry?.destination?.route ?: "",
+                                                pureBlack = pureBlack,
+                                                onTabSelected = onNavTabSelected,
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1444,7 +1511,7 @@ class MainActivity : ComponentActivity() {
                                             Screens.Home.route,
                                             Screens.Library.route,
                                             Screens.History.route,
-                                            Screens.Stats.route
+                                            Screens.Stats.route,
                                         )
 
                                         val shouldShowBlurBackground = remember(navBackStackEntry) {

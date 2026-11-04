@@ -29,6 +29,7 @@ val PureBlackKey = booleanPreferencesKey("pureBlack")
 val UseSystemFontKey = booleanPreferencesKey("useSystemFont")
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
 val SlimNavBarKey = booleanPreferencesKey("slimNavBar")
+val NewNavbarKey = booleanPreferencesKey("newNavbar")
 val GridItemsSizeKey = stringPreferencesKey("gridItemSize")
 val SliderStyleKey = stringPreferencesKey("sliderStyle")
 val SwipeToSongKey = booleanPreferencesKey("SwipeToSong")
@@ -106,6 +107,9 @@ val LastFMUseNowPlaying = booleanPreferencesKey("lastfmUseNowPlaying")
 val ScrobbleDelayPercentKey = floatPreferencesKey("scrobbleDelayPercent")
 val ScrobbleMinSongDurationKey = intPreferencesKey("scrobbleMinSongDuration")
 val ScrobbleDelaySecondsKey = intPreferencesKey("scrobbleDelaySeconds")
+
+// Music recognition (audD API token)
+val MusicRecognitionTokenKey = stringPreferencesKey("musicRecognitionToken")
 
 val AudioQualityKey = stringPreferencesKey("audioQuality")
 

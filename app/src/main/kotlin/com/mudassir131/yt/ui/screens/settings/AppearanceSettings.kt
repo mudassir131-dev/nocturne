@@ -96,6 +96,7 @@ import com.mudassir131.yt.constants.LyricsLineSpacingKey
 import com.mudassir131.yt.constants.SliderStyle
 import com.mudassir131.yt.constants.SliderStyleKey
 import com.mudassir131.yt.constants.SlimNavBarKey
+import com.mudassir131.yt.constants.NewNavbarKey
 import com.mudassir131.yt.constants.ShowLikedPlaylistKey
 import com.mudassir131.yt.constants.ShowDownloadedPlaylistKey
 import com.mudassir131.yt.constants.ShowHomeCategoryChipsKey
@@ -188,11 +189,6 @@ fun AppearanceSettings(
         defaultValue = false
     )
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
-    LaunchedEffect(pureBlack) {
-        if (pureBlack) {
-            onPureBlackChange(false)
-        }
-    }
     val (disableBlur, onDisableBlurChange) = rememberPreference(DisableBlurKey, defaultValue = true)
     val (useSystemFont, onUseSystemFontChange) = rememberPreference(UseSystemFontKey, defaultValue = false)
     val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(
@@ -253,6 +249,11 @@ fun AppearanceSettings(
     val (slimNav, onSlimNavChange) = rememberPreference(
         SlimNavBarKey,
         defaultValue = false
+    )
+
+    val (newNavbar, onNewNavbarChange) = rememberPreference(
+        NewNavbarKey,
+        defaultValue = true
     )
 
 
@@ -1083,6 +1084,15 @@ fun AppearanceSettings(
                         icon = { Icon(painterResource(R.drawable.nav_bar), null) },
                         checked = slimNav,
                         onCheckedChange = onSlimNavChange
+                    )
+                },
+                {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.new_navbar)) },
+                        description = stringResource(R.string.new_navbar_desc),
+                        icon = { Icon(painterResource(R.drawable.nav_bar), null) },
+                        checked = newNavbar,
+                        onCheckedChange = onNewNavbarChange
                     )
                 },
                 {

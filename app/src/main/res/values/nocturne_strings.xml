@@ -8,7 +8,7 @@
     <string name="no_title">No title</string>
     <string name="unknown_artist">Unknown artist</string>
     <string name="unknown_item_type">Unknown item type</string>
-    <string name="loading_charts">Loading charts…</string>
+    <string name="loading_charts">Loading chartsâ€¦</string>
     <string name="retry_button">Retry</string>
     <string name="album_cover_desc">Album cover</string>
     <string name="top_music_videos">Top music videos</string>
@@ -212,7 +212,7 @@
     <string name="player_stream_client_android_vr">Android VR</string>
     <string name="player_stream_client_android_vr_desc">Streams directly without signature decryption, providing maximum speed. Suitable for the majority of users.</string>
     <string name="player_stream_client_web_remix">Web Remix</string>
-    <string name="player_stream_client_web_remix_desc">Extended format support at the cost of speed. JavaScript signature decryption introduces a ~5–10 second startup delay.</string>
+    <string name="player_stream_client_web_remix_desc">Extended format support at the cost of speed. JavaScript signature decryption introduces a ~5â€“10 second startup delay.</string>
     <string name="settings_section_ui">User Interface</string>
     <string name="settings_section_privacy">Privacy &amp; Security</string>
     <string name="settings_section_player">Player &amp; Media</string>
@@ -291,7 +291,7 @@
     <string name="check_for_update">Check for update</string>
     <string name="check_for_updates">Check for Updates</string>
     <string name="check_for_update_desc">Check GitHub releases for latest versions</string>
-    <string name="checking_for_updates">Checking GitHub for updates…</string>
+    <string name="checking_for_updates">Checking GitHub for updatesâ€¦</string>
     <string name="up_to_date_title">You\'re up to date!</string>
     <string name="up_to_date_desc">Nocturne %s is the latest version available.</string>
     <string name="update_available_title">New version available!</string>
@@ -305,4 +305,37 @@
     <string name="install_update">Install Update</string>
     <string name="download_apk">Download APK</string>
     <string name="assets">Assets</string>
+
+    <!-- New Navbar -->
+    <string name="new_navbar">New Navbar</string>
+    <string name="new_navbar_desc">Expressive compact bottom bar with Home, Search, Library and quick actions</string>
+    <string name="identify_music">Identify Music</string>
+
+    <!-- Music recognition -->
+    <string name="music_recognition">Music Recognition</string>
+    <string name="music_recognition_tap_to_listen">Tap to listen</string>
+    <string name="music_recognition_listening">Listening…</string>
+    <string name="music_recognition_processing">Processing…</string>
+    <string name="music_recognition_listen_again">Listen again</string>
+    <string name="music_recognition_no_match">No match found</string>
+    <string name="music_recognition_signature_failed">Couldn\'t generate a signature</string>
+    <string name="music_recognition_recognition_failed">Recognition failed</string>
+    <string name="music_recognition_open_shazam">Open Shazam</string>
+    <string name="music_recognition_lyrics_preview">Lyrics preview</string>
+    <string name="music_recognition_permission_title">Microphone permission</string>
+    <string name="music_recognition_permission_desc">Allow microphone access to recognize nearby music.</string>
+    <string name="music_recognition_permission_action">Allow</string>
+    <string name="music_recognition_error">Something went wrong</string>
+    <string name="recognition_intro">Identify songs playing around you in a few seconds.</string>
+    <string name="recognition_tap_to_listen">Tap to listen</string>
+    <string name="recognition_listening">Listening…</string>
+    <string name="recognition_processing">Identifying…</string>
+    <string name="recognition_scan">Analyzing audio…</string>
+    <string name="recognition_scan_progress">Scanning %1$d of %2$d…</string>
+    <string name="recognition_no_library">No songs available in library. Download or cache songs to recognize them offline.</string>
+    <string name="recognition_no_match">No match found. Try moving closer to the source.</string>
+    <string name="recognition_error_prefix">Recognition failed</string>
+    <string name="recognition_search_in_app">Search in app</string>
+    <string name="recognition_try_again">Try again</string>
+    <string name="recognition_permission_denied">Microphone permission is required to recognize music.</string>
 </resources>

@@ -56,7 +56,12 @@ sealed class Screens(
     )
 
 
+
+
     companion object {
         val MainScreens = listOf(Home, Stats, History, Library, Search)
+
+        /** Tabs for the expressive bottom bar: Home → Search → Library, overflow in More. */
+        val ExpressiveScreens = listOf(Home, Search, Library)
     }
 }
