@@ -452,3 +452,5 @@ object AddonLosslessAudioProvider : LosslessAudioProvider {
 // Refinement 114: HTTP head request reuse
 
 // Refinement 125: Artist name guest token stripping
+
+// Refinement 136: Confidence score logging
