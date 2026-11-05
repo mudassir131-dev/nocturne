@@ -243,3 +243,5 @@ object QualityUpgradeManager {
 // Refinement 89: Upgrade job cancellation optimization
 
 // Refinement 98: Upgrading media id reset on stop
+
+// Refinement 113: Concurrent upgrade request guard
