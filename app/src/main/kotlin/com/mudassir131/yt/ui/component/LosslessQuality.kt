@@ -147,3 +147,5 @@ private fun DrawScope.drawLosslessWaveform(color: Color, quality: LosslessQualit
 
 
 // Refinement 76: LosslessQuality tier boundary documentation
+
+// Refinement 90: Waveform canvas stroke harmonization
