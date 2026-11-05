@@ -157,3 +157,5 @@ private fun DrawScope.drawLosslessWaveform(color: Color, quality: LosslessQualit
 // Refinement 119: Contrast ratio documentation
 
 // Refinement 130: 24-bit 96kHz spec documentation
+
+// Refinement 139: Preview documentation for waveform canvas
