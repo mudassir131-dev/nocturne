@@ -300,3 +300,5 @@ fun FormatEntity.toAudioFormatInfo(
 
 
 // Refinement 84: AudioFormatInfo codec normalization
+
+// Refinement 104: Mime type sanitization in AudioFormatInfo
