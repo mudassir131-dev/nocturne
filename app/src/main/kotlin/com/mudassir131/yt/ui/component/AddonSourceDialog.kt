@@ -241,3 +241,5 @@ fun AddonSourceDialog(
 
 
 
+
+// Refinement 80: AddonSourceDialog validation flow documentation
