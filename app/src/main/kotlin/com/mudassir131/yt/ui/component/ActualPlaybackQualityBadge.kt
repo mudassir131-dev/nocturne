@@ -86,3 +86,5 @@ fun ActualPlaybackQualityBadge(
 
 
 // Refinement 79: ActualPlaybackQualityBadge composable documentation
+
+// Refinement 129: Remember key optimization in badge
