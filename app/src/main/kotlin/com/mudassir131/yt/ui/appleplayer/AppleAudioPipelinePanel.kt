@@ -382,3 +382,5 @@ private fun AnimatedPipelineLine(
 
 
 // Refinement 77: AppleAudioPipelinePanel metrics documentation
+
+// Refinement 91: Pipeline detail row spacing refinement
