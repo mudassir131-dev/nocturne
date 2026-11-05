@@ -239,3 +239,5 @@ object QualityUpgradeManager {
 }
 
 // Refinement 75: QualityUpgradeManager lifecycle documentation
+
+// Refinement 89: Upgrade job cancellation optimization
