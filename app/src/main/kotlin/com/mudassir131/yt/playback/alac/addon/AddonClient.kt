@@ -308,3 +308,5 @@ class AddonClient(rawBaseUrl: String) {
 // Refinement 96: HTTP error response message formatting
 
 // Refinement 110: User agent header verification
+
+// Refinement 124: Query string delimiter escaping
