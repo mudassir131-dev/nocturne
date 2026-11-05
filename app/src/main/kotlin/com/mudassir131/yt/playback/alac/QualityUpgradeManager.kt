@@ -247,3 +247,5 @@ object QualityUpgradeManager {
 // Refinement 113: Concurrent upgrade request guard
 
 // Refinement 126: Cancellation state emission
+
+// Refinement 137: Supervisor scope exception documentation
