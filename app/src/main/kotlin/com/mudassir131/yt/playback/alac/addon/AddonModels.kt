@@ -290,3 +290,5 @@ data class AddonStreamItem(
 }
 
 // Refinement 72: AddonModels schema documentation
+
+// Refinement 95: Immutability enforcement in stream models
