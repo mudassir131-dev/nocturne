@@ -310,3 +310,5 @@ class AddonClient(rawBaseUrl: String) {
 // Refinement 110: User agent header verification
 
 // Refinement 124: Query string delimiter escaping
+
+// Refinement 135: Connection pool cleanup documentation
