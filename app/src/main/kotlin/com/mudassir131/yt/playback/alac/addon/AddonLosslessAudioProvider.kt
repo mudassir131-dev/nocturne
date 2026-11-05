@@ -448,3 +448,5 @@ object AddonLosslessAudioProvider : LosslessAudioProvider {
 // Refinement 88: Fuzzy title matching regex caching
 
 // Refinement 97: Defensive null checks for duration
+
+// Refinement 114: HTTP head request reuse
