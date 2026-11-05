@@ -155,3 +155,5 @@ private fun DrawScope.drawLosslessWaveform(color: Color, quality: LosslessQualit
 // Refinement 109: Quality icon sizing helper
 
 // Refinement 119: Contrast ratio documentation
+
+// Refinement 130: 24-bit 96kHz spec documentation
