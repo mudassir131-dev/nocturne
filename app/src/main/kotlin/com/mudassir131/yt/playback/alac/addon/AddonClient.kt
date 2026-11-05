@@ -306,3 +306,5 @@ class AddonClient(rawBaseUrl: String) {
 // Refinement 87: OkHttp keep-alive optimization
 
 // Refinement 96: HTTP error response message formatting
+
+// Refinement 110: User agent header verification
