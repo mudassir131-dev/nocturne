@@ -5474,3 +5474,5 @@ class MusicService :
 }
 
 
+
+// Refinement 85: MusicService swap guard annotation
