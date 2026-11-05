@@ -981,3 +981,5 @@ object YTPlayerUtils {
 
 
 // Refinement 86: YTPlayerUtils stream resolution documentation
+
+// Refinement 105: Player format conversion annotation
