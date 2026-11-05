@@ -384,3 +384,5 @@ private fun AnimatedPipelineLine(
 // Refinement 77: AppleAudioPipelinePanel metrics documentation
 
 // Refinement 91: Pipeline detail row spacing refinement
+
+// Refinement 100: Clean kHz suffix formatting in pipeline panel
