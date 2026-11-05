@@ -729,3 +729,5 @@ val LatestReleaseTagKey = stringPreferencesKey("latest_release_tag")
 
 
 // Refinement 82: PreferenceKeys lossless addon schema
+
+// Refinement 106: Preference key spacing harmonization
