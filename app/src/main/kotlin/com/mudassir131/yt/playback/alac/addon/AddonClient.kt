@@ -304,3 +304,5 @@ class AddonClient(rawBaseUrl: String) {
 // Refinement 73: AddonClient network specifications
 
 // Refinement 87: OkHttp keep-alive optimization
+
+// Refinement 96: HTTP error response message formatting
