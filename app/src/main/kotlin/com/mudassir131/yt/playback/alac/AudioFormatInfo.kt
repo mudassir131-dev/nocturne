@@ -14,18 +14,18 @@ import com.mudassir131.yt.db.entities.FormatEntity
  * Single canonical source of truth for audio stream/playback quality and format details.
  */
 data class AudioFormatInfo(
-    val codec: String, // e.g. "ALAC", "Opus", "AAC", "FLAC", "MP3"
-    val mimeType: String?,
-    val isLossless: Boolean,
-    val isHiRes: Boolean,
-    val sampleRate: Int?,
-    val bitDepth: Int?,
-    val channelCount: Int?,
-    val bitrate: Int?, // in bps, or null if unavailable/dynamic lossless
-    val contentLength: Long?,
-    val itag: Int?,
-    val source: String?, // e.g. "saavn", "youtube", "local", "alac"
-    val decoderName: String?,
+    val codec: String = "", // e.g. "ALAC", "Opus", "AAC", "FLAC", "MP3"
+    val mimeType: String? = null,
+    val isLossless: Boolean = false,
+    val isHiRes: Boolean = false,
+    val sampleRate: Int? = null,
+    val bitDepth: Int? = null,
+    val channelCount: Int? = null,
+    val bitrate: Int? = null, // in bps, or null if unavailable/dynamic lossless
+    val contentLength: Long? = null,
+    val itag: Int? = null,
+    val source: String? = null, // e.g. "saavn", "youtube", "local", "alac"
+    val decoderName: String? = null,
     val outputInfo: com.mudassir131.yt.playback.nativeaudio.AudioOutputInfo? = null,
 ) {
     val isBitPerfect: Boolean
@@ -72,6 +72,11 @@ data class AudioFormatInfo(
             bitrate != null && bitrate > 0 -> "${bitrate / 1000} Kbps"
             isLossless -> "Lossless (Variable)"
             else -> null
+        }
+
+    val displayFileSize: String?
+        get() = contentLength?.takeIf { it > 0 }?.let {
+            String.format(java.util.Locale.ROOT, "%.1f MB", it / (1024.0 * 1024.0))
         }
 
     companion object {
@@ -135,7 +140,7 @@ data class AudioFormatInfo(
                     ?: media3Format?.bitrate?.takeIf { it > 0 && it > 320000 }
                     ?: formatEntity?.bitrate?.takeIf { it > 320000 && formatEntity.codecs.contains("alac", ignoreCase = true) }
 
-                val isHiRes = sampleRate > 48000 || bitDepth > 16
+                val isHiRes = sampleRate > 48000 || bitDepth > 16 || rawCodecs.contains("24") || rawCodecs.contains("hi-res") || rawCodecs.contains("hires")
 
                 return AudioFormatInfo(
                     codec = "ALAC",
@@ -148,7 +153,7 @@ data class AudioFormatInfo(
                     bitrate = bitrate,
                     contentLength = formatEntity?.contentLength?.takeIf { it > 0 },
                     itag = formatEntity?.itag,
-                    source = if (resolvedUrl.contains("saavn", ignoreCase = true)) "saavn" else "alac",
+                    source = if (resolvedUrl.contains("saavn", ignoreCase = true)) "saavn" else if (resolvedUrl.contains("addon", ignoreCase = true) || formatEntity?.codecs?.contains("addon") == true) "addon" else "alac",
                     decoderName = decoderName ?: "AlacDecoder",
                 )
             }
@@ -168,7 +173,7 @@ data class AudioFormatInfo(
                     C.ENCODING_PCM_32BIT -> 32
                     else -> if (rawCodecs.contains("24") || sampleRate > 48000) 24 else 16
                 }
-                val isHiRes = sampleRate > 48000 || bitDepth > 16
+                val isHiRes = sampleRate > 48000 || bitDepth > 16 || rawCodecs.contains("24") || rawCodecs.contains("hi-res") || rawCodecs.contains("hires")
                 return AudioFormatInfo(
                     codec = "FLAC",
                     mimeType = "audio/flac",
@@ -180,7 +185,7 @@ data class AudioFormatInfo(
                     bitrate = media3Format?.bitrate?.takeIf { it > 0 },
                     contentLength = formatEntity?.contentLength?.takeIf { it > 0 },
                     itag = formatEntity?.itag,
-                    source = if (resolvedUrl.contains("saavn", ignoreCase = true)) "saavn" else "flac",
+                    source = if (resolvedUrl.contains("saavn", ignoreCase = true)) "saavn" else if (resolvedUrl.contains("addon", ignoreCase = true) || formatEntity?.codecs?.contains("addon") == true) "addon" else "flac",
                     decoderName = decoderName ?: "FlacDecoder",
                 )
             }
@@ -279,8 +284,8 @@ fun FormatEntity.toAudioFormatInfo(
     ) ?: AudioFormatInfo(
         codec = codecs.ifBlank { "Audio" },
         mimeType = mimeType,
-        isLossless = codecs.contains("alac", ignoreCase = true) || codecs.contains("flac", ignoreCase = true),
-        isHiRes = (sampleRate != null && sampleRate > 48000) || codecs.contains("24"),
+        isLossless = codecs.contains("alac", ignoreCase = true) || codecs.contains("flac", ignoreCase = true) || codecs.contains("lossless", ignoreCase = true),
+        isHiRes = (sampleRate != null && sampleRate > 48000) || codecs.contains("24") || codecs.contains("hi-res", ignoreCase = true) || codecs.contains("hires", ignoreCase = true),
         sampleRate = sampleRate,
         bitDepth = if (codecs.contains("24") || (sampleRate != null && sampleRate > 48000)) 24 else 16,
         channelCount = 2,
@@ -291,3 +296,5 @@ fun FormatEntity.toAudioFormatInfo(
         decoderName = decoderName,
     )
 }
+
+

@@ -200,14 +200,6 @@ fun PlayerSettings(
         ArtistSeparatorsKey,
         defaultValue = ",;/&"
     )
-    val (selfHostedEnabled) = rememberPreference(
-        com.mudassir131.yt.constants.SelfHostedLosslessEnabledKey,
-        defaultValue = false
-    )
-    val (selfHostedUrl) = rememberPreference(
-        com.mudassir131.yt.constants.SelfHostedServerUrlKey,
-        defaultValue = ""
-    )
     val (audioEnhancementEnabled, onAudioEnhancementEnabledChange) = rememberPreference(
         AudioEnhancementEnabledKey,
         defaultValue = false
@@ -259,7 +251,6 @@ fun PlayerSettings(
     var showArtistSeparatorsDialog by remember { mutableStateOf(false) }
     var showTagsManagementDialog by remember { mutableStateOf(false) }
     var showPlayerStreamClientDialog by remember { mutableStateOf(false) }
-    var showSelfHostedServerDialog by remember { mutableStateOf(false) }
     var showAudioDspPresetDialog by remember { mutableStateOf(false) }
     var showEnhancementModeDialog by remember { mutableStateOf(false) }
     var showAiProviderDialog by remember { mutableStateOf(false) }
@@ -493,12 +484,6 @@ fun PlayerSettings(
         )
     }
 
-    if (showSelfHostedServerDialog) {
-        com.mudassir131.yt.ui.component.SelfHostedLosslessDialog(
-            onDismiss = { showSelfHostedServerDialog = false }
-        )
-    }
-
     if (showArtistSeparatorsDialog) {
         ArtistSeparatorsDialog(
             currentSeparators = artistSeparators,
@@ -622,20 +607,6 @@ fun PlayerSettings(
                                 AudioQuality.SAAVN -> "Saavn"
                             }
                         }
-                    )
-                },
-                {
-                    PreferenceEntry(
-                        title = { Text("Self-Hosted Lossless Server") },
-                        description = if (selfHostedEnabled && selfHostedUrl.isNotBlank()) {
-                            "Connected: $selfHostedUrl"
-                        } else if (selfHostedEnabled) {
-                            "Enabled (Server URL not set)"
-                        } else {
-                            "Configure Navidrome / Subsonic lossless library"
-                        },
-                        icon = { Icon(painterResource(R.drawable.integration), null) },
-                        onClick = { showSelfHostedServerDialog = true }
                     )
                 },
                 {
@@ -1086,3 +1057,4 @@ private fun DspSliderPreference(
         isEnabled = isEnabled,
     )
 }
+

@@ -42,8 +42,14 @@ fun ActualPlaybackQualityBadge(
     val resolvedInfo = remember(format, formatInfo) {
         formatInfo ?: format?.toAudioFormatInfo()
     }
-    val label = remember(resolvedInfo) { resolvedInfo?.qualityLabel.orEmpty() }
     val lossless = remember(resolvedInfo) { resolvedInfo?.losslessQuality() }
+    val label = remember(resolvedInfo, lossless) {
+        if (lossless != null) {
+            lossless.label
+        } else {
+            resolvedInfo?.displayCodec?.ifBlank { "AUDIO" } ?: "AUDIO"
+        }
+    }
     if (label.isBlank()) return
 
     Box(
@@ -60,7 +66,7 @@ fun ActualPlaybackQualityBadge(
             if (lossless != null) {
                 LosslessIcon(
                     color = color.copy(alpha = 0.82f),
-                    isHiRes = lossless == LosslessQuality.HI_RES_LOSSLESS || lossless == LosslessQuality.BIT_PERFECT,
+                    quality = lossless,
                     size = 10.dp,
                 )
             }
@@ -77,3 +83,4 @@ fun ActualPlaybackQualityBadge(
         }
     }
 }
+

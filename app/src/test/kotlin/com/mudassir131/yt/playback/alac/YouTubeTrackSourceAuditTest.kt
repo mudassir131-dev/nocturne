@@ -105,7 +105,7 @@ class YouTubeTrackSourceAuditTest {
                     sampleRate = 96000,
                     channels = 2,
                     bitrate = 2304000,
-                    contentLength = 48000000L,
+                    contentLength = 68000000L,
                     durationSeconds = 240,
                     sourceName = "verified_alac",
                 )
@@ -143,7 +143,7 @@ class YouTubeTrackSourceAuditTest {
             codecs = "alac",
             bitrate = 2304000,
             sampleRate = 96000,
-            contentLength = 48000000L,
+            contentLength = 68000000L,
             loudnessDb = null,
             playbackUrl = result.streamUrl,
         )

@@ -21,32 +21,67 @@ import com.mudassir131.yt.playback.alac.AudioFormatInfo
 import com.mudassir131.yt.playback.alac.toAudioFormatInfo
 
 enum class LosslessQuality(val label: String) {
+    BIT_PERFECT("Bit-perfect"),
     LOSSLESS("Lossless"),
     HI_RES_LOSSLESS("Hi-Res Lossless"),
-    BIT_PERFECT("Bit-perfect"),
 }
 
 /**
- * Accurately determines if the resolved playback stream is genuine Lossless or Hi-Res Lossless.
+ * Accurately determines if the resolved playback stream is Bit-perfect, Lossless, or Hi-Res Lossless
+ * based on the file size in MBs:
+ * - Up to 30 MB (<= 30 MB): Bit-perfect
+ * - 30 to 50 MB (30 - 50 MB): Lossless
+ * - 50 to 100 MB+ (> 50 MB): Hi-Res Lossless
  * Returns null for lossy formats (Opus, AAC, MP3, Vorbis, etc.).
  */
-fun FormatEntity.losslessQuality(): LosslessQuality? {
-    val info = toAudioFormatInfo()
-    if (info.isBitPerfect) return LosslessQuality.BIT_PERFECT
-    return if (info.isLossless) {
-        if (info.isHiRes) LosslessQuality.HI_RES_LOSSLESS else LosslessQuality.LOSSLESS
-    } else {
-        null
+fun AudioFormatInfo.losslessQuality(): LosslessQuality? {
+    val isLosslessStream = isLossless ||
+        source?.contains("addon", ignoreCase = true) == true ||
+        codec.equals("flac", ignoreCase = true) ||
+        codec.equals("alac", ignoreCase = true) ||
+        mimeType?.contains("flac", ignoreCase = true) == true ||
+        mimeType?.contains("alac", ignoreCase = true) == true
+
+    if (!isLosslessStream) return null
+
+    val bytes = contentLength ?: 0L
+    if (bytes > 0L) {
+        val mb = bytes / (1024.0 * 1024.0)
+        return when {
+            mb <= 30.0 -> LosslessQuality.BIT_PERFECT
+            mb <= 50.0 -> LosslessQuality.LOSSLESS
+            else -> LosslessQuality.HI_RES_LOSSLESS
+        }
     }
+
+    if (isBitPerfect) return LosslessQuality.BIT_PERFECT
+    if (isHiRes || (sampleRate != null && sampleRate > 48000) || (bitDepth != null && bitDepth > 16)) {
+        return LosslessQuality.HI_RES_LOSSLESS
+    }
+    return LosslessQuality.LOSSLESS
 }
 
-fun AudioFormatInfo.losslessQuality(): LosslessQuality? {
-    if (isBitPerfect) return LosslessQuality.BIT_PERFECT
-    return if (isLossless) {
-        if (isHiRes) LosslessQuality.HI_RES_LOSSLESS else LosslessQuality.LOSSLESS
-    } else {
-        null
+fun FormatEntity.losslessQuality(): LosslessQuality? {
+    val bytes = contentLength.takeIf { it > 0 } ?: 0L
+    val isLosslessStream = codecs.contains("flac", ignoreCase = true) ||
+        codecs.contains("alac", ignoreCase = true) ||
+        codecs.contains("addon", ignoreCase = true) ||
+        codecs.contains("lossless", ignoreCase = true) ||
+        mimeType.contains("flac", ignoreCase = true) ||
+        mimeType.contains("alac", ignoreCase = true)
+
+    if (!isLosslessStream) return null
+
+    if (bytes > 0L) {
+        val mb = bytes / (1024.0 * 1024.0)
+        return when {
+            mb <= 30.0 -> LosslessQuality.BIT_PERFECT
+            mb <= 50.0 -> LosslessQuality.LOSSLESS
+            else -> LosslessQuality.HI_RES_LOSSLESS
+        }
     }
+
+    return toAudioFormatInfo().losslessQuality()
 }
 
 /**
@@ -55,29 +90,44 @@ fun AudioFormatInfo.losslessQuality(): LosslessQuality? {
 @Composable
 fun LosslessIcon(
     color: Color,
-    isHiRes: Boolean = false,
+    quality: LosslessQuality = LosslessQuality.LOSSLESS,
     modifier: Modifier = Modifier,
     size: Dp = 11.dp,
 ) {
     Canvas(modifier = modifier.size(size)) {
-        drawLosslessWaveform(color, isHiRes)
+        drawLosslessWaveform(color, quality)
     }
 }
 
-private fun DrawScope.drawLosslessWaveform(color: Color, isHiRes: Boolean) {
+@Composable
+fun LosslessIcon(
+    color: Color,
+    isHiRes: Boolean,
+    modifier: Modifier = Modifier,
+    size: Dp = 11.dp,
+) {
+    LosslessIcon(
+        color = color,
+        quality = if (isHiRes) LosslessQuality.HI_RES_LOSSLESS else LosslessQuality.LOSSLESS,
+        modifier = modifier,
+        size = size,
+    )
+}
+
+private fun DrawScope.drawLosslessWaveform(color: Color, quality: LosslessQuality) {
     val w = size.width
     val h = size.height
-    val barCount = if (isHiRes) 4 else 3
+
+    val heights = when (quality) {
+        LosslessQuality.HI_RES_LOSSLESS -> floatArrayOf(0.45f, 1.0f, 0.75f, 0.45f)
+        LosslessQuality.LOSSLESS -> floatArrayOf(0.55f, 1.0f, 0.55f)
+        LosslessQuality.BIT_PERFECT -> floatArrayOf(0.65f, 1.0f, 1.0f, 0.65f)
+    }
+
+    val barCount = heights.size
     val spacing = w * 0.14f
     val totalSpacing = spacing * (barCount - 1)
     val barWidth = (w - totalSpacing) / barCount
-
-    // Symmetrical high-fidelity acoustic wave heights
-    val heights = if (isHiRes) {
-        floatArrayOf(0.45f, 1.0f, 0.75f, 0.45f)
-    } else {
-        floatArrayOf(0.55f, 1.0f, 0.55f)
-    }
 
     for (i in 0 until barCount) {
         val barH = h * heights[i]
@@ -91,3 +141,7 @@ private fun DrawScope.drawLosslessWaveform(color: Color, isHiRes: Boolean) {
         )
     }
 }
+
+
+
+

@@ -20,6 +20,11 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -1094,18 +1099,21 @@ private fun AppleQualityBadge(
     sleepTimerTimeLeft: Long,
     onClick: (() -> Unit)? = null,
 ) {
+    val upgradingMediaId by com.mudassir131.yt.playback.alac.QualityUpgradeManager.upgradingMediaId.collectAsState()
+    val isUpgrading = upgradingMediaId != null && (format == null || upgradingMediaId == format.id)
     val resolved = remember(format, formatInfo) {
         formatInfo ?: format?.toAudioFormatInfo()
     }
     val lossless = remember(resolved) { resolved?.losslessQuality() }
-    val formatText = remember(resolved) {
+    val formatText = remember(resolved, lossless) {
         if (lossless != null) {
             lossless.label
         } else {
-            resolved?.qualityLabel.orEmpty()
+            // NEVER show bitrate in Apple player badge per user request
+            resolved?.displayCodec?.ifBlank { "AUDIO" } ?: "AUDIO"
         }
     }
-    if (!sleepTimerActive && formatText.isBlank() && !isLoading) return
+    if (!sleepTimerActive && formatText.isBlank() && !isLoading && !isUpgrading) return
 
     val badgeInteraction =
         if (!sleepTimerActive && onClick != null) {
@@ -1113,6 +1121,22 @@ private fun AppleQualityBadge(
         } else {
             Modifier
         }
+
+    // Dynamic pulse animation for "Upgrading quality" badge
+    val pulseTransition = rememberInfiniteTransition(label = "upgradingPulse")
+    val pulseAlpha by if (isUpgrading) {
+        pulseTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0.4f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "upgradingPulseAlpha",
+        )
+    } else {
+        remember { mutableStateOf(1f) }
+    }
 
     Box(
         modifier = Modifier
@@ -1144,6 +1168,27 @@ private fun AppleQualityBadge(
                     maxLines = 1,
                 )
             }
+        } else if (isUpgrading) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.graphicsLayer { alpha = pulseAlpha },
+            ) {
+                com.mudassir131.yt.ui.component.NocturneLoader(
+                    size = 11.dp,
+                    color = Color.White.copy(alpha = 0.85f),
+                )
+                Text(
+                    text = "Upgrading quality",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                        fontSize = 10.sp,
+                    ),
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1,
+                )
+            }
         } else if (isLoading) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1171,7 +1216,7 @@ private fun AppleQualityBadge(
             ) {
                 com.mudassir131.yt.ui.component.LosslessIcon(
                     color = Color.White.copy(alpha = 0.8f),
-                    isHiRes = lossless == com.mudassir131.yt.ui.component.LosslessQuality.HI_RES_LOSSLESS,
+                    quality = lossless,
                     size = 10.dp,
                 )
                 Text(
@@ -1284,3 +1329,6 @@ private fun AppleBottomActions(
 }
 
 private fun Long.validDuration(): Long = if (this == C.TIME_UNSET || this < 0L) 0L else this
+
+
+

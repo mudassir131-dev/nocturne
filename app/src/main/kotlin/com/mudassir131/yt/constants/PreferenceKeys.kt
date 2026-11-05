@@ -131,6 +131,11 @@ enum class AudioQuality {
     LOSSLESS,
 }
 
+// Lossless Sources & Addon Engine (Pluggable external sources)
+val AddonLosslessEnabledKey = booleanPreferencesKey("addonLosslessEnabled")
+val AddonLosslessUrlKey = stringPreferencesKey("addonLosslessUrl")
+val AddonLosslessNameKey = stringPreferencesKey("addonLosslessName")
+
 // Self-Hosted Lossless Server (Navidrome / Subsonic / OpenSubsonic)
 val SelfHostedLosslessEnabledKey = booleanPreferencesKey("selfHostedLosslessEnabled")
 val SelfHostedServerUrlKey = stringPreferencesKey("selfHostedServerUrl")
@@ -719,4 +724,6 @@ val DismissedUpdateVersionKey = stringPreferencesKey("dismissed_update_version")
 val LastWelcomedVersionKey = stringPreferencesKey("last_welcomed_version")
 val LatestReleaseJsonKey = stringPreferencesKey("latest_release_json")
 val LatestReleaseTagKey = stringPreferencesKey("latest_release_tag")
+
+
 

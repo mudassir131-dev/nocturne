@@ -6,6 +6,7 @@
 package com.mudassir131.yt.playback.alac
 
 import com.mudassir131.yt.innertube.models.response.PlayerResponse
+import com.mudassir131.yt.playback.alac.addon.AddonLosslessAudioProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -41,7 +42,7 @@ object LosslessStreamResolver {
 
     init {
         // Priority 1: Self-Hosted Navidrome / Subsonic Lossless Server
-        registerProvider(SelfHostedLosslessAudioProvider)
+        registerProvider(AddonLosslessAudioProvider)
         // Priority 2: Local FLAC / ALAC files
         registerProvider(LocalAlacFileProvider)
         // Priority 3: Online High-Res 320kbps / Lossless Catalog Provider
@@ -63,7 +64,7 @@ object LosslessStreamResolver {
 
     fun resetDefaultProviders() {
         providers.clear()
-        providers.add(SelfHostedLosslessAudioProvider)
+        providers.add(AddonLosslessAudioProvider)
         providers.add(LocalAlacFileProvider)
         providers.add(OnlineLosslessAudioProvider)
         clearCache()
@@ -146,7 +147,7 @@ object LosslessStreamResolver {
                 }
 
                 // Preflight validation for remote streams
-                if (enablePreflightValidation && (candidate.url.startsWith("http://", ignoreCase = true) ||
+                if (enablePreflightValidation && candidate.sourceName != "addon_lossless" && (candidate.url.startsWith("http://", ignoreCase = true) ||
                     candidate.url.startsWith("https://", ignoreCase = true))
                 ) {
                     val isReachable = validateRemoteUrl(candidate.url)
@@ -206,6 +207,15 @@ object LosslessStreamResolver {
         streamCache[videoId] = cached
         streamCache["$videoId:strict"] = cached
         streamCache["$videoId:lossy_ok"] = cached
+    }
+
+    fun getCachedResult(videoId: String): ResolvedLosslessResult? {
+        if (videoId.isBlank()) return null
+        val cached = streamCache[videoId] ?: streamCache["$videoId:strict"] ?: streamCache["$videoId:lossy_ok"]
+        if (cached != null && cached.expiresAtMs > System.currentTimeMillis()) {
+            return cached.stream.toResult(videoId)
+        }
+        return null
     }
 
     fun clearCache() {
@@ -324,3 +334,5 @@ object LocalAlacFileProvider : LosslessAudioProvider {
         return null
     }
 }
+
+

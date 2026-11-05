@@ -294,14 +294,7 @@ object YTPlayerUtils {
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] User preference: $audioQuality")
             Timber.tag(logTag).i("[LOSSLESS_PIPELINE] Target Track: '$title' by '$artist' (videoId=$videoId, duration=${durationSecs}s)")
             
-            val losslessResult = LosslessStreamResolver.resolve(
-                videoId = videoId,
-                title = title,
-                artist = artist,
-                durationSeconds = durationSecs,
-                isMetered = networkMetered ?: connectivityManager.isActiveNetworkMetered,
-                allowHighResLossy = true,
-            )
+            val losslessResult = LosslessStreamResolver.getCachedResult(videoId)
             if (losslessResult != null) {
                 Timber.tag(logTag).i("[LOSSLESS_PIPELINE] -> SUCCESS: Stream resolved: ${losslessResult.streamUrl} (source=${losslessResult.source})")
                 Timber.tag(logTag).i("[LOSSLESS_PIPELINE] ========================================================")
@@ -983,4 +976,6 @@ object YTPlayerUtils {
         }
     }
 }
+
+
 

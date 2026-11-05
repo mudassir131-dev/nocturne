@@ -30,6 +30,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -42,6 +43,8 @@ import com.mudassir131.yt.BuildConfig
 import com.mudassir131.yt.LocalPlayerAwareWindowInsets
 import com.mudassir131.yt.R
 import com.mudassir131.yt.ui.component.PreferenceGroupTitle
+import com.mudassir131.yt.constants.AddonLosslessEnabledKey
+import com.mudassir131.yt.constants.AddonLosslessUrlKey
 import com.mudassir131.yt.constants.ListenBrainzEnabledKey
 import com.mudassir131.yt.constants.ListenBrainzTokenKey
 import com.mudassir131.yt.constants.SpotifyUseDataApiMatchingKey
@@ -53,6 +56,7 @@ import com.mudassir131.yt.ui.component.InfoLabel
 import com.mudassir131.yt.ui.component.PreferenceEntry
 import com.mudassir131.yt.ui.component.SwitchPreference
 import com.mudassir131.yt.ui.component.TextFieldDialog
+import com.mudassir131.yt.ui.component.AddonSourceDialog
 import com.mudassir131.yt.ui.utils.backToMain
 import com.mudassir131.yt.utils.rememberPreference
 import com.mudassir131.yt.utils.youtube.YouTubeDataApi
@@ -65,6 +69,10 @@ fun IntegrationScreen(
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
     val context = LocalContext.current
+
+    val (addonLosslessEnabled) = rememberPreference(AddonLosslessEnabledKey, true)
+    val (addonLosslessUrl) = rememberPreference(AddonLosslessUrlKey, "")
+    var showAddonSourceDialog by remember { mutableStateOf(false) }
 
     val (listenBrainzEnabled, onListenBrainzEnabledChange) = rememberPreference(ListenBrainzEnabledKey, false)
     val (listenBrainzToken, onListenBrainzTokenChange) = rememberPreference(ListenBrainzTokenKey, "")
@@ -87,6 +95,12 @@ fun IntegrationScreen(
     val hasAnyKey = youtubeDataApiKey.isNotBlank() || BuildConfig.YOUTUBE_DATA_API_KEY.isNotBlank()
 
     val collapsibleScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+        if (showAddonSourceDialog) {
+        AddonSourceDialog(
+            onDismiss = { showAddonSourceDialog = false }
+        )
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(collapsibleScrollBehavior.nestedScrollConnection),
@@ -122,6 +136,23 @@ fun IntegrationScreen(
         ) {
 
         PreferenceGroupTitle(
+                title = "Lossless Audio Sources (Addon)",
+            )
+
+            PreferenceEntry(
+                title = { Text("Lossless Addon Provider") },
+                description = if (addonLosslessEnabled && addonLosslessUrl.isNotBlank()) {
+                    "Connected: $addonLosslessUrl"
+                } else if (addonLosslessEnabled) {
+                    "Enabled (No Addon link set)"
+                } else {
+                    "Configure lossless addon link"
+                },
+                icon = { Icon(painterResource(R.drawable.integration), null) },
+                onClick = { showAddonSourceDialog = true }
+            )
+
+            PreferenceGroupTitle(
                 title = stringResource(R.string.general),
             )
 
@@ -300,3 +331,5 @@ fun IntegrationScreen(
         )
     }
 }
+
+

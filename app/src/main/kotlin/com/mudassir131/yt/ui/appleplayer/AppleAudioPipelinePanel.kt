@@ -73,6 +73,7 @@ private fun buildAudioPipelineSections(formatInfo: AudioFormatInfo?): List<Pipel
     val rawSource = formatInfo.source.orEmpty()
     val source = when {
         rawSource.isBlank() -> "—"
+        rawSource.contains("addon", ignoreCase = true) -> "Addon Source"
         rawSource.contains("saavn", ignoreCase = true) -> "Saavn"
         rawSource.contains("local", ignoreCase = true) -> "Local file"
         rawSource.contains("self", ignoreCase = true) ||
@@ -94,6 +95,7 @@ private fun buildAudioPipelineSections(formatInfo: AudioFormatInfo?): List<Pipel
     }
     val sampleRate = formatInfo.sampleRate?.takeIf { it > 0 }?.let { "$it Hz" } ?: "—"
     val bitrate = formatInfo.displayBitrate ?: "—"
+    val fileSize = formatInfo.displayFileSize ?: "—"
     val channels = when (formatInfo.channelCount) {
         null -> "—"
         1 -> "Mono"
@@ -111,6 +113,7 @@ private fun buildAudioPipelineSections(formatInfo: AudioFormatInfo?): List<Pipel
                 "Bit Depth" to bitDepth,
                 "Sample Rate" to sampleRate,
                 "Bitrate" to bitrate,
+                "File Size" to fileSize,
                 "Channels" to channels,
             ),
         ),
@@ -374,3 +377,6 @@ private fun AnimatedPipelineLine(
         }
     }
 }
+
+
+

@@ -77,10 +77,14 @@ import com.mudassir131.yt.playback.alac.AudioFormatInfo
 import com.mudassir131.yt.playback.alac.AlacAudioRenderer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
+import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.ExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.flac.FlacExtractor
+import androidx.media3.extractor.wav.WavExtractor
+import com.mudassir131.yt.playback.alac.QualityUpgradeManager
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
@@ -330,6 +334,8 @@ class MusicService :
         OkHttpClient
             .Builder()
             .proxy(YouTube.streamProxy)
+            .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
             .addInterceptor { chain ->
@@ -408,10 +414,13 @@ class MusicService :
                             id = mediaId,
                             itag = existingDbFormat?.itag ?: info.itag ?: 0,
                             mimeType = info.mimeType ?: existingDbFormat?.mimeType ?: "audio/webm",
-                            codecs = if (info.isLossless) (if (info.isHiRes) "alac.24" else "alac") else info.codec.lowercase(),
+                            codecs = if (info.isLossless) {
+                                val isFlac = info.codec.equals("flac", ignoreCase = true) || info.mimeType?.contains("flac", ignoreCase = true) == true
+                                if (isFlac) (if (info.isHiRes) "flac.24" else "flac") else (if (info.isHiRes) "alac.24" else "alac")
+                            } else info.codec.lowercase(),
                             bitrate = info.bitrate ?: existingDbFormat?.bitrate ?: 0,
                             sampleRate = info.sampleRate ?: existingDbFormat?.sampleRate,
-                            contentLength = existingDbFormat?.contentLength ?: C.LENGTH_UNSET.toLong(),
+                            contentLength = info.contentLength ?: existingDbFormat?.contentLength ?: C.LENGTH_UNSET.toLong(),
                             loudnessDb = existingDbFormat?.loudnessDb,
                             perceptualLoudnessDb = existingDbFormat?.perceptualLoudnessDb,
                             playbackUrl = existingDbFormat?.playbackUrl,
@@ -3728,8 +3737,17 @@ class MusicService :
         )
     }
 
+    @Volatile
+    var isSwappingQualityMediaId: String? = null
+
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
+
+        // Quality upgrade swap guard: avoid duplicate transition cycles during quality upgrade hot-swap
+        if (mediaItem?.mediaId == isSwappingQualityMediaId) {
+            isSwappingQualityMediaId = null
+            return
+        }
 
         if (::recoveryController.isInitialized) {
             recoveryController.startNewSession(mediaItem?.mediaId)
@@ -3749,6 +3767,24 @@ class MusicService :
             mediaItem?.mediaMetadata?.artist?.toString(),
             player.duration.takeIf { it > 0 },
         )
+        if (mediaItem != null) {
+            val itemMeta = mediaItem.metadata
+            val t = mediaItem.mediaMetadata.title?.toString()
+                ?: itemMeta?.title
+                ?: currentMediaMetadata.value?.title
+            val a = mediaItem.mediaMetadata.artist?.toString()
+                ?: itemMeta?.artists?.joinToString { it.name }
+                ?: currentMediaMetadata.value?.artists?.joinToString { it.name }
+            val d = itemMeta?.duration ?: currentMediaMetadata.value?.duration
+
+            QualityUpgradeManager.startUpgradeIfEligible(
+                service = this@MusicService,
+                mediaId = mediaItem.mediaId,
+                title = t,
+                artist = a,
+                durationSeconds = d,
+            )
+        }
 
     val currentIndex = player.currentMediaItemIndex
     if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
@@ -4591,44 +4627,54 @@ class MusicService :
 
     private fun createDataSourceFactory(): DataSource.Factory {
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
-            val mediaId = dataSpec.key ?: error("No media id")
+            val rawKey = dataSpec.key ?: dataSpec.uri.toString()
+            val mediaId = rawKey.substringBefore('?').substringBefore('#')
+            val isQualityUpgraded = rawKey.contains("?q=") || dataSpec.uri.toString().contains("?q=")
 
-            val requiredCachedLength =
-                if (dataSpec.length >= 0) {
-                    dataSpec.length
-                } else {
-                    val contentLength =
-                        runBlocking(Dispatchers.IO) {
-                            database.format(mediaId).first()?.contentLength
-                        } ?: runCatching {
-                            downloadCache
-                                .getContentMetadata(mediaId)
-                                .get(ContentMetadata.KEY_CONTENT_LENGTH, -1L)
-                        }.getOrNull()?.takeIf { it > 0L } ?: runCatching {
-                            playerCache
-                                .getContentMetadata(mediaId)
-                                .get(ContentMetadata.KEY_CONTENT_LENGTH, -1L)
-                        }.getOrNull()?.takeIf { it > 0L }
+            // If this is an upgraded lossless stream, bypass the YouTube Opus cache to ensure fresh lossless audio
+            if (!isQualityUpgraded) {
+                val requiredCachedLength =
+                    if (dataSpec.length >= 0) {
+                        dataSpec.length
+                    } else {
+                        val contentLength =
+                            runBlocking(Dispatchers.IO) {
+                                database.format(mediaId).first()?.contentLength
+                            } ?: runCatching {
+                                downloadCache
+                                    .getContentMetadata(mediaId)
+                                    .get(ContentMetadata.KEY_CONTENT_LENGTH, -1L)
+                            }.getOrNull()?.takeIf { it > 0L } ?: runCatching {
+                                playerCache
+                                    .getContentMetadata(mediaId)
+                                    .get(ContentMetadata.KEY_CONTENT_LENGTH, -1L)
+                            }.getOrNull()?.takeIf { it > 0L }
 
-                    contentLength?.let { nonNullContentLength ->
-                        (nonNullContentLength - dataSpec.position).takeIf { it > 0L }
+                        contentLength?.let { nonNullContentLength ->
+                            (nonNullContentLength - dataSpec.position).takeIf { it > 0L }
+                        }
                     }
-                }
 
-            if (requiredCachedLength != null) {
-                val isFullyCached =
-                    downloadCache.isCached(mediaId, dataSpec.position, requiredCachedLength) ||
-                        playerCache.isCached(mediaId, dataSpec.position, requiredCachedLength)
-                if (isFullyCached) {
-                    scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
-                    return@Factory dataSpec
+                if (requiredCachedLength != null) {
+                    val isFullyCached =
+                        downloadCache.isCached(mediaId, dataSpec.position, requiredCachedLength) ||
+                            playerCache.isCached(mediaId, dataSpec.position, requiredCachedLength)
+                    if (isFullyCached) {
+                        scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
+                        return@Factory dataSpec
+                    }
                 }
             }
 
             playbackUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
                 scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
+                val streamUri = it.first.toUri()
+                val isExternalLossless = isQualityUpgraded || !it.first.contains("googlevideo.com")
+                if (isExternalLossless) {
+                    return@Factory dataSpec.withUri(streamUri)
+                }
                 val length = if (dataSpec.length >= 0) minOf(dataSpec.length, CHUNK_LENGTH) else CHUNK_LENGTH
-                return@Factory dataSpec.withUri(it.first.toUri()).subrange(dataSpec.uriPositionOffset, length)
+                return@Factory dataSpec.withUri(streamUri).subrange(dataSpec.uriPositionOffset, length)
             }
 
             val dataSaverEnabled = runBlocking(Dispatchers.IO) { dataStore.get(DataSaverKey, false) }
@@ -4732,9 +4778,61 @@ class MusicService :
 
                 playbackUrlCache[mediaId] =
                     streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)
+                QualityUpgradeManager.startUpgradeIfEligible(
+                    service = this@MusicService,
+                    mediaId = mediaId,
+                    title = resolvedTitle,
+                    artist = resolvedArtist,
+                    durationSeconds = resolvedDuration,
+                )
+                val isExternalLossless = isQualityUpgraded || !streamUrl.contains("googlevideo.com")
+                if (isExternalLossless) {
+                    return@Factory dataSpec.withUri(streamUrl.toUri())
+                }
                 val length = if (dataSpec.length >= 0) minOf(dataSpec.length, CHUNK_LENGTH) else CHUNK_LENGTH
                 return@Factory dataSpec.withUri(streamUrl.toUri()).subrange(dataSpec.uriPositionOffset, length)
             }
+        }
+    }
+
+    fun updatePlaybackUrl(mediaId: String, streamUrl: String, expiresInSeconds: Long = 86400L) {
+        playbackUrlCache[mediaId] = streamUrl to (System.currentTimeMillis() + expiresInSeconds * 1000L)
+        runCatching {
+            playerCache.removeResource(mediaId)
+        }
+    }
+
+    /**
+     * Seamless hot-swap: seamlessly swaps the active player MediaItem to the upgraded lossless stream.
+     * Uses marked URI & separate customCacheKey so Media3 rebuilds the media source at the current position.
+     */
+    fun swapToUpgradedLossless(mediaId: String, streamUrl: String) {
+        val currentItem = player.currentMediaItem ?: return
+        if (currentItem.mediaId != mediaId) return
+
+        val currentIndex = player.currentMediaItemIndex
+        val currentPos = player.currentPosition.coerceAtLeast(0L)
+        val wasPlaying = player.playWhenReady
+
+        Timber.tag("QualityUpgrade").i("Hot-swapping ExoPlayer to lossless stream for $mediaId at ${currentPos}ms")
+
+        isSwappingQualityMediaId = mediaId
+
+        val upgradedUri = "${mediaId}?q=hifi"
+        val upgradedItem = currentItem.buildUpon()
+            .setUri(upgradedUri.toUri())
+            .setCustomCacheKey(upgradedUri)
+            .build()
+
+        player.replaceMediaItem(currentIndex, upgradedItem)
+        if (currentPos > 1500L) {
+            player.seekTo(currentIndex, currentPos)
+        } else {
+            player.seekTo(currentIndex, 0L)
+        }
+        player.prepare()
+        if (wasPlaying) {
+            player.play()
         }
     }
 
@@ -4806,9 +4904,7 @@ class MusicService :
     private fun createMediaSourceFactory() =
         DefaultMediaSourceFactory(
             createDataSourceFactory(),
-            ExtractorsFactory {
-                arrayOf(Mp4Extractor(), FragmentedMp4Extractor(), MatroskaExtractor())
-            },
+            DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true),
         )
 
     private fun createLoadControl() =
@@ -5376,3 +5472,5 @@ class MusicService :
         val loudness: Boolean,
     )
 }
+
+
