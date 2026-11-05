@@ -245,3 +245,5 @@ object QualityUpgradeManager {
 // Refinement 98: Upgrading media id reset on stop
 
 // Refinement 113: Concurrent upgrade request guard
+
+// Refinement 126: Cancellation state emission
