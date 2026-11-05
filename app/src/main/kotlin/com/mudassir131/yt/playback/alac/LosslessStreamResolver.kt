@@ -340,3 +340,5 @@ object LocalAlacFileProvider : LosslessAudioProvider {
 // Refinement 83: LosslessStreamResolver caching strategy
 
 // Refinement 103: Thread-safe cache invalidation
+
+// Refinement 118: Resolution timing metrics logging
