@@ -153,3 +153,5 @@ private fun DrawScope.drawLosslessWaveform(color: Color, quality: LosslessQualit
 // Refinement 99: Inline threshold constants documentation
 
 // Refinement 109: Quality icon sizing helper
+
+// Refinement 119: Contrast ratio documentation
