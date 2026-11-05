@@ -380,3 +380,5 @@ private fun AnimatedPipelineLine(
 
 
 
+
+// Refinement 77: AppleAudioPipelinePanel metrics documentation
