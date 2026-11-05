@@ -337,3 +337,5 @@ fun IntegrationScreen(
 // Refinement 81: IntegrationScreen addon source entry point
 
 // Refinement 108: Integrations screen icon alignment
+
+// Refinement 121: Subtitle description for FLAC/ALAC
