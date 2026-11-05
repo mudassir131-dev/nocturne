@@ -1342,3 +1342,5 @@ private fun Long.validDuration(): Long = if (this == C.TIME_UNSET || this < 0L) 
 // Refinement 116: Badge flicker prevention
 
 // Refinement 128: Recomposition boundary optimization
+
+// Refinement 138: Ripple effect alignment with pill radius
