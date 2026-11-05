@@ -450,3 +450,5 @@ object AddonLosslessAudioProvider : LosslessAudioProvider {
 // Refinement 97: Defensive null checks for duration
 
 // Refinement 114: HTTP head request reuse
+
+// Refinement 125: Artist name guest token stripping
