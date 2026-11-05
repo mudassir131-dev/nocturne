@@ -304,3 +304,5 @@ fun FormatEntity.toAudioFormatInfo(
 // Refinement 104: Mime type sanitization in AudioFormatInfo
 
 // Refinement 117: Bit-perfect delivery state property
+
+// Refinement 132: Sample rate kHz string helper
