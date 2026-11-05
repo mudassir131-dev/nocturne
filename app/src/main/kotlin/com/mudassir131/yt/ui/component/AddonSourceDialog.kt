@@ -247,3 +247,5 @@ fun AddonSourceDialog(
 // Refinement 93: Connection test button state styling
 
 // Refinement 107: Addon URL trim and scheme handling
+
+// Refinement 120: Clear test result on URL edit
