@@ -84,3 +84,5 @@ fun ActualPlaybackQualityBadge(
     }
 }
 
+
+// Refinement 79: ActualPlaybackQualityBadge composable documentation
