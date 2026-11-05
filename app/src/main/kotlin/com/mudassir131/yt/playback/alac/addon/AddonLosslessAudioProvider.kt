@@ -442,3 +442,5 @@ object AddonLosslessAudioProvider : LosslessAudioProvider {
 
 
 
+
+// Refinement 74: AddonLosslessAudioProvider search resolution
