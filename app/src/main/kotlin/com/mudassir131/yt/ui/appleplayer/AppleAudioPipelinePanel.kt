@@ -386,3 +386,5 @@ private fun AnimatedPipelineLine(
 // Refinement 91: Pipeline detail row spacing refinement
 
 // Refinement 100: Clean kHz suffix formatting in pipeline panel
+
+// Refinement 115: Bitrate Mbps formatting
