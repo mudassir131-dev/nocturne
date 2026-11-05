@@ -1338,3 +1338,5 @@ private fun Long.validDuration(): Long = if (this == C.TIME_UNSET || this < 0L) 
 // Refinement 92: Apple player badge padding harmonization
 
 // Refinement 101: Sleep timer precedence over badge
+
+// Refinement 116: Badge flicker prevention
