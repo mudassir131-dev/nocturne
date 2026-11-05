@@ -145,3 +145,5 @@ private fun DrawScope.drawLosslessWaveform(color: Color, quality: LosslessQualit
 
 
 
+
+// Refinement 76: LosslessQuality tier boundary documentation
