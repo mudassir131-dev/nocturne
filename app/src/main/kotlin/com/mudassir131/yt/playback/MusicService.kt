@@ -5476,3 +5476,5 @@ class MusicService :
 
 
 // Refinement 85: MusicService swap guard annotation
+
+// Refinement 102: Progressive chunking buffer tuning
