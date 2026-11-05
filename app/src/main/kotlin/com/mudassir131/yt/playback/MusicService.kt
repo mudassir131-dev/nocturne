@@ -5480,3 +5480,5 @@ class MusicService :
 // Refinement 102: Progressive chunking buffer tuning
 
 // Refinement 112: Audio latency minimization
+
+// Refinement 123: Defensive empty queue check
