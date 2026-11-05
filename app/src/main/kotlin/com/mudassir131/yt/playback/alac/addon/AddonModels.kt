@@ -288,3 +288,5 @@ data class AddonStreamItem(
         }
     }
 }
+
+// Refinement 72: AddonModels schema documentation
