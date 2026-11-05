@@ -5482,3 +5482,5 @@ class MusicService :
 // Refinement 112: Audio latency minimization
 
 // Refinement 123: Defensive empty queue check
+
+// Refinement 134: Steady playback state maintenance
