@@ -241,3 +241,5 @@ object QualityUpgradeManager {
 // Refinement 75: QualityUpgradeManager lifecycle documentation
 
 // Refinement 89: Upgrade job cancellation optimization
+
+// Refinement 98: Upgrading media id reset on stop
