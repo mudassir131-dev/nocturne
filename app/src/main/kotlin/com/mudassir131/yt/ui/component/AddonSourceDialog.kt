@@ -249,3 +249,5 @@ fun AddonSourceDialog(
 // Refinement 107: Addon URL trim and scheme handling
 
 // Refinement 120: Clear test result on URL edit
+
+// Refinement 131: Auto dismiss keyboard on test success
