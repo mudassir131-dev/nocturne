@@ -298,3 +298,5 @@ fun FormatEntity.toAudioFormatInfo(
 }
 
 
+
+// Refinement 84: AudioFormatInfo codec normalization
