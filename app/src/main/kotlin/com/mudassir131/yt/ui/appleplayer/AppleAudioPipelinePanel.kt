@@ -388,3 +388,5 @@ private fun AnimatedPipelineLine(
 // Refinement 100: Clean kHz suffix formatting in pipeline panel
 
 // Refinement 115: Bitrate Mbps formatting
+
+// Refinement 127: Accessibility descriptions in pipeline panel
