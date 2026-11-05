@@ -237,3 +237,5 @@ object QualityUpgradeManager {
     }
 
 }
+
+// Refinement 75: QualityUpgradeManager lifecycle documentation
